@@ -146,34 +146,69 @@ export default function App() {
     });
   };
 
+  // Shopping Cart States
+  const [cart, setCart] = useState<{ product: Product; quantity: number }[]>(() => {
+    const cached = localStorage.getItem('noina_cart');
+    return cached ? JSON.parse(cached) : [];
+  });
+
+  useEffect(() => {
+    localStorage.setItem('noina_cart', JSON.stringify(cart));
+  }, [cart]);
+
+  const handleAddToCart = (product: Product, qty: number) => {
+    setCart(prev => {
+      const idx = prev.findIndex(item => item.product.id === product.id);
+      if (idx !== -1) {
+        const updated = [...prev];
+        updated[idx].quantity += qty;
+        return updated;
+      }
+      return [...prev, { product, quantity: qty }];
+    });
+  };
+
+  const handleRemoveFromCart = (productId: string) => {
+    setCart(prev => prev.filter(item => item.product.id !== productId));
+  };
+
+  const handleUpdateCartQuantity = (productId: string, qty: number) => {
+    setCart(prev => prev.map(item => item.product.id === productId ? { ...item, quantity: qty } : item));
+  };
+
+  const handleClearCart = () => {
+    setCart([]);
+  };
+
   // NLM Purchase Checkout & BV flow simulation!
-  const handlePurchase = (product: Product, quantity: number, registrationDetails?: any) => {
-    const baseAmount = product.price * quantity;
-    let totalAmount = baseAmount;
+  const handlePurchase = (items: { product: Product; quantity: number }[], registrationDetails?: any) => {
+    if (items.length === 0) return;
+    
+    const baseAmount = items.reduce((sum, item) => sum + item.product.price * item.quantity, 0);
+    const shippingFee = 50; // flat 50 Baht
     let codFee = 0;
     
     if (registrationDetails && registrationDetails.paymentMethod === 'cod') {
       codFee = Math.round(baseAmount * 0.03);
-      totalAmount = baseAmount + codFee;
     }
-
-    const totalBV = product.bv * quantity;
+    const totalAmount = baseAmount + shippingFee + codFee;
+    const totalBV = items.reduce((sum, item) => sum + item.product.bv * item.quantity, 0);
+    
+    const orderId = registrationDetails?.orderId || `ORD-${Date.now().toString().slice(-4)}`;
     
     const newOrder: Order = {
-      id: `ORD-${Date.now().toString().slice(-4)}`,
+      id: orderId,
       memberId: currentUser ? currentUser.id : 'GUEST',
       memberName: registrationDetails 
         ? `${registrationDetails.firstName} ${registrationDetails.lastName}` 
         : (currentUser ? currentUser.name : 'ลูกค้ารายย่อย (Guest)'),
-      items: [
-        {
-          productId: product.id,
-          name: product.name,
-          price: product.price,
-          bv: product.bv,
-          quantity: quantity
-        }
-      ],
+      items: items.map(item => ({
+        productId: item.product.id,
+        name: item.product.name,
+        price: item.product.price,
+        bv: item.product.bv,
+        quantity: item.quantity
+      })),
       totalAmount: totalAmount,
       totalBV: totalBV,
       date: new Date().toISOString().replace('T', ' ').slice(0, 16),
@@ -189,6 +224,31 @@ export default function App() {
     };
 
     setOrders(prev => [newOrder, ...prev]);
+
+    // Automatically POST to Google Sheets Webhook URL if saved by the admin in localStorage
+    const webhookUrl = localStorage.getItem('noina_order_webhook_url');
+    if (webhookUrl && webhookUrl.startsWith('http')) {
+      fetch(webhookUrl, {
+        method: 'POST',
+        mode: 'no-cors',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          ...newOrder,
+          firstName: registrationDetails?.firstName || '',
+          lastName: registrationDetails?.lastName || '',
+          sponsorId: currentUser ? currentUser.id : `NS${Math.floor(1000 + Math.random() * 9000)}`
+        })
+      }).then(() => {
+        console.log('Successfully posted order to Google Sheet script webhook:', webhookUrl);
+      }).catch(err => {
+        console.warn('Post to Google Sheet script webhook failed:', err);
+      });
+    }
+
+    // Clear cart upon successful purchase
+    setCart([]);
 
     // If user is logged in, distribute BV and award commissions!
     if (currentUser) {
@@ -239,13 +299,14 @@ export default function App() {
       if (currentUser.sponsorId) {
         const sponsorBonusAmount = totalBV; // 1 Baht per 1 BV
         
+        const itemsSummary = items.map(item => item.product.name).join(', ');
         const newLog: CommissionLog = {
           id: `COM-${Date.now().toString().slice(-4)}`,
           memberId: currentUser.sponsorId,
           type: 'sponsor_bonus',
           amount: sponsorBonusAmount,
           bvReference: totalBV,
-          description: `ค่าแนะนำแนะนำ ${currentUser.name} (${currentUser.id}) สั่งซื้อ ${product.name}`,
+          description: `ค่าแนะนำแนะนำ ${currentUser.name} (${currentUser.id}) สั่งซื้อ ${itemsSummary.length > 30 ? itemsSummary.slice(0, 30) + '...' : itemsSummary}`,
           date: new Date().toISOString().replace('T', ' ').slice(0, 16)
         };
 
@@ -287,6 +348,8 @@ export default function App() {
         onNavigate={setCurrentView} 
         currentUser={currentUser} 
         onLogout={handleLogout}
+        cartCount={cart.reduce((sum, item) => sum + item.quantity, 0)}
+        onCartClick={() => setCurrentView('products')}
       />
 
       {/* Main viewport area */}
@@ -307,6 +370,11 @@ export default function App() {
             products={products} 
             currentUser={currentUser} 
             onPurchase={handlePurchase} 
+            cart={cart}
+            onAddToCart={handleAddToCart}
+            onRemoveFromCart={handleRemoveFromCart}
+            onUpdateCartQuantity={handleUpdateCartQuantity}
+            onClearCart={handleClearCart}
           />
         )}
 

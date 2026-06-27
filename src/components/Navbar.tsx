@@ -5,7 +5,7 @@
 
 import React from 'react';
 import { Member } from '../types';
-import { Smartphone, LogIn, UserPlus, LogOut, LayoutDashboard, User, ShieldAlert } from 'lucide-react';
+import { Smartphone, LogIn, UserPlus, LogOut, LayoutDashboard, User, ShieldAlert, ShoppingCart } from 'lucide-react';
 import { shouldShowAdmin } from '../utils/domainHelper';
 
 interface NavbarProps {
@@ -13,9 +13,11 @@ interface NavbarProps {
   onNavigate: (view: string) => void;
   currentUser: Member | null;
   onLogout: () => void;
+  cartCount?: number;
+  onCartClick?: () => void;
 }
 
-export default function Navbar({ currentView, onNavigate, currentUser, onLogout }: NavbarProps) {
+export default function Navbar({ currentView, onNavigate, currentUser, onLogout, cartCount = 0, onCartClick }: NavbarProps) {
   const menuItems = [
     { id: 'home', label: 'หน้าแรก' },
     { id: 'about', label: 'เกี่ยวกับเรา' },
@@ -61,6 +63,20 @@ export default function Navbar({ currentView, onNavigate, currentUser, onLogout 
 
           {/* User Operations Section */}
           <div className="flex items-center gap-2.5">
+            {/* Shopping Cart Button */}
+            <button
+              onClick={onCartClick}
+              className="relative p-2 text-slate-600 hover:text-indigo-600 hover:bg-slate-50 rounded-xl transition"
+              title="ตะกร้าสินค้า"
+            >
+              <ShoppingCart className="w-5 h-5 md:w-5.5 md:h-5.5" />
+              {cartCount > 0 && (
+                <span className="absolute -top-1 -right-1 bg-rose-500 text-white font-bold font-mono text-[9px] w-4.5 h-4.5 rounded-full flex items-center justify-center">
+                  {cartCount}
+                </span>
+              )}
+            </button>
+
             {currentUser ? (
               <div className="flex items-center gap-3">
                 {/* User Portal Access */}
