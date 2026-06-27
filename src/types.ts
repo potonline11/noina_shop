@@ -54,6 +54,14 @@ export interface Order {
   totalBV: number;
   date: string;
   status: 'pending' | 'completed';
+  firstName?: string;
+  lastName?: string;
+  phone?: string;
+  email?: string;
+  address?: string;
+  paymentMethod?: 'cod' | 'cash';
+  codFee?: number;
+  slipUrl?: string;
 }
 
 export interface CommissionLog {

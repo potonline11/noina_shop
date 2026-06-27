@@ -509,6 +509,34 @@ export default function AdminPortal({
                       ))}
                     </div>
 
+                    {/* Customer shipping details in Admin View */}
+                    {(order.phone || order.email || order.address) && (
+                      <div className="bg-white border border-slate-100 rounded-xl p-3 text-[11px] text-slate-600 space-y-1 mt-1.5 shadow-sm">
+                        <p className="font-bold text-slate-700 border-b border-dashed border-slate-100 pb-1 mb-1 text-[10px] uppercase tracking-wider flex justify-between">
+                          <span>🚚 ข้อมูลผู้ลงทะเบียนจัดส่ง & การชำระเงิน</span>
+                          <span className="text-indigo-600 font-mono text-[9px]">{order.id}</span>
+                        </p>
+                        {order.phone && <p><strong>เบอร์โทรศัพท์:</strong> {order.phone}</p>}
+                        {order.email && <p><strong>อีเมล์:</strong> {order.email}</p>}
+                        {order.address && <p><strong>ที่อยู่จัดส่ง:</strong> {order.address}</p>}
+                        <div className="flex flex-wrap justify-between items-center pt-1.5 mt-1 border-t border-slate-100 text-[10px]">
+                          <span>
+                            <strong>วิธีชำระเงิน:</strong>{' '}
+                            {order.paymentMethod === 'cod' ? (
+                              <span className="text-amber-700 font-bold bg-amber-50 px-1.5 py-0.5 rounded border border-amber-100">เก็บเงินปลายทาง (COD +3%)</span>
+                            ) : (
+                              <span className="text-indigo-700 font-bold bg-indigo-50 px-1.5 py-0.5 rounded border border-indigo-100">เงินสด / โอนสลิปพร้อมเพย์</span>
+                            )}
+                          </span>
+                          {order.slipUrl && order.slipUrl !== 'COD' && (
+                            <span className="text-[10px] font-semibold text-emerald-600 bg-emerald-50 px-1.5 py-0.5 rounded border border-emerald-100 flex items-center gap-1 mt-1 sm:mt-0">
+                              ✓ สลิปผ่านการตรวจ AI ({order.slipUrl})
+                            </span>
+                          )}
+                        </div>
+                      </div>
+                    )}
+
                     <div className="border-t border-slate-200 pt-2.5 flex justify-between items-end bg-transparent">
                       <span className="text-[10px] text-indigo-600 font-bold font-mono">+{order.totalBV} BV เข้าระบบและอัปลิงก์ทั้งหมด</span>
                       <div className="text-right">

@@ -147,14 +147,24 @@ export default function App() {
   };
 
   // NLM Purchase Checkout & BV flow simulation!
-  const handlePurchase = (product: Product, quantity: number) => {
-    const totalAmount = product.price * quantity;
+  const handlePurchase = (product: Product, quantity: number, registrationDetails?: any) => {
+    const baseAmount = product.price * quantity;
+    let totalAmount = baseAmount;
+    let codFee = 0;
+    
+    if (registrationDetails && registrationDetails.paymentMethod === 'cod') {
+      codFee = Math.round(baseAmount * 0.03);
+      totalAmount = baseAmount + codFee;
+    }
+
     const totalBV = product.bv * quantity;
     
     const newOrder: Order = {
       id: `ORD-${Date.now().toString().slice(-4)}`,
       memberId: currentUser ? currentUser.id : 'GUEST',
-      memberName: currentUser ? currentUser.name : 'ลูกค้ารายย่อย (Guest)',
+      memberName: registrationDetails 
+        ? `${registrationDetails.firstName} ${registrationDetails.lastName}` 
+        : (currentUser ? currentUser.name : 'ลูกค้ารายย่อย (Guest)'),
       items: [
         {
           productId: product.id,
@@ -167,7 +177,15 @@ export default function App() {
       totalAmount: totalAmount,
       totalBV: totalBV,
       date: new Date().toISOString().replace('T', ' ').slice(0, 16),
-      status: 'completed'
+      status: 'completed',
+      firstName: registrationDetails?.firstName || '',
+      lastName: registrationDetails?.lastName || '',
+      phone: registrationDetails?.phone || '',
+      email: registrationDetails?.email || '',
+      address: registrationDetails?.address || '',
+      paymentMethod: registrationDetails?.paymentMethod || 'cash',
+      codFee: codFee,
+      slipUrl: registrationDetails?.slipUrl || ''
     };
 
     setOrders(prev => [newOrder, ...prev]);
