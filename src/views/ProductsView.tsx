@@ -295,7 +295,7 @@ export default function ProductsView({
                 <div className="space-y-1">
                   <span className="text-[10px] uppercase font-bold text-indigo-600 tracking-wider block">{product.brand}</span>
                   <h3 className="text-xs md:text-sm font-bold text-slate-800 line-clamp-1 group-hover:text-indigo-600 transition">{product.name}</h3>
-                  <p className="text-xs text-slate-400 line-clamp-2 leading-relaxed">{stripHtml(product.description)}</p>
+                  <p className="text-xs text-slate-500 leading-relaxed whitespace-pre-wrap">{stripHtml(product.description)}</p>
                 </div>
 
                 {/* Buy Section */}
@@ -366,7 +366,7 @@ export default function ProductsView({
                       {selectedProduct.brand} | {selectedProduct.category}
                     </span>
                     <h3 className="text-sm md:text-base font-extrabold text-slate-800">{selectedProduct.name}</h3>
-                    <p className="text-xs text-slate-400 mt-1 line-clamp-2">{stripHtml(selectedProduct.description)}</p>
+                    <p className="text-xs text-slate-500 mt-1.5 whitespace-pre-wrap leading-relaxed">{stripHtml(selectedProduct.description)}</p>
                   </div>
 
                   <div className="grid grid-cols-2 gap-3 bg-slate-50 p-3 rounded-xl border border-slate-100 text-xs">
