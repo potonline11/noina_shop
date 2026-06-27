@@ -6,7 +6,7 @@
 import React, { useState } from 'react';
 import { Product } from '../types';
 import { Database, Link, RefreshCw, CheckCircle, AlertTriangle, FileSpreadsheet, Eye } from 'lucide-react';
-import { parseCSV, DEMO_SPREADSHEET_DATA, DEFAULT_SHEET_URL, getCleanSheetUrl } from '../utils/sheetParser';
+import { parseCSV, DEMO_SPREADSHEET_DATA, DEFAULT_SHEET_URL, getCleanSheetUrl, parseSheetData } from '../utils/sheetParser';
 
 interface GoogleSheetSyncProps {
   onSyncComplete: (products: Product[]) => void;
@@ -56,7 +56,7 @@ export default function GoogleSheetSync({ onSyncComplete, currentProductsCount }
       }
 
       const text = await response.text();
-      const products = parseCSV(text);
+      const products = parseSheetData(text);
 
       if (products.length === 0) {
         throw new Error('ไม่พบข้อมูลสินค้าที่ถูกต้องในไฟล์ โปรดตรวจสอบว่ามีแถวหัวข้อ (Header) เช่น Title, Description, Price, BV');

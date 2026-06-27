@@ -30,6 +30,122 @@ export const DEMO_SPREADSHEET_DATA = `Title,Description,Price,BV,Image,Category,
 "iPad Air 4 Wi-Fi 64GB (มือสอง)","สภาพสวย 97% สี Sky Blue มีกล่องเดิมแถมเคสแม่เหล็กอย่างดี หน้าจอปุ่มทัชสแกนนิ้วปกติ",12500,1300,"https://images.unsplash.com/photo-1544244015-0df4b3ffc6b0?auto=format&fit=crop&w=600&q=80",tablet,Apple,"97% สภาพสมบูรณ์",3
 "Lenovo ThinkPad X1 Carbon Gen 6 (มือสอง)","โน๊ตบุ๊คเกรดพรีเมียม สภาพสวย 96% จอ IPS คมชัด RAM 8GB SSD 256GB เบาและหรูหรามาก",11900,1200,"https://images.unsplash.com/photo-1593642632823-8f785ba67e45?auto=format&fit=crop&w=600&q=80",notebook,Lenovo,"96% ระดับพรีเมียม",2`;
 
+export const parseHTMLTable = (htmlText: string): Product[] => {
+  const parser = new DOMParser();
+  const doc = parser.parseFromString(htmlText, 'text/html');
+  
+  // Find all table rows
+  const rows = Array.from(doc.querySelectorAll('tr'));
+  if (rows.length < 2) return [];
+  
+  // Find header row and column mapping
+  let headerIndex = -1;
+  let colMap: { [key: string]: number } = {};
+  
+  const targetHeaders = ['title', 'name', 'productname', 'description', 'desc', 'price', 'bv', 'image', 'img', 'category', 'brand', 'condition', 'quality', 'stock'];
+  
+  for (let r = 0; r < Math.min(rows.length, 15); r++) {
+    const cells = Array.from(rows[r].querySelectorAll('td, th')).map(c => (c.textContent || '').trim().toLowerCase());
+    // Check if this looks like a header row
+    const matchCount = cells.filter(cell => targetHeaders.some(th => cell.includes(th))).length;
+    if (matchCount >= 2) {
+      headerIndex = r;
+      cells.forEach((cell, idx) => {
+        // Clean cell text (remove spaces, quotes, non-alphabetic chars)
+        const cleanCell = cell.replace(/[^a-z]/g, '');
+        if (cleanCell.includes('title') || cleanCell.includes('name')) colMap['name'] = idx;
+        else if (cleanCell.includes('description') || cleanCell.includes('desc')) colMap['description'] = idx;
+        else if (cleanCell.includes('price')) colMap['price'] = idx;
+        else if (cleanCell.includes('bv')) colMap['bv'] = idx;
+        else if (cleanCell.includes('image') || cleanCell.includes('img')) colMap['image'] = idx;
+        else if (cleanCell.includes('category')) colMap['category'] = idx;
+        else if (cleanCell.includes('brand')) colMap['brand'] = idx;
+        else if (cleanCell.includes('condition') || cleanCell.includes('quality')) colMap['condition'] = idx;
+        else if (cleanCell.includes('stock')) colMap['stock'] = idx;
+      });
+      break;
+    }
+  }
+  
+  // If we couldn't find a clear header row with keywords, try the first row anyway
+  if (headerIndex === -1) {
+    const firstRowCells = Array.from(rows[0].querySelectorAll('td, th')).map(c => (c.textContent || '').trim().toLowerCase());
+    firstRowCells.forEach((cell, idx) => {
+      const cleanCell = cell.replace(/[^a-z]/g, '');
+      if (cleanCell.includes('title') || cleanCell.includes('name')) colMap['name'] = idx;
+      else if (cleanCell.includes('description') || cleanCell.includes('desc')) colMap['description'] = idx;
+      else if (cleanCell.includes('price')) colMap['price'] = idx;
+      else if (cleanCell.includes('bv')) colMap['bv'] = idx;
+      else if (cleanCell.includes('image') || cleanCell.includes('img')) colMap['image'] = idx;
+      else if (cleanCell.includes('category')) colMap['category'] = idx;
+      else if (cleanCell.includes('brand')) colMap['brand'] = idx;
+      else if (cleanCell.includes('condition') || cleanCell.includes('quality')) colMap['condition'] = idx;
+      else if (cleanCell.includes('stock')) colMap['stock'] = idx;
+    });
+    headerIndex = 0;
+  }
+  
+  // Defaults if columns still not mapped
+  if (colMap['name'] === undefined) colMap['name'] = 0;
+  if (colMap['description'] === undefined) colMap['description'] = 1;
+  if (colMap['price'] === undefined) colMap['price'] = 2;
+  if (colMap['bv'] === undefined) colMap['bv'] = 3;
+  if (colMap['image'] === undefined) colMap['image'] = 4;
+  if (colMap['category'] === undefined) colMap['category'] = 5;
+  if (colMap['brand'] === undefined) colMap['brand'] = 6;
+  if (colMap['condition'] === undefined) colMap['condition'] = 7;
+  if (colMap['stock'] === undefined) colMap['stock'] = 8;
+
+  const results: Product[] = [];
+  
+  for (let i = headerIndex + 1; i < rows.length; i++) {
+    const cells = Array.from(rows[i].querySelectorAll('td')).map(c => (c.textContent || '').trim());
+    if (cells.length === 0) continue;
+    
+    // Skip if row is completely empty
+    if (cells.every(c => !c)) continue;
+    
+    const name = cells[colMap['name']] || '';
+    // Skip header text repeating in data
+    if (!name || name.toLowerCase() === 'title' || name.toLowerCase() === 'name') continue;
+    
+    const priceVal = cells[colMap['price']] ? parseFloat(cells[colMap['price']].replace(/[^0-9.]/g, '')) : 0;
+    const bvVal = cells[colMap['bv']] ? parseFloat(cells[colMap['bv']].replace(/[^0-9.]/g, '')) : Math.round(priceVal * 0.1);
+
+    results.push({
+      id: `sheet-${Date.now()}-${i}-${Math.floor(Math.random() * 100)}`,
+      name: name,
+      description: cells[colMap['description']] || 'สินค้าดึงข้อมูลจาก Google Sheet สำเร็จ',
+      price: isNaN(priceVal) ? 0 : priceVal,
+      bv: isNaN(bvVal) ? 0 : bvVal,
+      image: cells[colMap['image']] || 'https://images.unsplash.com/photo-1531297484001-80022131f5a1?auto=format&fit=crop&w=600&q=80',
+      category: (cells[colMap['category']] || 'accessory').toLowerCase() as any,
+      brand: cells[colMap['brand']] || 'แบรนด์มือสอง',
+      condition: cells[colMap['condition']] || '95% สภาพดี',
+      stock: cells[colMap['stock']] ? parseInt(cells[colMap['stock']].replace(/[^0-9]/g, '')) || 5 : 5,
+      source: 'googlesheet'
+    });
+  }
+  
+  return results;
+};
+
+export const parseSheetData = (text: string): Product[] => {
+  if (!text) return [];
+  const trimmed = text.trim();
+  const isHTML = trimmed.startsWith('<!DOCTYPE') || trimmed.startsWith('<html') || trimmed.includes('<table') || trimmed.includes('<tr');
+  
+  if (isHTML) {
+    try {
+      return parseHTMLTable(text);
+    } catch (e) {
+      console.error('Error parsing HTML table from sheet data:', e);
+    }
+  }
+  
+  return parseCSV(text);
+};
+
 export const parseCSV = (text: string): Product[] => {
   const lines = text.split('\n');
   if (lines.length < 2) return [];

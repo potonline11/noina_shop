@@ -10,7 +10,7 @@ import {
   INITIAL_ORDERS, 
   INITIAL_COMMISSIONS 
 } from './data/mockData';
-import { parseCSV, DEMO_SPREADSHEET_DATA, DEFAULT_SHEET_URL, getCleanSheetUrl } from './utils/sheetParser';
+import { parseCSV, DEMO_SPREADSHEET_DATA, DEFAULT_SHEET_URL, getCleanSheetUrl, parseSheetData } from './utils/sheetParser';
 
 // Subcomponents and Views
 import Navbar from './components/Navbar';
@@ -103,7 +103,7 @@ export default function App() {
           const res = await fetch(cleanUrl);
           if (res.ok) {
             const text = await res.text();
-            const sheetProds = parseCSV(text);
+            const sheetProds = parseSheetData(text);
             if (sheetProds.length > 0) {
               setProducts(sheetProds);
             }
