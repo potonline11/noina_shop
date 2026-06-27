@@ -30,7 +30,6 @@ import {
   Minus,
   CheckSquare
 } from 'lucide-react';
-import { stripHtml } from '../utils/sheetParser';
 
 interface ProductsViewProps {
   products: Product[];
@@ -295,7 +294,7 @@ export default function ProductsView({
                 <div className="space-y-1">
                   <span className="text-[10px] uppercase font-bold text-indigo-600 tracking-wider block">{product.brand}</span>
                   <h3 className="text-xs md:text-sm font-bold text-slate-800 line-clamp-1 group-hover:text-indigo-600 transition">{product.name}</h3>
-                  <p className="text-xs text-slate-500 leading-relaxed whitespace-pre-wrap">{stripHtml(product.description)}</p>
+                  <div className="text-xs text-slate-500 leading-relaxed whitespace-pre-wrap font-sans break-words" dangerouslySetInnerHTML={{ __html: product.description }} />
                 </div>
 
                 {/* Buy Section */}
@@ -366,7 +365,7 @@ export default function ProductsView({
                       {selectedProduct.brand} | {selectedProduct.category}
                     </span>
                     <h3 className="text-sm md:text-base font-extrabold text-slate-800">{selectedProduct.name}</h3>
-                    <p className="text-xs text-slate-500 mt-1.5 whitespace-pre-wrap leading-relaxed">{stripHtml(selectedProduct.description)}</p>
+                    <div className="text-xs text-slate-500 mt-1.5 whitespace-pre-wrap leading-relaxed font-sans break-words" dangerouslySetInnerHTML={{ __html: selectedProduct.description }} />
                   </div>
 
                   <div className="grid grid-cols-2 gap-3 bg-slate-50 p-3 rounded-xl border border-slate-100 text-xs">
