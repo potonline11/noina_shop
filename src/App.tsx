@@ -94,8 +94,35 @@ export default function App() {
     localStorage.setItem('noina_commissions', JSON.stringify(commissionLogs));
   }, [commissionLogs]);
 
-  // Auto-sync with Google Sheet on startup
+  // Load server-side synced products and configurations on startup
   useEffect(() => {
+    const loadServerStore = async () => {
+      try {
+        const response = await fetch('/api/products-store');
+        if (response.ok) {
+          const data = await response.json();
+          if (data.products && data.products.length > 0) {
+            setProducts(data.products);
+            localStorage.setItem('noina_products', JSON.stringify(data.products));
+          } else {
+            // Fall back to auto sync if server is empty
+            await autoSyncFromSheet();
+          }
+          if (data.sheetUrl) {
+            localStorage.setItem('noina_sheet_url', data.sheetUrl);
+          }
+          if (data.webhookUrl) {
+            localStorage.setItem('noina_order_webhook_url', data.webhookUrl);
+          }
+        } else {
+          await autoSyncFromSheet();
+        }
+      } catch (err) {
+        console.warn('Failed to load server products store, falling back to client-side auto sync:', err);
+        await autoSyncFromSheet();
+      }
+    };
+
     const autoSyncFromSheet = async () => {
       try {
         const savedUrl = localStorage.getItem('noina_sheet_url') || DEFAULT_SHEET_URL;
@@ -107,6 +134,12 @@ export default function App() {
             const sheetProds = parseSheetData(text);
             if (sheetProds.length > 0) {
               setProducts(sheetProds);
+              // Also upload to server so it is remembered
+              await fetch('/api/products-store', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ products: sheetProds, sheetUrl: savedUrl })
+              });
             }
           }
         }
@@ -114,7 +147,8 @@ export default function App() {
         console.warn('Auto-sync on startup failed, using cached/demo sheet products:', err);
       }
     };
-    autoSyncFromSheet();
+
+    loadServerStore();
   }, []);
 
   // Auth Operations
@@ -326,18 +360,51 @@ export default function App() {
     }
   };
 
-  // Admin Google Sheet sync callback (replaces entirely)
-  const handleSyncProducts = (newProducts: Product[]) => {
+  // Admin Google Sheet sync callback (replaces entirely and saves to server)
+  const handleSyncProducts = async (newProducts: Product[]) => {
     setProducts(newProducts);
+    try {
+      const savedUrl = localStorage.getItem('noina_sheet_url') || '';
+      await fetch('/api/products-store', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          products: newProducts,
+          sheetUrl: savedUrl
+        })
+      });
+    } catch (err) {
+      console.error('Failed to save synced products to server:', err);
+    }
   };
 
   // Admin Inventory Controls
-  const handleAddProduct = (product: Product) => {
-    setProducts(prev => [...prev, product]);
+  const handleAddProduct = async (product: Product) => {
+    const updated = [...products, product];
+    setProducts(updated);
+    try {
+      await fetch('/api/products-store', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ products: updated })
+      });
+    } catch (err) {
+      console.error('Failed to save added product to server:', err);
+    }
   };
 
-  const handleDeleteProduct = (id: string) => {
-    setProducts(prev => prev.filter(p => p.id !== id));
+  const handleDeleteProduct = async (id: string) => {
+    const updated = products.filter(p => p.id !== id);
+    setProducts(updated);
+    try {
+      await fetch('/api/products-store', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ products: updated })
+      });
+    } catch (err) {
+      console.error('Failed to save deleted product to server:', err);
+    }
   };
 
   return (

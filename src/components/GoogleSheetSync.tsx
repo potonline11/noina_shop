@@ -100,10 +100,25 @@ export default function GoogleSheetSync({ onSyncComplete, currentProductsCount }
     }, 800);
   };
 
-  const handleSaveWebhook = (e: React.FormEvent) => {
+  const handleSaveWebhook = async (e: React.FormEvent) => {
     e.preventDefault();
     localStorage.setItem('noina_order_webhook_url', webhookUrl);
-    setWebhookSaveStatus('บันทึก Webhook URL สำเร็จแล้ว! ข้อมูลคำสั่งซื้อใหม่จากนี้จะถูกยิงเข้า URL นี้ทันที');
+    setWebhookSaveStatus('กำลังบันทึกไปยังเซิร์ฟเวอร์...');
+    try {
+      const response = await fetch('/api/products-store', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ webhookUrl: webhookUrl })
+      });
+      if (response.ok) {
+        setWebhookSaveStatus('บันทึก Webhook URL สำเร็จแล้ว! ข้อมูลคำสั่งซื้อใหม่จากนี้จะถูกยิงเข้า URL นี้ทันที');
+      } else {
+        setWebhookSaveStatus('บันทึกเข้าระบบเบราว์เซอร์สำเร็จ แต่ไม่สามารถบันทึกไปยังเซิร์ฟเวอร์ได้');
+      }
+    } catch (err) {
+      console.error(err);
+      setWebhookSaveStatus('บันทึกเข้าระบบเบราว์เซอร์สำเร็จ แต่ไม่สามารถส่งข้อมูลเซิร์ฟเวอร์ได้ (Network Error)');
+    }
     setTimeout(() => setWebhookSaveStatus(''), 4000);
   };
 
