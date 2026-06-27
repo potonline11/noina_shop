@@ -37,6 +37,7 @@ export interface Member {
   dateJoined: string;
   status: 'active' | 'inactive';
   role: 'member' | 'admin';
+  password?: string;
 }
 
 export interface Order {

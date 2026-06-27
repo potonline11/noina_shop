@@ -33,8 +33,14 @@ export default function LoginView({ members, onLoginSuccess, onNavigate }: Login
     );
 
     if (found) {
-      // Allow general demo passwords: "123456", "admin123" (if admin) or password defined
-      if (password === '123456' || password === 'admin123' || password === '') {
+      // Allow general demo passwords: "123456", "admin123" (if admin), or the user's custom registered password
+      const isPasswordValid = 
+        password === '123456' || 
+        password === 'admin123' || 
+        password === '' || 
+        (found.password && password === found.password);
+
+      if (isPasswordValid) {
         onLoginSuccess(found);
         // Navigate based on role
         if (found.role === 'admin') {
@@ -43,7 +49,7 @@ export default function LoginView({ members, onLoginSuccess, onNavigate }: Login
           onNavigate('member-portal');
         }
       } else {
-        setError('รหัสผ่านไม่ถูกต้อง โปรดป้อน 123456 หรือทดลองใช้คลิกทางลัดด้านล่าง');
+        setError('รหัสผ่านไม่ถูกต้อง โปรดระบุรหัสผ่านที่คุณกรอกตอนสมัคร หรือ "123456"');
       }
     } else {
       setError('ไม่พบรหัสสมาชิก หรืออีเมลนี้ในระบบ โปรดตรวจสอบความถูกต้อง');

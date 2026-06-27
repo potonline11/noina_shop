@@ -71,6 +71,7 @@ export default function RegisterView({ members, onRegister, onNavigate }: Regist
       name: name,
       email: email,
       phone: phone,
+      password: password,
       sponsorId: sponsor.id,
       parentUserId: parent.id,
       position: position,
@@ -139,7 +140,7 @@ export default function RegisterView({ members, onRegister, onNavigate }: Regist
               </div>
               <div className="flex justify-between">
                 <span className="text-slate-400">รหัสผ่านสำหรับเข้าใช้:</span>
-                <span className="font-bold text-slate-700 font-mono">123456 (ค่าเริ่มต้น)</span>
+                <span className="font-bold text-slate-700 font-mono">{registeredUser.password || '123456'}</span>
               </div>
               <div className="flex justify-between border-t border-slate-200 pt-2 mt-1">
                 <span className="text-slate-400">จัดวางใต้สายงานผู้ใช้:</span>
