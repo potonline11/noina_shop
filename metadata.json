@@ -1,0 +1,6 @@
+{
+  "name": "Noinashop",
+  "description": "ระบบเครือข่าย NLM สำหรับร้าน Noinashop ขายโทรศัพท์มือถือ โน๊ตบุ๊ค และอุปกรณ์ไอทีมือสอง พร้อมระบบบริหารจัดการสมาชิก แผนผังสายงาน ระบบ BV และการดึงข้อมูลจาก Google Sheets",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
