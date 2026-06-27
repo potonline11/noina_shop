@@ -7,6 +7,22 @@ import { Product } from '../types';
 
 export const DEFAULT_SHEET_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vSgD4S83Y7Mh0p_ZpUqB6HwR-E9Gg56m8-q-WqP4SgK7Jq7e_gG7gG8g_example/pub?output=csv';
 
+export const getCleanSheetUrl = (url: string): string => {
+  if (!url) return '';
+  const trimmed = url.trim();
+  // If already published/direct export, leave it
+  if (trimmed.includes('output=csv') || trimmed.includes('format=csv')) {
+    return trimmed;
+  }
+  // Try to match google spreadsheets URL pattern to convert to export
+  const match = trimmed.match(/\/spreadsheets\/d\/([a-zA-Z0-9-_]+)/);
+  if (match && match[1]) {
+    return `https://docs.google.com/spreadsheets/d/${match[1]}/export?format=csv`;
+  }
+  return trimmed;
+};
+
+
 export const DEMO_SPREADSHEET_DATA = `Title,Description,Price,BV,Image,Category,Brand,Condition,Stock
 "iPhone 12 Pro Max 128GB (มือสอง)","สภาพ 94% สุขภาพแบตเตอรี่ 85% กล้องซูมชัด จอแท้เดิม อุปกรณ์เสริมครบชุด",14900,1500,"https://images.unsplash.com/photo-1510557880182-3d4d3cba35a5?auto=format&fit=crop&w=600&q=80",smartphone,Apple,"94% สภาพดีเยี่ยม",6
 "Dell Latitude 7490 Core i5 (มือสอง)","โน๊ตบุ๊คทำงาน น้ำหนักเบา คีย์บอร์ดมีไฟ RAM 16GB SSD 256GB แบตเตอรี่เก็บไฟได้ดีเยี่ยม",8500,900,"https://images.unsplash.com/photo-1588872657578-7efd1f1555ed?auto=format&fit=crop&w=600&q=80",notebook,Dell,"92% แข็งแรงทนทาน",4

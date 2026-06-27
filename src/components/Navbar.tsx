@@ -6,6 +6,7 @@
 import React from 'react';
 import { Member } from '../types';
 import { Smartphone, LogIn, UserPlus, LogOut, LayoutDashboard, User, ShieldAlert } from 'lucide-react';
+import { shouldShowAdmin } from '../utils/domainHelper';
 
 interface NavbarProps {
   currentView: string;
@@ -63,22 +64,24 @@ export default function Navbar({ currentView, onNavigate, currentUser, onLogout 
             {currentUser ? (
               <div className="flex items-center gap-3">
                 {/* User Portal Access */}
-                <button
-                  onClick={() => onNavigate(currentUser.role === 'admin' ? 'admin-portal' : 'member-portal')}
-                  className="flex items-center gap-1.5 bg-indigo-50 border border-indigo-100 text-indigo-700 hover:bg-indigo-100 px-3 py-1.5 md:py-2 rounded-xl text-xs font-semibold transition shadow-sm"
-                >
-                  {currentUser.role === 'admin' ? (
-                    <>
-                      <ShieldAlert className="w-3.5 h-3.5" />
-                      <span>หลังบ้าน (แอดมิน)</span>
-                    </>
-                  ) : (
-                    <>
-                      <LayoutDashboard className="w-3.5 h-3.5" />
-                      <span>หลังบ้าน (สมาชิก)</span>
-                    </>
-                  )}
-                </button>
+                {((currentUser.role !== 'admin') || shouldShowAdmin()) && (
+                  <button
+                    onClick={() => onNavigate(currentUser.role === 'admin' ? 'admin-portal' : 'member-portal')}
+                    className="flex items-center gap-1.5 bg-indigo-50 border border-indigo-100 text-indigo-700 hover:bg-indigo-100 px-3 py-1.5 md:py-2 rounded-xl text-xs font-semibold transition shadow-sm"
+                  >
+                    {currentUser.role === 'admin' ? (
+                      <>
+                        <ShieldAlert className="w-3.5 h-3.5" />
+                        <span>หลังบ้าน (แอดมิน)</span>
+                      </>
+                    ) : (
+                      <>
+                        <LayoutDashboard className="w-3.5 h-3.5" />
+                        <span>หลังบ้าน (สมาชิก)</span>
+                      </>
+                    )}
+                  </button>
+                )}
 
                 {/* Profile Widget */}
                 <div className="hidden sm:flex flex-col items-end text-right">

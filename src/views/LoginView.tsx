@@ -6,6 +6,7 @@
 import React, { useState } from 'react';
 import { Member } from '../types';
 import { LogIn, Key, ShieldAlert, User, AlertTriangle, Info, Smartphone } from 'lucide-react';
+import { shouldShowAdmin } from '../utils/domainHelper';
 
 interface LoginViewProps {
   members: Member[];
@@ -134,14 +135,16 @@ export default function LoginView({ members, onLoginSuccess, onNavigate }: Login
 
         {/* Demo Fast Login shortcuts */}
         <div className="space-y-2">
-          <button
-            type="button"
-            onClick={() => handleQuickLogin('admin')}
-            className="w-full bg-slate-900 hover:bg-slate-800 text-white font-bold text-xs py-2.5 rounded-xl transition flex items-center justify-center gap-2"
-          >
-            <ShieldAlert className="w-4 h-4 text-indigo-400" />
-            เข้าสู่ระบบแอดมิน (อนันต์ - แอดมินหลัก)
-          </button>
+          {shouldShowAdmin() && (
+            <button
+              type="button"
+              onClick={() => handleQuickLogin('admin')}
+              className="w-full bg-slate-900 hover:bg-slate-800 text-white font-bold text-xs py-2.5 rounded-xl transition flex items-center justify-center gap-2"
+            >
+              <ShieldAlert className="w-4 h-4 text-indigo-400" />
+              เข้าสู่ระบบแอดมิน (อนันต์ - แอดมินหลัก)
+            </button>
+          )}
 
           <button
             type="button"

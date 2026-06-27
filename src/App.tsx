@@ -10,7 +10,7 @@ import {
   INITIAL_ORDERS, 
   INITIAL_COMMISSIONS 
 } from './data/mockData';
-import { parseCSV, DEMO_SPREADSHEET_DATA, DEFAULT_SHEET_URL } from './utils/sheetParser';
+import { parseCSV, DEMO_SPREADSHEET_DATA, DEFAULT_SHEET_URL, getCleanSheetUrl } from './utils/sheetParser';
 
 // Subcomponents and Views
 import Navbar from './components/Navbar';
@@ -98,8 +98,9 @@ export default function App() {
     const autoSyncFromSheet = async () => {
       try {
         const savedUrl = localStorage.getItem('noina_sheet_url') || DEFAULT_SHEET_URL;
-        if (savedUrl && savedUrl.startsWith('http') && !savedUrl.includes('_example')) {
-          const res = await fetch(savedUrl);
+        const cleanUrl = getCleanSheetUrl(savedUrl);
+        if (cleanUrl && cleanUrl.startsWith('http') && !cleanUrl.includes('_example')) {
+          const res = await fetch(cleanUrl);
           if (res.ok) {
             const text = await res.text();
             const sheetProds = parseCSV(text);

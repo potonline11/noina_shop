@@ -6,7 +6,7 @@
 import React, { useState } from 'react';
 import { Product } from '../types';
 import { Database, Link, RefreshCw, CheckCircle, AlertTriangle, FileSpreadsheet, Eye } from 'lucide-react';
-import { parseCSV, DEMO_SPREADSHEET_DATA, DEFAULT_SHEET_URL } from '../utils/sheetParser';
+import { parseCSV, DEMO_SPREADSHEET_DATA, DEFAULT_SHEET_URL, getCleanSheetUrl } from '../utils/sheetParser';
 
 interface GoogleSheetSyncProps {
   onSyncComplete: (products: Product[]) => void;
@@ -49,7 +49,8 @@ export default function GoogleSheetSync({ onSyncComplete, currentProductsCount }
       }
 
       // Real network fetch
-      const response = await fetch(sheetUrl);
+      const cleanUrl = getCleanSheetUrl(sheetUrl);
+      const response = await fetch(cleanUrl);
       if (!response.ok) {
         throw new Error('ไม่สามารถเข้าถึงลิงก์ Google Sheet นี้ได้ โปรดตรวจสอบความถูกต้องและการเผยแพร่');
       }
