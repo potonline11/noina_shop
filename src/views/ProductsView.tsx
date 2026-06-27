@@ -6,6 +6,7 @@
 import React, { useState } from 'react';
 import { Product, Member } from '../types';
 import { Search, ShoppingCart, Info, CheckCircle, Smartphone, Laptop, Tablet, Layers } from 'lucide-react';
+import { stripHtml } from '../utils/sheetParser';
 
 interface ProductsViewProps {
   products: Product[];
@@ -138,7 +139,7 @@ export default function ProductsView({ products, currentUser, onPurchase }: Prod
                 <div className="space-y-1">
                   <span className="text-[10px] uppercase font-bold text-indigo-600 tracking-wider block">{product.brand}</span>
                   <h3 className="text-xs md:text-sm font-bold text-slate-800 line-clamp-1 group-hover:text-indigo-600 transition">{product.name}</h3>
-                  <p className="text-xs text-slate-400 line-clamp-2 leading-relaxed">{product.description}</p>
+                  <p className="text-xs text-slate-400 line-clamp-2 leading-relaxed">{stripHtml(product.description)}</p>
                 </div>
 
                 {/* Buy Section */}
@@ -185,7 +186,10 @@ export default function ProductsView({ products, currentUser, onPurchase }: Prod
                   {selectedProduct.brand} | {selectedProduct.category}
                 </span>
                 <h3 className="text-sm md:text-base font-extrabold text-slate-800">{selectedProduct.name}</h3>
-                <p className="text-xs text-slate-500 mt-1 leading-relaxed">{selectedProduct.description}</p>
+                <div 
+                  className="text-xs text-slate-500 mt-1.5 leading-relaxed product-description-html"
+                  dangerouslySetInnerHTML={{ __html: selectedProduct.description }}
+                />
               </div>
 
               {/* Product specifications summary */}

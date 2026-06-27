@@ -7,6 +7,7 @@ import React from 'react';
 import { Product } from '../types';
 import { ArrowRight, Shield, RefreshCw, Sparkles, Users, Award, Smartphone, Laptop, Layers } from 'lucide-react';
 import { motion } from 'motion/react';
+import { stripHtml } from '../utils/sheetParser';
 
 interface HomeViewProps {
   onNavigate: (view: string) => void;
@@ -161,7 +162,7 @@ export default function HomeView({ onNavigate, featuredProducts, onProductClick 
                 <div>
                   <span className="text-[10px] uppercase font-bold text-indigo-600 tracking-wider block mb-1">{product.brand}</span>
                   <h3 className="text-xs md:text-sm font-bold text-slate-800 line-clamp-1 group-hover:text-indigo-600 transition">{product.name}</h3>
-                  <p className="text-xs text-slate-400 line-clamp-2 mt-1 leading-relaxed">{product.description}</p>
+                  <p className="text-xs text-slate-400 line-clamp-2 mt-1 leading-relaxed">{stripHtml(product.description)}</p>
                 </div>
 
                 <div className="pt-3 border-t border-slate-100 flex justify-between items-center bg-white">

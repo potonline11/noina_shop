@@ -146,36 +146,76 @@ export const parseSheetData = (text: string): Product[] => {
   return parseCSV(text);
 };
 
-export const parseCSV = (text: string): Product[] => {
-  const lines = text.split('\n');
-  if (lines.length < 2) return [];
+export const stripHtml = (html: string): string => {
+  if (!html) return '';
+  if (!html.includes('<') || !html.includes('>')) {
+    return html;
+  }
+  try {
+    const parser = new DOMParser();
+    const doc = parser.parseFromString(html, 'text/html');
+    return doc.body.textContent || doc.body.innerText || '';
+  } catch (e) {
+    return html.replace(/<[^>]*>/g, '');
+  }
+};
 
-  const headerLine = lines[0];
-  const separator = headerLine.includes('\t') ? '\t' : ',';
-  const headers = headerLine.split(separator).map(h => h.trim().replace(/^"|"$/g, '').toLowerCase());
+export const parseCSV = (text: string): Product[] => {
+  if (!text) return [];
+
+  // Determine separator from the first line
+  const firstLine = text.split('\n')[0] || '';
+  const separator = firstLine.includes('\t') ? '\t' : ',';
+
+  const rows: string[][] = [];
+  let currentRow: string[] = [];
+  let currentCell = '';
+  let inQuotes = false;
+  
+  // Normalize line endings
+  const normalized = text.replace(/\r\n/g, '\n');
+
+  for (let i = 0; i < normalized.length; i++) {
+    const char = normalized[i];
+    const nextChar = normalized[i + 1];
+
+    if (char === '"') {
+      if (inQuotes && nextChar === '"') {
+        // Escaped double quote "" inside quotes
+        currentCell += '"';
+        i++; // skip next quote
+      } else {
+        // Toggle quotes mode
+        inQuotes = !inQuotes;
+      }
+    } else if (char === separator && !inQuotes) {
+      currentRow.push(currentCell.trim());
+      currentCell = '';
+    } else if (char === '\n' && !inQuotes) {
+      currentRow.push(currentCell.trim());
+      rows.push(currentRow);
+      currentRow = [];
+      currentCell = '';
+    } else {
+      currentCell += char;
+    }
+  }
+  // Add the last cell and row if anything remains
+  if (currentCell || currentRow.length > 0) {
+    currentRow.push(currentCell.trim());
+    rows.push(currentRow);
+  }
+
+  if (rows.length < 2) return [];
+
+  const headerRow = rows[0];
+  const headers = headerRow.map(h => h.trim().replace(/^"|"$/g, '').toLowerCase());
 
   const results: Product[] = [];
   
-  for (let i = 1; i < lines.length; i++) {
-    const line = lines[i].trim();
-    if (!line) continue;
-
-    let cells: string[] = [];
-    let currentCell = '';
-    let inQuotes = false;
-
-    for (let c = 0; c < line.length; c++) {
-      const char = line[c];
-      if (char === '"') {
-        inQuotes = !inQuotes;
-      } else if (char === separator && !inQuotes) {
-        cells.push(currentCell.trim());
-        currentCell = '';
-      } else {
-        currentCell += char;
-      }
-    }
-    cells.push(currentCell.trim());
+  for (let i = 1; i < rows.length; i++) {
+    const cells = rows[i];
+    if (cells.length === 0 || cells.every(c => !c)) continue;
 
     const row: any = {};
     headers.forEach((header, index) => {
@@ -186,18 +226,31 @@ export const parseCSV = (text: string): Product[] => {
 
     // Map to Product object
     const name = row.name || row.title || row.productname || '';
-    if (name) {
+    
+    // Ignore rows that appear to be parsed from some random HTML webpage wrapper
+    if (name && 
+        name.toLowerCase() !== 'title' && 
+        name.toLowerCase() !== 'name' && 
+        !name.startsWith('<!DOCTYPE') && 
+        !name.startsWith('<html') && 
+        !name.startsWith('<head') && 
+        !name.startsWith('<body') && 
+        !name.startsWith('<style')) {
+      
+      const priceVal = row.price ? parseFloat(row.price.replace(/[^0-9.]/g, '')) : 0;
+      const bvVal = row.bv ? parseFloat(row.bv.replace(/[^0-9.]/g, '')) : Math.round(priceVal * 0.1);
+
       results.push({
         id: `sheet-${Date.now()}-${i}-${Math.floor(Math.random() * 100)}`,
         name: name,
         description: row.description || row.desc || 'สินค้าดึงข้อมูลจาก Google Sheet สำเร็จ',
-        price: parseFloat(row.price) || 0,
-        bv: parseFloat(row.bv) || Math.round((parseFloat(row.price) || 0) * 0.1), // default 10%
+        price: isNaN(priceVal) ? 0 : priceVal,
+        bv: isNaN(bvVal) ? 0 : bvVal,
         image: row.image || row.img || 'https://images.unsplash.com/photo-1531297484001-80022131f5a1?auto=format&fit=crop&w=600&q=80',
         category: (row.category || 'accessory').toLowerCase() as any,
         brand: row.brand || 'แบรนด์มือสอง',
         condition: row.condition || row.quality || '95% สภาพดี',
-        stock: parseInt(row.stock) || 5,
+        stock: row.stock ? parseInt(row.stock.replace(/[^0-9]/g, '')) || 5 : 5,
         source: 'googlesheet'
       });
     }

@@ -6,7 +6,7 @@
 import React, { useState } from 'react';
 import { Product } from '../types';
 import { Database, Link, RefreshCw, CheckCircle, AlertTriangle, FileSpreadsheet, Eye } from 'lucide-react';
-import { parseCSV, DEMO_SPREADSHEET_DATA, DEFAULT_SHEET_URL, getCleanSheetUrl, parseSheetData } from '../utils/sheetParser';
+import { parseCSV, DEMO_SPREADSHEET_DATA, DEFAULT_SHEET_URL, getCleanSheetUrl, parseSheetData, stripHtml } from '../utils/sheetParser';
 
 interface GoogleSheetSyncProps {
   onSyncComplete: (products: Product[]) => void;
@@ -197,7 +197,7 @@ export default function GoogleSheetSync({ onSyncComplete, currentProductsCount }
                     <h5 className="text-xs font-bold text-slate-800 truncate">{p.name}</h5>
                     <span className="px-1.5 py-0.2 bg-emerald-100 text-emerald-800 rounded text-[9px] uppercase font-bold shrink-0">{p.category}</span>
                   </div>
-                  <p className="text-[10px] text-slate-500 truncate mt-0.5">{p.description}</p>
+                  <p className="text-[10px] text-slate-500 truncate mt-0.5">{stripHtml(p.description)}</p>
                 </div>
                 <div className="text-right shrink-0">
                   <span className="block text-xs font-bold text-slate-800">{p.price.toLocaleString()} ฿</span>
