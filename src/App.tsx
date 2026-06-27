@@ -14,6 +14,7 @@ import { parseCSV, DEMO_SPREADSHEET_DATA, DEFAULT_SHEET_URL, getCleanSheetUrl, p
 
 // Subcomponents and Views
 import Navbar from './components/Navbar';
+import AIChatWidget from './components/AIChatWidget';
 import Footer from './components/Footer';
 import HomeView from './views/HomeView';
 import AboutView from './views/AboutView';
@@ -429,6 +430,9 @@ export default function App() {
 
       {/* Universal footer bar */}
       <Footer onNavigate={setCurrentView} />
+
+      {/* Floating AI Chat support widget */}
+      <AIChatWidget products={products} />
 
     </div>
   );
