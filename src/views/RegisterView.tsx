@@ -5,7 +5,7 @@
 
 import React, { useState } from 'react';
 import { Member } from '../types';
-import { UserPlus, UserCheck, Shield, Users, Info, AlertTriangle, Key } from 'lucide-react';
+import { UserPlus, UserCheck, Shield, Users, Info, AlertTriangle, Key, Sparkles } from 'lucide-react';
 
 interface RegisterViewProps {
   members: Member[];
@@ -27,11 +27,67 @@ export default function RegisterView({ members, onRegister, onNavigate }: Regist
   const [error, setError] = useState('');
   const [success, setSuccess] = useState(false);
   const [registeredUser, setRegisteredUser] = useState<Member | null>(null);
+  const [spilloverInfo, setSpilloverInfo] = useState<{
+    originalParentId: string;
+    originalPosition: 'left' | 'right';
+    finalParentId: string;
+    finalPosition: 'left' | 'right';
+  } | null>(null);
+
+  // Helper function to find the first vacant position under a specific parent node (Spillover)
+  const findSpilloverSpot = (
+    startParentId: string,
+    preferredSide: 'left' | 'right',
+    membersList: Member[]
+  ): { parentId: string; position: 'left' | 'right' } => {
+    const memberMap = new Map<string, Member>();
+    membersList.forEach(m => memberMap.set(m.id, m));
+
+    const startParent = memberMap.get(startParentId);
+    if (!startParent) {
+      return { parentId: startParentId, position: preferredSide };
+    }
+
+    const queue: string[] = [startParentId];
+    const visited = new Set<string>();
+
+    while (queue.length > 0) {
+      const currentId = queue.shift()!;
+      if (visited.has(currentId)) continue;
+      visited.add(currentId);
+
+      const currentMember = memberMap.get(currentId);
+      if (!currentMember) continue;
+
+      if (preferredSide === 'left') {
+        if (!currentMember.leftChildId) {
+          return { parentId: currentId, position: 'left' };
+        }
+        if (!currentMember.rightChildId) {
+          return { parentId: currentId, position: 'right' };
+        }
+        if (currentMember.leftChildId) queue.push(currentMember.leftChildId);
+        if (currentMember.rightChildId) queue.push(currentMember.rightChildId);
+      } else {
+        if (!currentMember.rightChildId) {
+          return { parentId: currentId, position: 'right' };
+        }
+        if (!currentMember.leftChildId) {
+          return { parentId: currentId, position: 'left' };
+        }
+        if (currentMember.rightChildId) queue.push(currentMember.rightChildId);
+        if (currentMember.leftChildId) queue.push(currentMember.leftChildId);
+      }
+    }
+
+    return { parentId: startParentId, position: preferredSide };
+  };
 
   const handleRegister = (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
     setSuccess(false);
+    setSpilloverInfo(null);
 
     // Form validations
     if (!name || !email || !phone || !password) {
@@ -52,14 +108,21 @@ export default function RegisterView({ members, onRegister, onNavigate }: Regist
       return;
     }
 
-    // Check vacancy of target position
-    if (position === 'left' && parent.leftChildId) {
-      setError(`ตำแหน่งใต้สายงาน ซ้าย ของ ${parent.name} (${parent.id}) ไม่ว่างแล้ว โปรดเลือกตำแหน่งอื่น`);
-      return;
-    }
-    if (position === 'right' && parent.rightChildId) {
-      setError(`ตำแหน่งใต้สายงาน ขวา ของ ${parent.name} (${parent.id}) ไม่ว่างแล้ว โปรดเลือกตำแหน่งอื่น`);
-      return;
+    // Automatic Spillover: If the requested position is occupied, find the first available position
+    let finalParentId = parent.id;
+    let finalPosition = position;
+    const isOccupied = (position === 'left' && parent.leftChildId) || (position === 'right' && parent.rightChildId);
+
+    if (isOccupied) {
+      const spot = findSpilloverSpot(parent.id, position, members);
+      finalParentId = spot.parentId;
+      finalPosition = spot.position;
+      setSpilloverInfo({
+        originalParentId: parent.id,
+        originalPosition: position,
+        finalParentId: spot.parentId,
+        finalPosition: spot.position
+      });
     }
 
     // Create unique ID
@@ -73,8 +136,8 @@ export default function RegisterView({ members, onRegister, onNavigate }: Regist
       phone: phone,
       password: password,
       sponsorId: sponsor.id,
-      parentUserId: parent.id,
-      position: position,
+      parentUserId: finalParentId,
+      position: finalPosition,
       leftChildId: null,
       rightChildId: null,
       rank: 'Bronze',
@@ -146,10 +209,22 @@ export default function RegisterView({ members, onRegister, onNavigate }: Regist
                 <span className="text-slate-400">จัดวางใต้สายงานผู้ใช้:</span>
                 <span className="font-bold text-slate-700">{registeredUser.parentUserId}</span>
               </div>
-              <div className="flex justify-between">
+              <div className="flex justify-between pb-1">
                 <span className="text-slate-400">ฝั่งที่จัดวาง:</span>
                 <span className="font-bold text-indigo-600">สายฝั่ง{registeredUser.position === 'left' ? 'ซ้าย' : 'ขวา'}</span>
               </div>
+
+              {spilloverInfo && (
+                <div className="border-t border-slate-200 pt-2 mt-2 space-y-1 bg-amber-50/70 p-2.5 rounded-xl border border-amber-100 text-[10px] text-amber-800 leading-normal">
+                  <div className="font-extrabold flex items-center gap-1">
+                    <Sparkles className="w-3.5 h-3.5 text-amber-600 shrink-0" />
+                    ระบบจัดวางแบบอัตโนมัติ (Spillover)
+                  </div>
+                  <p>
+                    เนื่องจากตำแหน่งดั้งเดิมคือใต้รหัส <strong className="font-mono">{spilloverInfo.originalParentId}</strong> ฝั่ง{spilloverInfo.originalPosition === 'left' ? 'ซ้าย' : 'ขวา'} เต็มแล้ว ระบบจึงได้ค้นหาและโยนสายงานลงไปที่ตำแหน่งแรกที่ยังว่างอยู่ คือใต้รหัส <strong className="font-mono">{spilloverInfo.finalParentId}</strong> ฝั่ง{spilloverInfo.finalPosition === 'left' ? 'ซ้าย' : 'ขวา'} ให้เรียบร้อยโดยอัตโนมัติ!
+                  </p>
+                </div>
+              )}
             </div>
 
             <div className="flex gap-3 justify-center pt-2">
