@@ -6,11 +6,11 @@
 import React, { useState, useEffect } from 'react';
 import { Product, Member, Order, CommissionLog } from './types';
 import { 
-  INITIAL_PRODUCTS, 
   INITIAL_MEMBERS, 
   INITIAL_ORDERS, 
   INITIAL_COMMISSIONS 
 } from './data/mockData';
+import { parseCSV, DEMO_SPREADSHEET_DATA, DEFAULT_SHEET_URL } from './utils/sheetParser';
 
 // Subcomponents and Views
 import Navbar from './components/Navbar';
@@ -35,10 +35,18 @@ export default function App() {
     return cached ? JSON.parse(cached) : null;
   });
 
-  // Global Products State (loaded from local storage or mock)
+  // Global Products State (loaded from local storage or default Google Sheet csv)
   const [products, setProducts] = useState<Product[]>(() => {
     const cached = localStorage.getItem('noina_products');
-    return cached ? JSON.parse(cached) : INITIAL_PRODUCTS;
+    if (cached) {
+      const parsed = JSON.parse(cached) as Product[];
+      // Keep only products with source 'googlesheet' to ensure database products are not displayed
+      const sheetOnly = parsed.filter(p => p.source === 'googlesheet');
+      if (sheetOnly.length > 0) {
+        return sheetOnly;
+      }
+    }
+    return parseCSV(DEMO_SPREADSHEET_DATA);
   });
 
   // Global MLM Members State
@@ -84,6 +92,28 @@ export default function App() {
   useEffect(() => {
     localStorage.setItem('noina_commissions', JSON.stringify(commissionLogs));
   }, [commissionLogs]);
+
+  // Auto-sync with Google Sheet on startup
+  useEffect(() => {
+    const autoSyncFromSheet = async () => {
+      try {
+        const savedUrl = localStorage.getItem('noina_sheet_url') || DEFAULT_SHEET_URL;
+        if (savedUrl && savedUrl.startsWith('http') && !savedUrl.includes('_example')) {
+          const res = await fetch(savedUrl);
+          if (res.ok) {
+            const text = await res.text();
+            const sheetProds = parseCSV(text);
+            if (sheetProds.length > 0) {
+              setProducts(sheetProds);
+            }
+          }
+        }
+      } catch (err) {
+        console.warn('Auto-sync on startup failed, using cached/demo sheet products:', err);
+      }
+    };
+    autoSyncFromSheet();
+  }, []);
 
   // Auth Operations
   const handleLoginSuccess = (user: Member) => {
@@ -215,13 +245,9 @@ export default function App() {
     }
   };
 
-  // Admin Google Sheet sync callback (merges or replaces)
+  // Admin Google Sheet sync callback (replaces entirely)
   const handleSyncProducts = (newProducts: Product[]) => {
-    setProducts(prev => {
-      // Filter out existing google sheet products to avoid duplication
-      const localsOnly = prev.filter(p => p.source !== 'googlesheet');
-      return [...localsOnly, ...newProducts];
-    });
+    setProducts(newProducts);
   };
 
   // Admin Inventory Controls

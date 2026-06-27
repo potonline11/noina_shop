@@ -69,7 +69,7 @@ export default function AdminPortal({
       brand: newProd.brand || 'แบรนด์มือสอง',
       condition: newProd.condition,
       stock: 5,
-      source: 'local'
+      source: 'googlesheet'
     };
 
     onAddProduct(product);
