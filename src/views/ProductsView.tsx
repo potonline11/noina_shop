@@ -42,6 +42,18 @@ interface ProductsViewProps {
   onClearCart: () => void;
 }
 
+// Formats descriptions seamlessly: cleans up massive gaps from HTML tags and parses newlines for plain text
+const formatDescriptionHtml = (desc: string): string => {
+  if (!desc) return '';
+  const hasHtml = /<[a-z][\s\S]*>/i.test(desc);
+  if (!hasHtml) {
+    return desc.replace(/\n/g, '<br />');
+  }
+  return desc
+    .replace(/>\s*\n\s*</g, '><') // Collapse newlines formatted inside HTML tags
+    .replace(/\r/g, '');
+};
+
 export default function ProductsView({ 
   products, 
   currentUser, 
@@ -294,7 +306,7 @@ export default function ProductsView({
                 <div className="space-y-1">
                   <span className="text-[10px] uppercase font-bold text-indigo-600 tracking-wider block">{product.brand}</span>
                   <h3 className="text-xs md:text-sm font-bold text-slate-800 line-clamp-1 group-hover:text-indigo-600 transition">{product.name}</h3>
-                  <div className="text-xs text-slate-500 leading-relaxed whitespace-pre-wrap font-sans break-words" dangerouslySetInnerHTML={{ __html: product.description }} />
+                  <div className="html-description text-xs text-slate-500 leading-relaxed font-sans break-words" dangerouslySetInnerHTML={{ __html: formatDescriptionHtml(product.description) }} />
                 </div>
 
                 {/* Buy Section */}
@@ -365,7 +377,7 @@ export default function ProductsView({
                       {selectedProduct.brand} | {selectedProduct.category}
                     </span>
                     <h3 className="text-sm md:text-base font-extrabold text-slate-800">{selectedProduct.name}</h3>
-                    <div className="text-xs text-slate-500 mt-1.5 whitespace-pre-wrap leading-relaxed font-sans break-words" dangerouslySetInnerHTML={{ __html: selectedProduct.description }} />
+                    <div className="html-description text-xs text-slate-500 mt-1.5 leading-relaxed font-sans break-words" dangerouslySetInnerHTML={{ __html: formatDescriptionHtml(selectedProduct.description) }} />
                   </div>
 
                   <div className="grid grid-cols-2 gap-3 bg-slate-50 p-3 rounded-xl border border-slate-100 text-xs">
