@@ -16,6 +16,111 @@ const __dirname = path.dirname(__filename);
 
 const STORE_PATH = path.join(process.cwd(), 'products_store.json');
 
+// Helper functions for parsing Google Sheets CSV on the server
+function getCleanSheetUrl(url: string): string {
+  if (!url) return '';
+  const trimmed = url.trim();
+  if (trimmed.includes('output=csv') || trimmed.includes('format=csv')) {
+    return trimmed;
+  }
+  const match = trimmed.match(/\/spreadsheets\/d\/([a-zA-Z0-9-_]+)/);
+  if (match && match[1]) {
+    return `https://docs.google.com/spreadsheets/d/${match[1]}/export?format=csv`;
+  }
+  return trimmed;
+}
+
+function parseCSVLine(line: string, separator: string): string[] {
+  const cells = [];
+  let currentCell = '';
+  let inQuotes = false;
+  for (let i = 0; i < line.length; i++) {
+    const char = line[i];
+    if (char === '"') {
+      inQuotes = !inQuotes;
+    } else if (char === separator && !inQuotes) {
+      cells.push(currentCell.trim().replace(/^["']|["']$/g, ''));
+      currentCell = '';
+    } else {
+      currentCell += char;
+    }
+  }
+  cells.push(currentCell.trim().replace(/^["']|["']$/g, ''));
+  return cells;
+}
+
+function parseCSV(text: string): any[] {
+  if (!text) return [];
+  
+  // Normalize line endings
+  const normalized = text.replace(/\r\n/g, '\n').replace(/\r/g, '\n');
+  const lines = normalized.split('\n');
+  if (lines.length === 0) return [];
+
+  // Determine separator from first line
+  const firstLine = lines[0] || '';
+  const separator = firstLine.includes('\t') ? '\t' : ',';
+
+  // Find headers
+  const headerCells = parseCSVLine(firstLine, separator);
+  const colMap: { [key: string]: number } = {};
+  
+  headerCells.forEach((cell, idx) => {
+    const clean = cell.toLowerCase().trim().replace(/[^a-z]/g, '');
+    if (clean.includes('title') || clean.includes('name')) colMap['name'] = idx;
+    else if (clean.includes('description') || clean.includes('desc')) colMap['description'] = idx;
+    else if (clean.includes('price')) colMap['price'] = idx;
+    else if (clean.includes('bv')) colMap['bv'] = idx;
+    else if (clean.includes('image') || clean.includes('img')) colMap['image'] = idx;
+    else if (clean.includes('category')) colMap['category'] = idx;
+    else if (clean.includes('brand')) colMap['brand'] = idx;
+    else if (clean.includes('condition') || clean.includes('quality')) colMap['condition'] = idx;
+    else if (clean.includes('stock')) colMap['stock'] = idx;
+  });
+
+  // Fallback defaults
+  if (colMap['name'] === undefined) colMap['name'] = 0;
+  if (colMap['description'] === undefined) colMap['description'] = 1;
+  if (colMap['price'] === undefined) colMap['price'] = 2;
+  if (colMap['bv'] === undefined) colMap['bv'] = 3;
+  if (colMap['image'] === undefined) colMap['image'] = 4;
+  if (colMap['category'] === undefined) colMap['category'] = 5;
+  if (colMap['brand'] === undefined) colMap['brand'] = 6;
+  if (colMap['condition'] === undefined) colMap['condition'] = 7;
+  if (colMap['stock'] === undefined) colMap['stock'] = 8;
+
+  const results = [];
+  for (let i = 1; i < lines.length; i++) {
+    const line = lines[i].trim();
+    if (!line) continue;
+    
+    const cells = parseCSVLine(line, separator);
+    if (cells.length === 0) continue;
+    if (cells.every(c => !c)) continue;
+
+    const name = cells[colMap['name']] || '';
+    if (!name || name.toLowerCase() === 'title' || name.toLowerCase() === 'name') continue;
+
+    const priceVal = cells[colMap['price']] ? parseFloat(cells[colMap['price']].replace(/[^0-9.]/g, '')) : 0;
+    const bvVal = cells[colMap['bv']] ? parseFloat(cells[colMap['bv']].replace(/[^0-9.]/g, '')) : Math.round(priceVal * 0.1);
+
+    results.push({
+      id: `sheet-${Date.now()}-${i}-${Math.floor(Math.random() * 100)}`,
+      name: name,
+      description: cells[colMap['description']] || 'สินค้าดึงข้อมูลจาก Google Sheet สำเร็จ',
+      price: isNaN(priceVal) ? 0 : priceVal,
+      bv: isNaN(bvVal) ? 0 : bvVal,
+      image: cells[colMap['image']] || 'https://images.unsplash.com/photo-1531297484001-80022131f5a1?auto=format&fit=crop&w=600&q=80',
+      category: (cells[colMap['category']] || 'accessory').toLowerCase(),
+      brand: cells[colMap['brand']] || 'แบรนด์มือสอง',
+      condition: cells[colMap['condition']] || '95% สภาพดี',
+      stock: cells[colMap['stock']] ? parseInt(cells[colMap['stock']].replace(/[^0-9]/g, '')) || 5 : 5,
+      source: 'googlesheet'
+    });
+  }
+  return results;
+}
+
 async function readStore() {
   try {
     const data = await fs.readFile(STORE_PATH, 'utf-8');
@@ -145,10 +250,50 @@ ${productsContext || 'ขณะนี้ไม่มีสินค้าใน�
     }
   });
 
+  // Server-side cache variables for Google Sheets syncing
+  let cachedSheetProducts: any[] = [];
+  let lastFetchTime = 0;
+  const CACHE_TTL = 10000; // 10 seconds cache TTL
+
   // Products store GET and POST routes for persistent Google Sheet data and Webhook URL
   app.get('/api/products-store', async (req, res) => {
     try {
       const store = await readStore();
+      const now = Date.now();
+      
+      if (store.sheetUrl && store.sheetUrl.startsWith('http') && !store.sheetUrl.includes('_example')) {
+        // If cache expired, or cached products are empty, fetch fresh from Google Sheets on the server
+        if (now - lastFetchTime > CACHE_TTL || cachedSheetProducts.length === 0) {
+          try {
+            const cleanUrl = getCleanSheetUrl(store.sheetUrl);
+            console.log(`Server-fetching Google Sheet automatically: ${cleanUrl}`);
+            const fetchRes = await fetch(cleanUrl);
+            if (fetchRes.ok) {
+              const text = await fetchRes.text();
+              const freshProducts = parseCSV(text);
+              if (freshProducts && freshProducts.length > 0) {
+                cachedSheetProducts = freshProducts;
+                lastFetchTime = now;
+                
+                // Persist the latest fetched products inside the database cache so Gemini AI has instant access
+                store.products = freshProducts;
+                await writeStore(store);
+                console.log(`Successfully auto-fetched and parsed ${freshProducts.length} products from Google Sheet`);
+              }
+            } else {
+              console.warn(`Google Sheet fetch responded with status: ${fetchRes.status}`);
+            }
+          } catch (fetchErr) {
+            console.error('Server auto-fetch Google Sheet failed, falling back to cached products:', fetchErr);
+          }
+        }
+        
+        // If we successfully fetched or have cached data, override stored products
+        if (cachedSheetProducts.length > 0) {
+          store.products = cachedSheetProducts;
+        }
+      }
+      
       res.json(store);
     } catch (error: any) {
       console.error('Failed to read products-store:', error);

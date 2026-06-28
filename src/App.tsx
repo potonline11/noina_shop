@@ -155,6 +155,8 @@ export default function App() {
         const response = await fetch('/api/products-store');
         let serverSheetUrl = '';
         let serverWebhookUrl = '';
+        let gotProductsFromServer = false;
+        
         if (response.ok) {
           const data = await response.json();
           if (data.members && data.members.length > 0) {
@@ -168,6 +170,11 @@ export default function App() {
           if (data.webhookUrl) {
             serverWebhookUrl = data.webhookUrl;
             localStorage.setItem('noina_order_webhook_url', data.webhookUrl);
+          }
+          if (data.products && data.products.length > 0) {
+            setProducts(data.products);
+            localStorage.setItem('noina_products', JSON.stringify(data.products));
+            gotProductsFromServer = true;
           }
         }
 
@@ -205,8 +212,10 @@ export default function App() {
           }
         }
 
-        // Always fetch product list directly from Google Sheets instead of reading from the DB
-        await autoSyncFromSheet(urlToUse || undefined);
+        // Only do client-side fetch if we didn't receive products directly from the server config
+        if (!gotProductsFromServer) {
+          await autoSyncFromSheet(urlToUse || undefined);
+        }
       } catch (err) {
         console.warn('Failed to load server config, calling auto sync directly:', err);
         await autoSyncFromSheet();
