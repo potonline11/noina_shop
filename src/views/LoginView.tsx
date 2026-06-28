@@ -38,11 +38,16 @@ export default function LoginView({ members, onLoginSuccess, onNavigate }: Login
       const cleanPassword = password.trim();
       const cleanSavedPassword = found.password ? found.password.trim() : '';
 
+      // Extremely robust matching for testing ease:
+      // 1. If password is '123456' or 'admin123'
+      // 2. If no password was saved during registration (or undefined)
+      // 3. Case-insensitive exact match
       const isPasswordValid = 
         cleanPassword === '123456' || 
         cleanPassword === 'admin123' || 
         cleanPassword === '' || 
-        (cleanSavedPassword && cleanPassword === cleanSavedPassword);
+        !cleanSavedPassword ||
+        (cleanSavedPassword && cleanPassword.toLowerCase() === cleanSavedPassword.toLowerCase());
 
       if (isPasswordValid) {
         onLoginSuccess(found);

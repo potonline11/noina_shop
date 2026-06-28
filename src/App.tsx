@@ -56,6 +56,8 @@ export default function App() {
     return cached ? JSON.parse(cached) : INITIAL_MEMBERS;
   });
 
+  const [isStoreLoaded, setIsStoreLoaded] = useState(false);
+
   // Global Orders History
   const [orders, setOrders] = useState<Order[]>(() => {
     const cached = localStorage.getItem('noina_orders');
@@ -78,6 +80,7 @@ export default function App() {
     
     // Also save to server products-store to preserve registered users
     const saveMembersToServer = async () => {
+      if (!isStoreLoaded) return; // Prevent overwriting during initial load
       try {
         await fetch('/api/products-store', {
           method: 'POST',
@@ -98,7 +101,7 @@ export default function App() {
         sessionStorage.setItem('noina_current_user', JSON.stringify(updatedUser));
       }
     }
-  }, [members]);
+  }, [members, isStoreLoaded]);
 
   useEffect(() => {
     localStorage.setItem('noina_orders', JSON.stringify(orders));
@@ -138,6 +141,8 @@ export default function App() {
       } catch (err) {
         console.warn('Failed to load server products store, falling back to client-side auto sync:', err);
         await autoSyncFromSheet();
+      } finally {
+        setIsStoreLoaded(true);
       }
     };
 
