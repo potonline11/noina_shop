@@ -274,6 +274,8 @@ export default function App() {
       return [...updated, newMember];
     });
 
+    const clientWebhookUrl = localStorage.getItem('noina_order_webhook_url') || '';
+
     // Automatically POST new registration to Google Sheets Webhook URL via server-side proxy (Bypasses client-side CORS issues and works across all devices)
     return fetch('/api/webhook-proxy', {
       method: 'POST',
@@ -281,6 +283,7 @@ export default function App() {
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
+        webhookUrl: clientWebhookUrl,
         type: 'registration',
         id: newMember.id,
         name: newMember.name,
@@ -316,12 +319,14 @@ export default function App() {
       // Also notify webhook via server-side proxy so Google Sheet is updated and an email alert is sent to user with the new password
       const resetMember = updated.find(m => m.id === memberId);
       if (resetMember) {
+        const clientWebhookUrl = localStorage.getItem('noina_order_webhook_url') || '';
         fetch('/api/webhook-proxy', {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
           },
           body: JSON.stringify({
+            webhookUrl: clientWebhookUrl,
             type: 'registration',
             id: resetMember.id,
             name: resetMember.name,
@@ -424,6 +429,8 @@ export default function App() {
 
     setOrders(prev => [newOrder, ...prev]);
 
+    const clientWebhookUrl = localStorage.getItem('noina_order_webhook_url') || '';
+
     // Automatically POST to Google Sheets Webhook URL via server-side proxy (Bypasses client-side CORS issues and works across all devices)
     fetch('/api/webhook-proxy', {
       method: 'POST',
@@ -431,6 +438,7 @@ export default function App() {
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
+        webhookUrl: clientWebhookUrl,
         ...newOrder,
         type: 'order',
         orderId: newOrder.id,
