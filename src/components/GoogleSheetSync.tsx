@@ -168,32 +168,40 @@ export default function GoogleSheetSync({ onSyncComplete, currentProductsCount }
     setTimeout(() => setWebhookSaveStatus(''), 4000);
   };
 
-  const triggerDemoSync = () => {
-    setLoading(true);
-    setStatus({ type: 'idle', message: '' });
-    
-    setTimeout(() => {
-      const products = parseCSV(DEMO_SPREADSHEET_DATA);
-      setPreviewProducts(products);
-      onSyncComplete(products);
-      setLoading(false);
-      setStatus({
-        type: 'success',
-        message: `เชื่อมต่อระบบจำลอง Google Sheet สำเร็จ! โหลดสินค้ามือสองเพิ่มอีก ${products.length} รายการ`
-      });
-    }, 1000);
-  };
-
   const appsScriptCode = `function doPost(e) {
   try {
     var jsonString = e.postData.contents;
     var data = JSON.parse(jsonString);
-    var ss = SpreadsheetApp.getActiveSpreadsheet();
+    
+    var ss;
+    try {
+      ss = SpreadsheetApp.getActiveSpreadsheet();
+    } catch (err) {}
+    
+    if (!ss) {
+      var sheetId = data.sheetId || "1UL93q_PpKGlZocvcD6ShLwbDJP-nU1emB5-hvQOLT_A";
+      try {
+        ss = SpreadsheetApp.openById(sheetId);
+      } catch (err) {
+        return ContentService.createTextOutput(JSON.stringify({ 
+          status: "error", 
+          success: false,
+          message: "ไม่สามารถเปิดไฟล์ Google Sheet ด้วย ID: " + sheetId + " ได้ โปรดตรวจสอบว่าได้แชร์สิทธิ์เข้าถึงให้ทุกคนที่มีลิงก์เข้าถึงได้ หรือเปิดสิทธิ์แล้ว: " + err.toString() 
+        })).setMimeType(ContentService.MimeType.JSON);
+      }
+    }
     
     // ตรวจสอบว่าเป็นข้อมูลการสมัครสมาชิกใหม่ หรือข้อมูลการสั่งซื้อสินค้า
     if (data.type === "registration" || (data.password !== undefined && data.items === undefined)) {
       // 1. จัดการข้อมูลการสมัครสมาชิกใหม่ (NLM Registration)
-      var sheet = ss.getSheetByName("Members") || ss.insertSheet("Members");
+      var sheet = ss.getSheetByName("Members");
+      if (!sheet) {
+        try {
+          sheet = ss.insertSheet("Members");
+        } catch (e) {
+          sheet = ss.getSheets()[0]; // fallback to first sheet if insert fails
+        }
+      }
       
       // ตั้งค่าหัวข้อในแถวที่ 1 หากชีตยังว่างอยู่
       if (sheet.getLastRow() === 0) {
@@ -218,56 +226,69 @@ export default function GoogleSheetSync({ onSyncComplete, currentProductsCount }
       ]);
       
       // ส่งเมลยินดีต้อนรับสมาชิกใหม่พร้อมข้อมูลสำหรับเข้าใช้งานทันที!
+      var mailStatus = "No email address provided";
       if (data.email) {
-        var subject = "ยินดีต้อนรับสมาชิกใหม่ Noinashop NLM - รหัสสมาชิก " + (data.id || "");
-        var body = "เรียนคุณ " + (data.name || "") + ",\\n\\n" +
-                   "ยินดีต้อนรับเข้าสู่ครอบครัว Noinashop NLM (Noina Line Marketing) เครือข่ายไอทีมือสองพรีเมียม!\\n" +
-                   "ระบบได้ลงทะเบียนบัญชีผู้ใช้งานของคุณเข้าสู่ผังองค์กรแบบ Binary เรียบร้อยแล้ว\\n\\n" +
-                   "--------------------------------------------------\\n" +
-                   " 🔑 ข้อมูลบัญชีสมาชิกของคุณสำหรับเข้าใช้งาน\\n" +
-                   "--------------------------------------------------\\n" +
-                   "● รหัสสมาชิก (Member ID): " + (data.id || "") + "\\n" +
-                   "● อีเมลสำหรับล็อกอิน: " + (data.email || "") + "\\n" +
-                   "● รหัสผ่านเข้าใช้ (Password): " + (data.password || "") + "\\n" +
-                   "● ผู้แนะนำตรง (Sponsor ID): " + (data.sponsorId || "") + "\\n" +
-                   "● ผู้จัดวางในสายงาน (Parent ID): " + (data.parentUserId || "") + "\\n" +
-                   "● ฝั่งสายงาน (Position): " + (data.position === "left" ? "ทีมงานฝั่งซ้าย" : "ทีมงานฝั่งขวา") + "\\n" +
-                   "● ระดับสมาชิกเริ่มต้น (Rank): " + (data.rank || "Bronze") + "\\n\\n" +
-                   "--------------------------------------------------\\n" +
-                   " 🚀 ลิงก์ร้านค้าและลิงก์แนะนำขยายงานของคุณ\\n" +
-                   "--------------------------------------------------\\n" +
-                   "คัดลอกลิงก์ด้านล่างส่งต่อเพื่อขยายสายงานเครือข่ายของคุุณเพื่อสะสมคะแนน BV รับคอมมิชชันแนะนําตรง 100%:\\n" +
-                   "https://NoinashopNLM.com/?sponsor=" + (data.id || "") + "\\n\\n" +
-                   "คุณสามารถนำรหัสสมาชิก หรือ อีเมลด้านบน ร่วมกับรหัสผ่านของคุณ เพื่อล็อกอินเข้าสู่ระบบสมาชิกหลังบ้านเพื่อตรวจสอบสถิติคะแนนสะสม โบนัสจับคู่จ่าย และแผนภาพต้นไม้สายงานได้ทันที!\\n\\n" +
-                   "ขอแสดงความนับถืออย่างสูง,\\nทีมงาน Noinashop Support\\nสายด่วนผู้บริหาร คุณไวพจน์ โสมภา 081-160-1092";
-                   
-        MailApp.sendEmail(data.email, subject, body);
+        try {
+          var subject = "ยินดีต้อนรับสมาชิกใหม่ Noinashop NLM - รหัสสมาชิก " + (data.id || "");
+          var body = "เรียนคุณ " + (data.name || "") + ",\\n\\n" +
+                     "ยินดีต้อนรับเข้าสู่ครอบครัว Noinashop NLM (Noina Line Marketing) เครือข่ายไอทีมือสองพรีเมียม!\\n" +
+                     "ระบบได้ลงทะเบียนบัญชีผู้ใช้งานของคุณเข้าสู่ผังองค์กรแบบ Binary เรียบร้อยแล้ว\\n\\n" +
+                     "--------------------------------------------------\\n" +
+                     " 🔑 ข้อมูลบัญชีสมาชิกของคุณสำหรับเข้าใช้งาน\\n" +
+                     "--------------------------------------------------\\n" +
+                     "● รหัสสมาชิก (Member ID): " + (data.id || "") + "\\n" +
+                     "● อีเมลสำหรับล็อกอิน: " + (data.email || "") + "\\n" +
+                     "● รหัสผ่านเข้าใช้ (Password): " + (data.password || "") + "\\n" +
+                     "● ผู้แนะนำตรง (Sponsor ID): " + (data.sponsorId || "") + "\\n" +
+                     "● ผู้จัดวางในสายงาน (Parent ID): " + (data.parentUserId || "") + "\\n" +
+                     "● ฝั่งสายงาน (Position): " + (data.position === "left" ? "ทีมงานฝั่งซ้าย" : "ทีมงานฝั่งขวา") + "\\n" +
+                     "● ระดับสมาชิกเริ่มต้น (Rank): " + (data.rank || "Bronze") + "\\n\\n" +
+                     "--------------------------------------------------\\n" +
+                     " 🚀 ลิงก์ร้านค้าและลิงก์แนะนำขยายงานของคุณ\\n" +
+                     "--------------------------------------------------\\n" +
+                     "คัดลอกลิงก์ด้านล่างส่งต่อเพื่อขยายสายงานเครือข่ายของคุณเพื่อสะสมคะแนน BV รับคอมมิชชันแนะนำตรง 100%:\\n" +
+                     "https://NoinashopNLM.com/?sponsor=" + (data.id || "") + "\\n\\n" +
+                     "คุณสามารถนำรหัสสมาชิก หรือ อีเมลด้านบน ร่วมกับรหัสผ่านของคุณ เพื่อล็อกอินเข้าสู่ระบบสมาชิกหลังบ้านเพื่อตรวจสอบสถิติคะแนนสะสม โบนัสจับคู่จ่าย และแผนภาพต้นไม้สายงานได้ทันที!\\n\\n" +
+                     "ขอแสดงความนับถืออย่างสูง,\\nทีมงาน Noinashop Support\\nสายด่วนผู้บริหาร คุณไวพจน์ โสมภา 081-160-1092";
+                     
+          MailApp.sendEmail(data.email, subject, body);
+          mailStatus = "ส่งเมลยินดีต้อนรับเรียบร้อยแล้ว";
+        } catch (mailError) {
+          mailStatus = "ส่งเมลไม่สำเร็จ: " + mailError.toString() + " (แต่วางข้อมูลลงสเปรดชีตสำเร็จแล้ว)";
+        }
       }
       
-      return ContentService.createTextOutput(JSON.stringify({ status: "success", message: "Member Registered and Welcome Email Sent!" }))
-                           .setMimeType(ContentService.MimeType.JSON);
+      return ContentService.createTextOutput(JSON.stringify({ 
+        status: "success", 
+        success: true,
+        message: "บันทึกรายชื่อสมาชิกใหม่เรียบร้อย! " + mailStatus 
+      })).setMimeType(ContentService.MimeType.JSON);
+      
     } else {
-      // 2. จัดการข้อมูลคำสั่งซื้อสินค้า (Existing Order Logic)
-      var sheet = ss.getSheetByName("Orders") || ss.insertSheet("Orders");
-                  
-      // ตั้งค่าหัวข้อในแถวที่ 1 หากชีตยังว่างอยู่
+      // 2. จัดการข้อมูลคำสั่งซื้อสินค้า (Order Logic)
+      var sheet = ss.getSheetByName("Orders");
+      if (!sheet) {
+        try {
+          sheet = ss.insertSheet("Orders");
+        } catch (e) {
+          sheet = ss.getSheets()[0]; // fallback
+        }
+      }
+      
       if (sheet.getLastRow() === 0) {
         sheet.appendRow([
-          "Order ID", "Date", "Customer Name", "Customer Phone", 
-          "Customer Email", "Shipping Address", "Products Purchased", 
-          "Total BV Received", "Subtotal", "Shipping Fee (50 THB)", 
-          "COD Fee (3%)", "Grand Total Price", "Payment Method", "Slip/COD Ref"
+          "Order ID", "Date Ordered", "Customer Name", "Phone", "Email", 
+          "Address", "Items Ordered", "Total BV", "Subtotal", "Shipping Fee", 
+          "COD Fee", "Total Amount", "Payment Method", "Slip URL"
         ]);
       }
       
-      // ดึงรหัสสั่งซื้อ และ ข้อมูลลูกค้าแบบปลอดภัยสูง (Safe fallbacks)
-      var orderId = data.orderId || data.id || ("ORD-" + Date.now());
-      var customerName = (data.firstName || data.lastName) ? ((data.firstName || "") + " " + (data.lastName || "")) : (data.memberName || "ลูกค้าผู้มีอุปการคุณ");
-      var customerPhone = data.phone || "";
-      var customerEmail = data.email || "";
-      var customerAddress = data.address || "ไม่ได้ระบุที่อยู่จัดส่ง";
+      var orderId = data.orderId || "";
+      var customerName = data.name || data.customerName || "";
+      var customerPhone = data.phone || data.customerPhone || "";
+      var customerEmail = data.email || data.customerEmail || "";
+      var customerAddress = data.address || data.customerAddress || "";
       
-      // แปลงรายการสินค้าให้อยู่ในข้อความแบบอ่านง่าย รองรับทั้งโครงสร้างแบบแบนและแบบมีอ็อบเจกต์ซ้อน
       var itemsStr = "";
       if (data.items && Array.isArray(data.items)) {
         itemsStr = data.items.map(function(item) {
@@ -306,35 +327,47 @@ export default function GoogleSheetSync({ onSyncComplete, currentProductsCount }
       ]);
       
       // ส่งอีเมลตอบกลับออเดอร์ถึงผู้รับทันทีตามที่ลูกค้าระบุไว้!
+      var mailStatus = "No email address provided";
       if (customerEmail) {
-        var subject = "ยืนยันคำสั่งซื้อ Noinashop MLM ออเดอร์ #" + orderId;
-        var body = "เรียนคุณ " + customerName + ",\\n\\n" +
-                   "ขอขอบพระคุณสำหรับการสั่งซื้อสินค้าไอทีมือสองกับ Noinashop ทางเราได้รับยอดจดและเริ่มแพ็คของเรียบร้อย\\n\\n" +
-                   "--------------------------------------------------\\n" +
-                   " รายละเอียดใบสั่งซื้อออเดอร์ #" + orderId + "\\n" +
-                   "--------------------------------------------------\\n" +
-                   "● สินค้าที่สั่งซื้อ: " + itemsStr + "\\n" +
-                   "● ยอดสะสมคะแนน: +" + totalBV + " BV (คะแนนไหลเข้าสู่สายงานคุณ)\\n" +
-                   "● ค่าจัดส่งพัสดุด่วน: " + shippingFee + " บาท\\n" +
-                   "● ยอดสุทธิทั้งสิ้น: " + totalAmount.toLocaleString() + " บาท\\n" +
-                   "● วิธีการชำระเงิน: " + (data.paymentMethod === "cod" ? "เก็บเงินปลายทาง (ชาร์จเพิ่ม 3%)" : "โอนเงินเข้าบัญชีพร้อมเพย์ คุณไวพจน์ โสมภา 081-160-1092") + "\\n" +
-                   "● ที่อยู่สำหรับการจัดส่ง: " + customerAddress + "\\n\\n" +
-                   "--------------------------------------------------\\n" +
-                   " 🔑 ข้อมูลสมาชิกและรหัสผู้แนะนำ MLM ของคุณ\\n" +
-                   "--------------------------------------------------\\n" +
-                   "● รหัสแนะนำส่วนตัวของคุณ: " + (data.sponsorCode || data.memberId || "") + "\\n" +
-                   "โปรดเก็บรหัสนี้ส่งต่อให้สมาชิกใหม่ใช้ลงทะเบียนต่อผังไบนารีด้านซ้าย/ขวา เพื่อรับโบนัสคอมมิชชันทีมสูงสุด 20% !\\n\\n" +
-                   "ขอแสดงความนับถืออย่างสูง,\\nทีมงาน Noinashop Support\\nสายด่วน 081-160-1092";
-                    
-        MailApp.sendEmail(customerEmail, subject, body);
+        try {
+          var subject = "ยืนยันคำสั่งซื้อ Noinashop MLM ออเดอร์ #" + orderId;
+          var body = "เรียนคุณ " + customerName + ",\\n\\n" +
+                     "ขอขอบพระคุณสำหรับการสั่งซื้อสินค้าไอทีมือสองกับ Noinashop ทางเราได้รับยอดจดและเริ่มแพ็คของเรียบร้อย\\n\\n" +
+                     "--------------------------------------------------\\n" +
+                     " รายละเอียดใบสั่งซื้อออเดอร์ #" + orderId + "\\n" +
+                     "--------------------------------------------------\\n" +
+                     "● สินค้าที่สั่งซื้อ: " + itemsStr + "\\n" +
+                     "● ยอดสะสมคะแนน: +" + totalBV + " BV (คะแนนไหลเข้าสู่สายงานคุณ)\\n" +
+                     "● ค่าจัดส่งพัสดุด่วน: " + shippingFee + " บาท\\n" +
+                     "● ยอดสุทธิทั้งสิ้น: " + totalAmount.toLocaleString() + " บาท\\n" +
+                     "● วิธีการชำระเงิน: " + (data.paymentMethod === "cod" ? "เก็บเงินปลายทาง (ชาร์จเพิ่ม 3%)" : "โอนเงินเข้าบัญชีพร้อมเพย์ คุณไวพจน์ โสมภา 081-160-1092") + "\\n" +
+                     "● ที่อยู่สำหรับการจัดส่ง: " + customerAddress + "\\n\\n" +
+                     "--------------------------------------------------\\n" +
+                     " 🔑 ข้อมูลสมาชิกและรหัสผู้แนะนำ MLM ของคุณ\\n" +
+                     "--------------------------------------------------\\n" +
+                     "● รหัสแนะนำส่วนตัวของคุณ: " + (data.sponsorCode || data.memberId || "") + "\\n" +
+                     "โปรดเก็บรหัสนี้ส่งต่อให้สมาชิกใหม่ใช้ลงทะเบียนต่อผังไบนารีด้านซ้าย/ขวา เพื่อรับโบนัสคอมมิชชันทีมสูงสุด 20% !\\n\\n" +
+                     "ขอแสดงความนับถืออย่างสูง,\\nทีมงาน Noinashop Support\\nสายด่วน 081-160-1092";
+                        
+          MailApp.sendEmail(customerEmail, subject, body);
+          mailStatus = "ส่งเมลออเดอร์สำเร็จแล้ว";
+        } catch (mailError) {
+          mailStatus = "ส่งเมลออเดอร์ล้มเหลว: " + mailError.toString() + " (แต่วางข้อมูลลงสเปรดชีตสำเร็จแล้ว)";
+        }
       }
       
-      return ContentService.createTextOutput(JSON.stringify({ status: "success", message: "Order logged and Email Sent!" }))
-                           .setMimeType(ContentService.MimeType.JSON);
+      return ContentService.createTextOutput(JSON.stringify({ 
+        status: "success", 
+        success: true,
+        message: "บันทึกข้อมูลใบสั่งซื้อสินค้าเรียบร้อย! " + mailStatus 
+      })).setMimeType(ContentService.MimeType.JSON);
     }
-  } catch(error) {
-    return ContentService.createTextOutput(JSON.stringify({ status: "error", message: error.toString() }))
-                         .setMimeType(ContentService.MimeType.JSON);
+  } catch (error) {
+    return ContentService.createTextOutput(JSON.stringify({ 
+      status: "error", 
+      success: false, 
+      message: "เกิดข้อผิดพลาดภายในสคริปต์: " + error.toString() 
+    })).setMimeType(ContentService.MimeType.JSON);
   }
 }`;
 

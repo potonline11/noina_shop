@@ -26,6 +26,12 @@ import LoginView from './views/LoginView';
 import MemberPortal from './views/MemberPortal';
 import AdminPortal from './views/AdminPortal';
 
+const extractSheetId = (url: string): string => {
+  if (!url) return '';
+  const match = url.match(/\/spreadsheets\/d\/([a-zA-Z0-9-_]+)/);
+  return match ? match[1] : '';
+};
+
 export default function App() {
   // Navigation View State
   const [currentView, setCurrentView] = useState<string>('home');
@@ -275,6 +281,8 @@ export default function App() {
     });
 
     const clientWebhookUrl = localStorage.getItem('noina_order_webhook_url') || '';
+    const clientSheetUrl = localStorage.getItem('noina_sheet_url') || '';
+    const sheetId = extractSheetId(clientSheetUrl);
 
     // Automatically POST new registration to Google Sheets Webhook URL via server-side proxy (Bypasses client-side CORS issues and works across all devices)
     return fetch('/api/webhook-proxy', {
@@ -284,6 +292,7 @@ export default function App() {
       },
       body: JSON.stringify({
         webhookUrl: clientWebhookUrl,
+        sheetId: sheetId,
         type: 'registration',
         id: newMember.id,
         name: newMember.name,
@@ -320,6 +329,8 @@ export default function App() {
       const resetMember = updated.find(m => m.id === memberId);
       if (resetMember) {
         const clientWebhookUrl = localStorage.getItem('noina_order_webhook_url') || '';
+        const clientSheetUrl = localStorage.getItem('noina_sheet_url') || '';
+        const sheetId = extractSheetId(clientSheetUrl);
         fetch('/api/webhook-proxy', {
           method: 'POST',
           headers: {
@@ -327,6 +338,7 @@ export default function App() {
           },
           body: JSON.stringify({
             webhookUrl: clientWebhookUrl,
+            sheetId: sheetId,
             type: 'registration',
             id: resetMember.id,
             name: resetMember.name,
@@ -430,6 +442,8 @@ export default function App() {
     setOrders(prev => [newOrder, ...prev]);
 
     const clientWebhookUrl = localStorage.getItem('noina_order_webhook_url') || '';
+    const clientSheetUrl = localStorage.getItem('noina_sheet_url') || '';
+    const sheetId = extractSheetId(clientSheetUrl);
 
     // Automatically POST to Google Sheets Webhook URL via server-side proxy (Bypasses client-side CORS issues and works across all devices)
     fetch('/api/webhook-proxy', {
@@ -439,6 +453,7 @@ export default function App() {
       },
       body: JSON.stringify({
         webhookUrl: clientWebhookUrl,
+        sheetId: sheetId,
         ...newOrder,
         type: 'order',
         orderId: newOrder.id,
