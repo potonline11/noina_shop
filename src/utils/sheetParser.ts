@@ -5,7 +5,7 @@
 
 import { Product } from '../types';
 
-export const DEFAULT_SHEET_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vSgD4S83Y7Mh0p_ZpUqB6HwR-E9Gg56m8-q-WqP4SgK7Jq7e_gG7gG8g_example/pub?output=csv';
+export const DEFAULT_SHEET_URL = 'https://docs.google.com/spreadsheets/d/1UL93q_PpKGlZocvcD6ShLwbDJP-nU1emB5-hvQOLT_A/edit?usp=sharing';
 
 export const getCleanSheetUrl = (url: string): string => {
   if (!url) return '';

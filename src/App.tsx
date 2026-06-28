@@ -115,9 +115,13 @@ export default function App() {
   useEffect(() => {
     const autoSyncFromSheet = async (urlToUse?: string) => {
       try {
-        const savedUrl = urlToUse || localStorage.getItem('noina_sheet_url') || DEFAULT_SHEET_URL;
+        let savedUrl = urlToUse || localStorage.getItem('noina_sheet_url') || DEFAULT_SHEET_URL;
+        if (savedUrl.includes('_example')) {
+          savedUrl = DEFAULT_SHEET_URL;
+          localStorage.setItem('noina_sheet_url', DEFAULT_SHEET_URL);
+        }
         const cleanUrl = getCleanSheetUrl(savedUrl);
-        if (cleanUrl && cleanUrl.startsWith('http') && !cleanUrl.includes('_example')) {
+        if (cleanUrl && cleanUrl.startsWith('http')) {
           const res = await fetch(cleanUrl);
           if (res.ok) {
             const text = await res.text();
@@ -180,12 +184,19 @@ export default function App() {
 
         // Auto-uplink: If the server has no sheetUrl but the browser has a custom one,
         // send it to the server so it is persisted for all subsequent users.
-        const clientSheetUrl = localStorage.getItem('noina_sheet_url') || '';
+        let clientSheetUrl = localStorage.getItem('noina_sheet_url') || '';
+        if (clientSheetUrl.includes('_example')) {
+          clientSheetUrl = DEFAULT_SHEET_URL;
+          localStorage.setItem('noina_sheet_url', DEFAULT_SHEET_URL);
+        }
         const clientWebhookUrl = localStorage.getItem('noina_order_webhook_url') || '';
         
         let urlToUse = serverSheetUrl;
+        if (!urlToUse || urlToUse.includes('_example')) {
+          urlToUse = DEFAULT_SHEET_URL;
+        }
         
-        if (!serverSheetUrl && clientSheetUrl && !clientSheetUrl.includes('_example') && clientSheetUrl.startsWith('http')) {
+        if ((!serverSheetUrl || serverSheetUrl.includes('_example')) && clientSheetUrl && clientSheetUrl.startsWith('http')) {
           urlToUse = clientSheetUrl;
           console.log('Auto-uplinking sheet URL to server:', clientSheetUrl);
           try {
@@ -215,7 +226,7 @@ export default function App() {
         // Always sync in the background if there is a custom Google Sheet URL.
         // This ensures the products list is automatically and silently updated in the background
         // on every visit/refresh, without the user ever needing to go to the admin panel!
-        if (urlToUse && urlToUse.startsWith('http') && !urlToUse.includes('_example')) {
+        if (urlToUse && urlToUse.startsWith('http')) {
           console.log('Background auto-syncing from custom Google Sheet URL:', urlToUse);
           autoSyncFromSheet(urlToUse).catch(err => {
             console.warn('Background sheet auto-sync failed:', err);

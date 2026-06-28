@@ -261,14 +261,15 @@ ${productsContext || 'ขณะนี้ไม่มีสินค้าใน�
       const store = await readStore();
       const now = Date.now();
       
-      // Fallback to environment variables if sheetUrl is empty or not configured
-      const envSheetUrl = process.env.GOOGLE_SHEET_URL || process.env.VITE_GOOGLE_SHEET_URL || '';
-      if (!store.sheetUrl && envSheetUrl) {
-        store.sheetUrl = envSheetUrl;
+      const targetSheetUrl = 'https://docs.google.com/spreadsheets/d/1UL93q_PpKGlZocvcD6ShLwbDJP-nU1emB5-hvQOLT_A/edit?usp=sharing';
+      
+      // Always enforce the user's specific Google Sheet URL if not set or if it points to an example
+      if (!store.sheetUrl || store.sheetUrl.includes('_example') || !store.sheetUrl.startsWith('http')) {
+        store.sheetUrl = targetSheetUrl;
         await writeStore(store);
       }
       
-      if (store.sheetUrl && store.sheetUrl.startsWith('http') && !store.sheetUrl.includes('_example')) {
+      if (store.sheetUrl && store.sheetUrl.startsWith('http')) {
         // If cache expired, or cached products are empty, fetch fresh from Google Sheets on the server
         if (now - lastFetchTime > CACHE_TTL || cachedSheetProducts.length === 0) {
           try {
