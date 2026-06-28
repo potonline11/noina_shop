@@ -47,7 +47,7 @@ export default function App() {
         return sheetOnly;
       }
     }
-    return parseCSV(DEMO_SPREADSHEET_DATA);
+    return [];
   });
 
   // Global MLM Members State

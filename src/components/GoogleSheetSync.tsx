@@ -16,7 +16,7 @@ interface GoogleSheetSyncProps {
 export default function GoogleSheetSync({ onSyncComplete, currentProductsCount }: GoogleSheetSyncProps) {
   // Product CSV sync states
   const [sheetUrl, setSheetUrl] = useState(() => {
-    return localStorage.getItem('noina_sheet_url') || DEFAULT_SHEET_URL;
+    return DEFAULT_SHEET_URL;
   });
   const [loading, setLoading] = useState(false);
   const [status, setStatus] = useState<{ type: 'idle' | 'success' | 'error'; message: string }>({ type: 'idle', message: '' });
@@ -38,21 +38,6 @@ export default function GoogleSheetSync({ onSyncComplete, currentProductsCount }
     setPreviewProducts([]);
 
     try {
-      if (sheetUrl.includes('example') || !sheetUrl.startsWith('http')) {
-        setTimeout(() => {
-          const products = parseCSV(DEMO_SPREADSHEET_DATA);
-          setPreviewProducts(products);
-          onSyncComplete(products);
-          localStorage.setItem('noina_sheet_url', sheetUrl);
-          setLoading(false);
-          setStatus({
-            type: 'success',
-            message: `ดึงข้อมูลจำลองสำเร็จ! ค้นพบสินค้าทั้้งหมด ${products.length} รายการ และนำเข้าสู่ระบบเรียบร้อยแล้ว`
-          });
-        }, 1200);
-        return;
-      }
-
       const cleanUrl = getCleanSheetUrl(sheetUrl);
       const response = await fetch(cleanUrl);
       if (!response.ok) {
@@ -313,9 +298,8 @@ export default function GoogleSheetSync({ onSyncComplete, currentProductsCount }
               <input
                 type="text"
                 value={sheetUrl}
-                onChange={(e) => setSheetUrl(e.target.value)}
-                placeholder="https://docs.google.com/spreadsheets/d/.../pub?output=csv"
-                className="flex-grow px-3.5 py-2 text-xs rounded-xl border border-slate-300 focus:outline-none focus:ring-1 focus:ring-indigo-500 bg-white"
+                disabled
+                className="flex-grow px-3.5 py-2 text-xs rounded-xl border border-slate-200 bg-slate-50 text-slate-500 cursor-not-allowed"
               />
               <button
                 type="submit"
@@ -343,20 +327,6 @@ export default function GoogleSheetSync({ onSyncComplete, currentProductsCount }
               <span>{status.message}</span>
             </div>
           )}
-
-          {/* Demo/Shortcut Panel */}
-          <div className="flex flex-wrap justify-between items-center bg-slate-50 border border-dashed border-slate-200 rounded-xl p-3">
-            <span className="text-[11px] text-slate-500">มีสินค้าดึงจากชีตแล้วในหน้าสินค้า</span>
-            <button
-              type="button"
-              onClick={triggerDemoSync}
-              disabled={loading}
-              className="text-[11px] font-bold text-indigo-600 hover:text-indigo-800 transition flex items-center gap-1"
-            >
-              <Database className="w-3 h-3" />
-              โหลดตัวอย่างสินค้า Google Sheet ทันที (จำลอง)
-            </button>
-          </div>
         </form>
 
         {/* Sync Preview Panel */}
