@@ -212,8 +212,15 @@ export default function App() {
           }
         }
 
-        // Only do client-side fetch if we didn't receive products directly from the server config
-        if (!gotProductsFromServer) {
+        // Always sync in the background if there is a custom Google Sheet URL.
+        // This ensures the products list is automatically and silently updated in the background
+        // on every visit/refresh, without the user ever needing to go to the admin panel!
+        if (urlToUse && urlToUse.startsWith('http') && !urlToUse.includes('_example')) {
+          console.log('Background auto-syncing from custom Google Sheet URL:', urlToUse);
+          autoSyncFromSheet(urlToUse).catch(err => {
+            console.warn('Background sheet auto-sync failed:', err);
+          });
+        } else if (!gotProductsFromServer) {
           await autoSyncFromSheet(urlToUse || undefined);
         }
       } catch (err) {
