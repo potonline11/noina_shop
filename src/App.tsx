@@ -76,6 +76,20 @@ export default function App() {
   useEffect(() => {
     localStorage.setItem('noina_members', JSON.stringify(members));
     
+    // Also save to server products-store to preserve registered users
+    const saveMembersToServer = async () => {
+      try {
+        await fetch('/api/products-store', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ members })
+        });
+      } catch (err) {
+        console.error('Failed to sync members list to server:', err);
+      }
+    };
+    saveMembersToServer();
+    
     // Keep session current user up to date if they are in members list
     if (currentUser) {
       const updatedUser = members.find(m => m.id === currentUser.id);
@@ -107,6 +121,10 @@ export default function App() {
           } else {
             // Fall back to auto sync if server is empty
             await autoSyncFromSheet();
+          }
+          if (data.members && data.members.length > 0) {
+            setMembers(data.members);
+            localStorage.setItem('noina_members', JSON.stringify(data.members));
           }
           if (data.sheetUrl) {
             localStorage.setItem('noina_sheet_url', data.sheetUrl);

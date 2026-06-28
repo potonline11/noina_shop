@@ -19,9 +19,15 @@ const STORE_PATH = path.join(process.cwd(), 'products_store.json');
 async function readStore() {
   try {
     const data = await fs.readFile(STORE_PATH, 'utf-8');
-    return JSON.parse(data);
+    const parsed = JSON.parse(data);
+    return {
+      sheetUrl: parsed.sheetUrl || '',
+      webhookUrl: parsed.webhookUrl || '',
+      products: parsed.products || [],
+      members: parsed.members || []
+    };
   } catch (error) {
-    return { sheetUrl: '', webhookUrl: '', products: [] };
+    return { sheetUrl: '', webhookUrl: '', products: [], members: [] };
   }
 }
 
@@ -152,11 +158,12 @@ ${productsContext || 'ขณะนี้ไม่มีสินค้าใน�
 
   app.post('/api/products-store', async (req, res) => {
     try {
-      const { sheetUrl, webhookUrl, products } = req.body;
+      const { sheetUrl, webhookUrl, products, members } = req.body;
       const store = await readStore();
       if (sheetUrl !== undefined) store.sheetUrl = sheetUrl;
       if (webhookUrl !== undefined) store.webhookUrl = webhookUrl;
       if (products !== undefined) store.products = products;
+      if (members !== undefined) store.members = members;
       await writeStore(store);
       res.json({ success: true, store });
     } catch (error: any) {

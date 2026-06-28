@@ -5,7 +5,7 @@
 
 import React, { useState } from 'react';
 import { Member } from '../types';
-import { LogIn, Key, ShieldAlert, User, AlertTriangle, Info, Smartphone } from 'lucide-react';
+import { LogIn, Key, ShieldAlert, User, AlertTriangle, Info, Smartphone, Eye, EyeOff } from 'lucide-react';
 import { shouldShowAdmin } from '../utils/domainHelper';
 
 interface LoginViewProps {
@@ -17,6 +17,7 @@ interface LoginViewProps {
 export default function LoginView({ members, onLoginSuccess, onNavigate }: LoginViewProps) {
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState('');
 
   const handleLogin = (e: React.FormEvent) => {
@@ -34,11 +35,14 @@ export default function LoginView({ members, onLoginSuccess, onNavigate }: Login
 
     if (found) {
       // Allow general demo passwords: "123456", "admin123" (if admin), or the user's custom registered password
+      const cleanPassword = password.trim();
+      const cleanSavedPassword = found.password ? found.password.trim() : '';
+
       const isPasswordValid = 
-        password === '123456' || 
-        password === 'admin123' || 
-        password === '' || 
-        (found.password && password === found.password);
+        cleanPassword === '123456' || 
+        cleanPassword === 'admin123' || 
+        cleanPassword === '' || 
+        (cleanSavedPassword && cleanPassword === cleanSavedPassword);
 
       if (isPasswordValid) {
         onLoginSuccess(found);
@@ -106,14 +110,23 @@ export default function LoginView({ members, onLoginSuccess, onNavigate }: Login
               <Key className="w-3.5 h-3.5 text-slate-400" />
               รหัสผ่าน (Password)
             </label>
-            <input
-              type="password"
-              required
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              placeholder="รหัสผ่านเข้าใช้ เช่น 123456"
-              className="w-full px-3.5 py-2.5 text-xs rounded-xl border border-slate-300 focus:outline-none focus:ring-1 focus:ring-indigo-500 bg-white"
-            />
+            <div className="relative">
+              <input
+                type={showPassword ? 'text' : 'password'}
+                required
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                placeholder="รหัสผ่านเข้าใช้ หรือรหัสที่กำหนดตอนสมัคร"
+                className="w-full px-3.5 py-2.5 pr-10 text-xs rounded-xl border border-slate-300 focus:outline-none focus:ring-1 focus:ring-indigo-500 bg-white"
+              />
+              <button
+                type="button"
+                onClick={() => setShowPassword(!showPassword)}
+                className="absolute inset-y-0 right-0 pr-3 flex items-center text-slate-400 hover:text-indigo-600 transition"
+              >
+                {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+              </button>
+            </div>
           </div>
 
           {error && (
