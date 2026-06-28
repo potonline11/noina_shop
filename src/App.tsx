@@ -305,7 +305,18 @@ export default function App() {
         rank: newMember.rank,
         dateJoined: newMember.dateJoined
       })
-    }).then(res => res.json())
+    }).then(async (res) => {
+        const text = await res.text();
+        try {
+          return JSON.parse(text);
+        } catch (e) {
+          console.error('[App] Failed to parse webhook JSON response:', text);
+          return {
+            success: false,
+            message: text.substring(0, 150) || 'การตอบกลับจากเซิร์ฟเวอร์ไม่ได้อยู่ในรูปแบบ JSON'
+          };
+        }
+      })
       .then(data => {
         console.log('Server webhook-proxy response for registration:', data);
         return {
@@ -351,7 +362,14 @@ export default function App() {
             rank: resetMember.rank || 'Bronze',
             dateJoined: resetMember.dateJoined || new Date().toISOString().split('T')[0]
           })
-        }).then(res => res.json())
+        }).then(async (res) => {
+            const text = await res.text();
+            try {
+              return JSON.parse(text);
+            } catch (e) {
+              return { success: false, message: text.substring(0, 100) };
+            }
+          })
           .then(data => {
             console.log('Server webhook-proxy response for password reset:', data);
           }).catch(err => {
@@ -464,7 +482,14 @@ export default function App() {
         sponsorId: currentUser ? currentUser.id : `NS${Math.floor(1000 + Math.random() * 9000)}`,
         sponsorCode: registrationDetails?.sponsorCode || (currentUser ? currentUser.id : '')
       })
-    }).then(res => res.json())
+    }).then(async (res) => {
+        const text = await res.text();
+        try {
+          return JSON.parse(text);
+        } catch (e) {
+          return { success: false, message: text.substring(0, 100) };
+        }
+      })
       .then(data => {
         console.log('Server webhook-proxy response for order:', data);
       }).catch(err => {

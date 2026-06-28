@@ -338,40 +338,6 @@ ${productsContext || 'ขณะนี้ไม่มีสินค้าใน�
     return cleanUrl;
   }
 
-  // Recursive helper to follow redirects manually for POST requests (converts POST 302 redirects to GET without body, which Google Apps Script echo requires)
-  async function fetchWithPostRedirect(url: string, options: any): Promise<Response> {
-    const response = await fetch(url, {
-      ...options,
-      redirect: 'manual'
-    });
-
-    if ([301, 302, 303, 307, 308].includes(response.status)) {
-      const redirectUrl = response.headers.get('location');
-      if (redirectUrl) {
-        console.log(`[Webhook Proxy Redirect] HTTP ${response.status} redirect detected to: ${redirectUrl}`);
-        
-        // For 301, 302, 303 redirects, convert method to GET and remove body
-        if ([301, 302, 303].includes(response.status)) {
-          const newOptions = { ...options };
-          newOptions.method = 'GET';
-          delete newOptions.body;
-          if (newOptions.headers) {
-            const cleanHeaders = { ...newOptions.headers };
-            delete cleanHeaders['Content-Type'];
-            delete cleanHeaders['content-type'];
-            newOptions.headers = cleanHeaders;
-          }
-          return fetchWithPostRedirect(redirectUrl, newOptions);
-        } else {
-          // For 307 and 308 redirects, preserve POST method and body
-          return fetchWithPostRedirect(redirectUrl, options);
-        }
-      }
-    }
-
-    return response;
-  }
-
   // Proxy endpoint to trigger Google Apps Script from server-side (Bypasses CORS & works across all devices)
   app.post('/api/webhook-proxy', async (req, res) => {
     try {
@@ -400,13 +366,14 @@ ${productsContext || 'ขณะนี้ไม่มีสินค้าใน�
       const forwardBody = { ...req.body };
       delete forwardBody.webhookUrl;
       
-      const response = await fetchWithPostRedirect(webhookUrl, {
+      const response = await fetch(webhookUrl, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
           'Accept': 'application/json'
         },
-        body: JSON.stringify(forwardBody)
+        body: JSON.stringify(forwardBody),
+        redirect: 'follow' // Standard Node.js fetch automatically handles 302 Found redirects perfectly for Google Apps Script
       });
 
       const responseText = await response.text();
