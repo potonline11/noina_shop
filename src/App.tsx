@@ -113,42 +113,9 @@ export default function App() {
 
   // Load server-side synced products and configurations on startup
   useEffect(() => {
-    const loadServerStore = async () => {
+    const autoSyncFromSheet = async (urlToUse?: string) => {
       try {
-        const response = await fetch('/api/products-store');
-        if (response.ok) {
-          const data = await response.json();
-          if (data.products && data.products.length > 0) {
-            setProducts(data.products);
-            localStorage.setItem('noina_products', JSON.stringify(data.products));
-          } else {
-            // Fall back to auto sync if server is empty
-            await autoSyncFromSheet();
-          }
-          if (data.members && data.members.length > 0) {
-            setMembers(data.members);
-            localStorage.setItem('noina_members', JSON.stringify(data.members));
-          }
-          if (data.sheetUrl) {
-            localStorage.setItem('noina_sheet_url', data.sheetUrl);
-          }
-          if (data.webhookUrl) {
-            localStorage.setItem('noina_order_webhook_url', data.webhookUrl);
-          }
-        } else {
-          await autoSyncFromSheet();
-        }
-      } catch (err) {
-        console.warn('Failed to load server products store, falling back to client-side auto sync:', err);
-        await autoSyncFromSheet();
-      } finally {
-        setIsStoreLoaded(true);
-      }
-    };
-
-    const autoSyncFromSheet = async () => {
-      try {
-        const savedUrl = localStorage.getItem('noina_sheet_url') || DEFAULT_SHEET_URL;
+        const savedUrl = urlToUse || localStorage.getItem('noina_sheet_url') || DEFAULT_SHEET_URL;
         const cleanUrl = getCleanSheetUrl(savedUrl);
         if (cleanUrl && cleanUrl.startsWith('http') && !cleanUrl.includes('_example')) {
           const res = await fetch(cleanUrl);
@@ -157,17 +124,57 @@ export default function App() {
             const sheetProds = parseSheetData(text);
             if (sheetProds.length > 0) {
               setProducts(sheetProds);
-              // Also upload to server so it is remembered
+              localStorage.setItem('noina_products', JSON.stringify(sheetProds));
+              // Save to server so Gemini AI chat has access to the correct products list
               await fetch('/api/products-store', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ products: sheetProds, sheetUrl: savedUrl })
               });
+              return;
             }
           }
         }
+        
+        // Fallback to locally cached products if any
+        const cached = localStorage.getItem('noina_products');
+        if (cached) {
+          setProducts(JSON.parse(cached));
+        }
       } catch (err) {
-        console.warn('Auto-sync on startup failed, using cached/demo sheet products:', err);
+        console.warn('Auto-sync on startup failed, using cached products:', err);
+        const cached = localStorage.getItem('noina_products');
+        if (cached) {
+          setProducts(JSON.parse(cached));
+        }
+      }
+    };
+
+    const loadServerStore = async () => {
+      try {
+        const response = await fetch('/api/products-store');
+        let serverSheetUrl = '';
+        if (response.ok) {
+          const data = await response.json();
+          if (data.members && data.members.length > 0) {
+            setMembers(data.members);
+            localStorage.setItem('noina_members', JSON.stringify(data.members));
+          }
+          if (data.sheetUrl) {
+            serverSheetUrl = data.sheetUrl;
+            localStorage.setItem('noina_sheet_url', data.sheetUrl);
+          }
+          if (data.webhookUrl) {
+            localStorage.setItem('noina_order_webhook_url', data.webhookUrl);
+          }
+        }
+        // Always fetch product list directly from Google Sheets instead of reading from the DB
+        await autoSyncFromSheet(serverSheetUrl || undefined);
+      } catch (err) {
+        console.warn('Failed to load server config, calling auto sync directly:', err);
+        await autoSyncFromSheet();
+      } finally {
+        setIsStoreLoaded(true);
       }
     };
 
