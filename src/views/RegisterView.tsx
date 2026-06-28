@@ -23,6 +23,7 @@ export default function RegisterView({ members, onRegister, onNavigate }: Regist
   const [sponsorId, setSponsorId] = useState('NS002'); // Defaults to Somchai
   const [parentUserId, setParentUserId] = useState('NS004'); // Defaults to Wipa (who has no children yet, so slots are open!)
   const [position, setPosition] = useState<'left' | 'right'>('left');
+  const [isAutoPlacement, setIsAutoPlacement] = useState(true);
   
   const [error, setError] = useState('');
   const [success, setSuccess] = useState(false);
@@ -33,6 +34,19 @@ export default function RegisterView({ members, onRegister, onNavigate }: Regist
     finalParentId: string;
     finalPosition: 'left' | 'right';
   } | null>(null);
+
+  // Auto-find first vacant spot when Sponsor ID changes and isAutoPlacement is enabled
+  React.useEffect(() => {
+    if (isAutoPlacement && members && members.length > 0) {
+      const targetSponsorId = sponsorId.trim().toUpperCase();
+      const sponsorExists = members.some(m => m.id === targetSponsorId);
+      if (sponsorExists) {
+        const spot = findSpilloverSpot(targetSponsorId, 'left', members);
+        setParentUserId(spot.parentId);
+        setPosition(spot.position);
+      }
+    }
+  }, [sponsorId, members, isAutoPlacement]);
 
   // Helper function to find the first vacant position under a specific parent node (Spillover)
   const findSpilloverSpot = (
@@ -305,17 +319,46 @@ export default function RegisterView({ members, onRegister, onNavigate }: Regist
 
             {/* 2. Networking genealogy Placement */}
             <div className="space-y-4 border-t border-slate-100 pt-5">
-              <h3 className="text-xs font-extrabold text-indigo-600 uppercase tracking-widest flex items-center gap-1">
-                <Users className="w-4 h-4" />
-                2. ข้อมูลการจัดวางสายงาน NLM
-              </h3>
-
-              <div className="bg-indigo-50 border border-indigo-100 rounded-xl p-3 text-[11px] text-indigo-800 leading-relaxed flex gap-2">
-                <Info className="w-4 h-4 shrink-0 mt-0.5 text-indigo-600" />
-                <div>
-                  ระบบได้ป้อน <strong>รหัสผู้จัดวางจำลอง</strong> ที่มีตำแหน่งว่างทางธุรกิจไว้ให้คุณเป็นค่าเริ่มต้นแล้วเพื่อความสะดวกในการทดลองใช้งาน คุณสามารถปรับเปลี่ยนรหัสเป็นผู้ใช้อื่นๆ ในผังสายงานได้ตามใจชอบ
-                </div>
+              <div className="flex items-center justify-between">
+                <h3 className="text-xs font-extrabold text-indigo-600 uppercase tracking-widest flex items-center gap-1">
+                  <Users className="w-4 h-4" />
+                  2. ข้อมูลการจัดวางสายงาน NLM
+                </h3>
+                <button
+                  type="button"
+                  onClick={() => setIsAutoPlacement(!isAutoPlacement)}
+                  className={`text-[10px] px-2.5 py-1 rounded-lg border font-semibold transition ${isAutoPlacement ? 'bg-emerald-50 text-emerald-700 border-emerald-200' : 'bg-slate-50 text-slate-600 border-slate-200'}`}
+                >
+                  {isAutoPlacement ? '⭐ แนะนำ: จัดวางอัตโนมัติเปิดใช้งาน' : '⚙️ จัดวางแบบกำหนดเอง'}
+                </button>
               </div>
+
+              {isAutoPlacement ? (
+                <div className="flex items-center justify-between bg-emerald-50 border border-emerald-100 rounded-xl p-3 text-[11px] text-emerald-800 leading-relaxed">
+                  <div className="flex gap-2">
+                    <Sparkles className="w-4 h-4 shrink-0 text-emerald-600 mt-0.5 animate-pulse" />
+                    <div>
+                      <strong>ระบบจัดวางให้อัตโนมัติ (Auto-Placement)</strong>: ค้นหาตำแหน่งว่างแรกสุดใต้สายงานรหัสผู้แนะนำ <span className="font-mono font-bold bg-white/80 px-1 rounded">{sponsorId}</span> โดยอัตโนมัติ พบตำแหน่งที่ว่างอยู่คือใต้รหัส <span className="font-mono font-bold bg-white/80 px-1.5 py-0.5 rounded text-indigo-700">{parentUserId}</span> ฝั่ง<span className="font-bold text-indigo-700">{position === 'left' ? 'ซ้าย' : 'ขวา'}</span>
+                    </div>
+                  </div>
+                </div>
+              ) : (
+                <div className="flex items-center justify-between bg-amber-50 border border-amber-100 rounded-xl p-3 text-[11px] text-amber-800 leading-relaxed">
+                  <div className="flex gap-2">
+                    <Info className="w-4 h-4 shrink-0 text-amber-600 mt-0.5" />
+                    <div>
+                      <strong>กำลังจัดวางแบบระบุกำหนดเอง</strong>: รหัส <span className="font-mono font-bold bg-white/80 px-1 rounded">{parentUserId}</span> และฝั่งที่คุณเลือกจะถูกใช้ในการจัดสายงานโดยตรง
+                    </div>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => setIsAutoPlacement(true)}
+                    className="shrink-0 bg-white hover:bg-amber-100 border border-amber-200 text-amber-900 font-extrabold text-[10px] px-2.5 py-1 rounded-lg transition shadow-sm ml-2"
+                  >
+                    เปิดจัดวางอัตโนมัติ 💡
+                  </button>
+                </div>
+              )}
 
               <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
                 <div>
@@ -335,7 +378,10 @@ export default function RegisterView({ members, onRegister, onNavigate }: Regist
                     type="text"
                     required
                     value={parentUserId}
-                    onChange={(e) => setParentUserId(e.target.value)}
+                    onChange={(e) => {
+                      setParentUserId(e.target.value);
+                      setIsAutoPlacement(false); // Turn off auto placement on manual edits
+                    }}
                     placeholder="ป้อนรหัสพ่อข่าย เช่น NS004"
                     className="w-full px-3.5 py-2 text-xs rounded-xl border border-slate-300 bg-white font-mono uppercase font-semibold"
                   />
@@ -345,14 +391,20 @@ export default function RegisterView({ members, onRegister, onNavigate }: Regist
                   <div className="grid grid-cols-2 gap-2">
                     <button
                       type="button"
-                      onClick={() => setPosition('left')}
+                      onClick={() => {
+                        setPosition('left');
+                        setIsAutoPlacement(false); // Turn off auto placement on manual edits
+                      }}
                       className={`py-2 text-xs font-bold rounded-xl border transition ${position === 'left' ? 'bg-indigo-600 text-white border-indigo-600' : 'bg-slate-50 text-slate-600 border-slate-200'}`}
                     >
                       ข้างซ้าย (Left)
                     </button>
                     <button
                       type="button"
-                      onClick={() => setPosition('right')}
+                      onClick={() => {
+                        setPosition('right');
+                        setIsAutoPlacement(false); // Turn off auto placement on manual edits
+                      }}
                       className={`py-2 text-xs font-bold rounded-xl border transition ${position === 'right' ? 'bg-indigo-600 text-white border-indigo-600' : 'bg-slate-50 text-slate-600 border-slate-200'}`}
                     >
                       ข้างขวา (Right)
