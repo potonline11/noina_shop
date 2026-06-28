@@ -274,68 +274,64 @@ export default function App() {
       return [...updated, newMember];
     });
 
-    // Automatically POST new registration to Google Sheets Webhook URL if saved by the admin in localStorage
-    const webhookUrl = localStorage.getItem('noina_order_webhook_url');
-    if (webhookUrl && webhookUrl.startsWith('http')) {
-      fetch(webhookUrl, {
-        method: 'POST',
-        mode: 'no-cors',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          type: 'registration',
-          id: newMember.id,
-          name: newMember.name,
-          email: newMember.email,
-          phone: newMember.phone,
-          password: newMember.password,
-          sponsorId: newMember.sponsorId,
-          parentUserId: newMember.parentUserId,
-          position: newMember.position,
-          rank: newMember.rank,
-          dateJoined: newMember.dateJoined
-        })
-      }).then(() => {
-        console.log('Successfully posted registration to Google Sheet script webhook:', webhookUrl);
+    // Automatically POST new registration to Google Sheets Webhook URL via server-side proxy (Bypasses client-side CORS issues and works across all devices)
+    fetch('/api/webhook-proxy', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        type: 'registration',
+        id: newMember.id,
+        name: newMember.name,
+        email: newMember.email,
+        phone: newMember.phone,
+        password: newMember.password,
+        sponsorId: newMember.sponsorId,
+        parentUserId: newMember.parentUserId,
+        position: newMember.position,
+        rank: newMember.rank,
+        dateJoined: newMember.dateJoined
+      })
+    }).then(res => res.json())
+      .then(data => {
+        console.log('Server webhook-proxy response for registration:', data);
       }).catch(err => {
-        console.warn('Post registration to Google Sheet script webhook failed:', err);
+        console.warn('Post registration to server webhook-proxy failed:', err);
       });
-    }
   };
 
   const handleUpdatePassword = (memberId: string, newPassword: string) => {
     setMembers(prevMembers => {
       const updated = prevMembers.map(m => m.id === memberId ? { ...m, password: newPassword } : m);
       
-      // Also notify webhook so Google Sheet is updated and an email alert is sent to user with the new password
+      // Also notify webhook via server-side proxy so Google Sheet is updated and an email alert is sent to user with the new password
       const resetMember = updated.find(m => m.id === memberId);
       if (resetMember) {
-        const webhookUrl = localStorage.getItem('noina_order_webhook_url');
-        if (webhookUrl && webhookUrl.startsWith('http')) {
-          fetch(webhookUrl, {
-            method: 'POST',
-            mode: 'no-cors',
-            headers: {
-              'Content-Type': 'application/json',
-            },
-            body: JSON.stringify({
-              type: 'registration',
-              id: resetMember.id,
-              name: resetMember.name,
-              email: resetMember.email,
-              phone: resetMember.phone,
-              password: resetMember.password,
-              sponsorId: resetMember.sponsorId || '',
-              parentUserId: resetMember.parentUserId || '',
-              position: resetMember.position || '',
-              rank: resetMember.rank || 'Bronze',
-              dateJoined: resetMember.dateJoined || new Date().toISOString().split('T')[0]
-            })
+        fetch('/api/webhook-proxy', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            type: 'registration',
+            id: resetMember.id,
+            name: resetMember.name,
+            email: resetMember.email,
+            phone: resetMember.phone,
+            password: resetMember.password,
+            sponsorId: resetMember.sponsorId || '',
+            parentUserId: resetMember.parentUserId || '',
+            position: resetMember.position || '',
+            rank: resetMember.rank || 'Bronze',
+            dateJoined: resetMember.dateJoined || new Date().toISOString().split('T')[0]
+          })
+        }).then(res => res.json())
+          .then(data => {
+            console.log('Server webhook-proxy response for password reset:', data);
           }).catch(err => {
-            console.warn('Post password reset webhook failed:', err);
+            console.warn('Post password reset to server webhook-proxy failed:', err);
           });
-        }
       }
       return updated;
     });
@@ -420,32 +416,29 @@ export default function App() {
 
     setOrders(prev => [newOrder, ...prev]);
 
-    // Automatically POST to Google Sheets Webhook URL if saved by the admin in localStorage
-    const webhookUrl = localStorage.getItem('noina_order_webhook_url');
-    if (webhookUrl && webhookUrl.startsWith('http')) {
-      fetch(webhookUrl, {
-        method: 'POST',
-        mode: 'no-cors',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          ...newOrder,
-          type: 'order',
-          orderId: newOrder.id,
-          subtotal: baseAmount,
-          shippingFee: shippingFee,
-          firstName: registrationDetails?.firstName || '',
-          lastName: registrationDetails?.lastName || '',
-          sponsorId: currentUser ? currentUser.id : `NS${Math.floor(1000 + Math.random() * 9000)}`,
-          sponsorCode: registrationDetails?.sponsorCode || (currentUser ? currentUser.id : '')
-        })
-      }).then(() => {
-        console.log('Successfully posted order to Google Sheet script webhook:', webhookUrl);
+    // Automatically POST to Google Sheets Webhook URL via server-side proxy (Bypasses client-side CORS issues and works across all devices)
+    fetch('/api/webhook-proxy', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        ...newOrder,
+        type: 'order',
+        orderId: newOrder.id,
+        subtotal: baseAmount,
+        shippingFee: shippingFee,
+        firstName: registrationDetails?.firstName || '',
+        lastName: registrationDetails?.lastName || '',
+        sponsorId: currentUser ? currentUser.id : `NS${Math.floor(1000 + Math.random() * 9000)}`,
+        sponsorCode: registrationDetails?.sponsorCode || (currentUser ? currentUser.id : '')
+      })
+    }).then(res => res.json())
+      .then(data => {
+        console.log('Server webhook-proxy response for order:', data);
       }).catch(err => {
-        console.warn('Post to Google Sheet script webhook failed:', err);
+        console.warn('Post to server webhook-proxy failed:', err);
       });
-    }
 
     // Clear cart upon successful purchase
     setCart([]);
