@@ -202,6 +202,72 @@ export default function App() {
       });
       return [...updated, newMember];
     });
+
+    // Automatically POST new registration to Google Sheets Webhook URL if saved by the admin in localStorage
+    const webhookUrl = localStorage.getItem('noina_order_webhook_url');
+    if (webhookUrl && webhookUrl.startsWith('http')) {
+      fetch(webhookUrl, {
+        method: 'POST',
+        mode: 'no-cors',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          type: 'registration',
+          id: newMember.id,
+          name: newMember.name,
+          email: newMember.email,
+          phone: newMember.phone,
+          password: newMember.password,
+          sponsorId: newMember.sponsorId,
+          parentUserId: newMember.parentUserId,
+          position: newMember.position,
+          rank: newMember.rank,
+          dateJoined: newMember.dateJoined
+        })
+      }).then(() => {
+        console.log('Successfully posted registration to Google Sheet script webhook:', webhookUrl);
+      }).catch(err => {
+        console.warn('Post registration to Google Sheet script webhook failed:', err);
+      });
+    }
+  };
+
+  const handleUpdatePassword = (memberId: string, newPassword: string) => {
+    setMembers(prevMembers => {
+      const updated = prevMembers.map(m => m.id === memberId ? { ...m, password: newPassword } : m);
+      
+      // Also notify webhook so Google Sheet is updated and an email alert is sent to user with the new password
+      const resetMember = updated.find(m => m.id === memberId);
+      if (resetMember) {
+        const webhookUrl = localStorage.getItem('noina_order_webhook_url');
+        if (webhookUrl && webhookUrl.startsWith('http')) {
+          fetch(webhookUrl, {
+            method: 'POST',
+            mode: 'no-cors',
+            headers: {
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+              type: 'registration',
+              id: resetMember.id,
+              name: resetMember.name,
+              email: resetMember.email,
+              phone: resetMember.phone,
+              password: resetMember.password,
+              sponsorId: resetMember.sponsorId || '',
+              parentUserId: resetMember.parentUserId || '',
+              position: resetMember.position || '',
+              rank: resetMember.rank || 'Bronze',
+              dateJoined: resetMember.dateJoined || new Date().toISOString().split('T')[0]
+            })
+          }).catch(err => {
+            console.warn('Post password reset webhook failed:', err);
+          });
+        }
+      }
+      return updated;
+    });
   };
 
   // Shopping Cart States
@@ -490,6 +556,7 @@ export default function App() {
             members={members} 
             onLoginSuccess={handleLoginSuccess} 
             onNavigate={setCurrentView} 
+            onUpdatePassword={handleUpdatePassword}
           />
         )}
 
