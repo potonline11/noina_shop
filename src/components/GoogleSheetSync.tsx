@@ -5,7 +5,7 @@
 
 import React, { useState } from 'react';
 import { Product } from '../types';
-import { Database, Link, RefreshCw, CheckCircle, AlertTriangle, FileSpreadsheet, Eye, Code, Save, Mail } from 'lucide-react';
+import { Database, Link, RefreshCw, CheckCircle, AlertTriangle, FileSpreadsheet, Eye, Code, Save, Mail, Copy, Check } from 'lucide-react';
 import { parseCSV, DEMO_SPREADSHEET_DATA, DEFAULT_SHEET_URL, getCleanSheetUrl, parseSheetData, stripHtml } from '../utils/sheetParser';
 
 interface GoogleSheetSyncProps {
@@ -28,6 +28,13 @@ export default function GoogleSheetSync({ onSyncComplete, currentProductsCount }
   });
   const [webhookSaveStatus, setWebhookSaveStatus] = useState<string>('');
   const [showScriptCode, setShowScriptCode] = useState<boolean>(false);
+  const [copied, setCopied] = useState(false);
+
+  const handleCopyCode = () => {
+    navigator.clipboard.writeText(appsScriptCode);
+    setCopied(true);
+    setTimeout(() => setCopied(false), 2000);
+  };
 
   const handleSync = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -418,6 +425,32 @@ export default function GoogleSheetSync({ onSyncComplete, currentProductsCount }
 
           {showScriptCode && (
             <div className="space-y-2">
+              <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-2 bg-slate-100 p-2.5 rounded-xl border border-slate-200">
+                <span className="text-[10px] text-slate-600 font-bold leading-relaxed">
+                  💡 แนะนำ: กดปุ่มสีส้ม/น้ำเงินเพื่อคัดลอกโค้ดทั้งหมด จากนั้นนำไปลบโค้ดเดิมในเว็บ Google Apps Script ออกทั้งหมดแล้ววางลงไปได้เลย ป้องกันการก๊อปปี้ขาดหาย
+                </span>
+                <button
+                  type="button"
+                  onClick={handleCopyCode}
+                  className={`px-3.5 py-1.5 rounded-xl text-xs font-bold transition flex items-center justify-center gap-1.5 shadow-sm shrink-0 ${
+                    copied 
+                      ? 'bg-emerald-600 text-white' 
+                      : 'bg-indigo-600 hover:bg-indigo-700 text-white'
+                  }`}
+                >
+                  {copied ? (
+                    <>
+                      <Check className="w-3.5 h-3.5" />
+                      คัดลอกสำเร็จ!
+                    </>
+                  ) : (
+                    <>
+                      <Copy className="w-3.5 h-3.5" />
+                      คัดลอกโค้ดทั้งหมด (Copy All)
+                    </>
+                  )}
+                </button>
+              </div>
               <div className="relative">
                 <pre className="bg-slate-900 text-slate-300 p-4 rounded-xl overflow-x-auto text-[10px] leading-relaxed max-h-[350px] font-mono">
                   {appsScriptCode}
