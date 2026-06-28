@@ -183,56 +183,73 @@ export default function GoogleSheetSync({ onSyncComplete, currentProductsCount }
         ]);
       }
       
-      // แปลงรายการสินค้าให้อยู่ในข้อความแบบอ่านง่าย
+      // ดึงรหัสสั่งซื้อ และ ข้อมูลลูกค้าแบบปลอดภัยสูง (Safe fallbacks)
+      var orderId = data.orderId || data.id || ("ORD-" + Date.now());
+      var customerName = (data.firstName || data.lastName) ? ((data.firstName || "") + " " + (data.lastName || "")) : (data.memberName || "ลูกค้าผู้มีอุปการคุณ");
+      var customerPhone = data.phone || "";
+      var customerEmail = data.email || "";
+      var customerAddress = data.address || "ไม่ได้ระบุที่อยู่จัดส่ง";
+      
+      // แปลงรายการสินค้าให้อยู่ในข้อความแบบอ่านง่าย รองรับทั้งโครงสร้างแบบแบนและแบบมีอ็อบเจกต์ซ้อน
       var itemsStr = "";
       if (data.items && Array.isArray(data.items)) {
         itemsStr = data.items.map(function(item) {
-          return item.product.name + " (" + item.quantity + " ชิ้น)";
+          var prodName = item.name || (item.product && item.product.name) || "สินค้าไอที";
+          return prodName + " (" + item.quantity + " ชิ้น)";
         }).join(", ");
       } else {
         itemsStr = "ไม่ได้ระบุรายการสินค้า";
       }
       
+      var totalBV = data.totalBV || 0;
+      var subtotal = data.subtotal || 0;
+      if (subtotal === 0 && data.totalAmount) {
+        subtotal = data.totalAmount - (data.shippingFee || 50) - (data.codFee || 0);
+      }
+      var shippingFee = data.shippingFee !== undefined ? data.shippingFee : 50;
+      var codFee = data.codFee || 0;
+      var totalAmount = data.totalAmount || (subtotal + shippingFee + codFee);
+      
       // เพิ่มแถวข้อมูลการสั่งซื้อ
       sheet.appendRow([
-        data.orderId || ("ORD-" + Date.now()),
+        orderId,
         new Date().toLocaleString("th-TH"),
-        (data.firstName || "") + " " + (data.lastName || ""),
-        data.phone || "",
-        data.email || "",
-        data.address || "",
+        customerName,
+        customerPhone,
+        customerEmail,
+        customerAddress,
         itemsStr,
-        data.totalBV || 0,
-        data.subtotal || 0,
-        data.shippingFee || 0,
-        data.codFee || 0,
-        data.totalAmount || 0,
+        totalBV,
+        subtotal,
+        shippingFee,
+        codFee,
+        totalAmount,
         data.paymentMethod === "cod" ? "เก็บเงินปลายทาง" : "เงินสด / โอนพร้อมเพย์ ไวพจน์",
         data.slipUrl || ""
       ]);
       
       // ส่งอีเมลตอบกลับออเดอร์ถึงผู้รับทันทีตามที่ลูกค้าระบุไว้!
-      if (data.email) {
-        var subject = "ยืนยันคำสั่งซื้อ Noinashop MLM ออเดอร์ #" + data.orderId;
-        var body = "เรียนคุณ " + data.firstName + " " + data.lastName + ",\\n\\n" +
+      if (customerEmail) {
+        var subject = "ยืนยันคำสั่งซื้อ Noinashop MLM ออเดอร์ #" + orderId;
+        var body = "เรียนคุณ " + customerName + ",\\n\\n" +
                    "ขอขอบพระคุณสำหรับการสั่งซื้อสินค้าไอทีมือสองกับ Noinashop ทางเราได้รับยอดจดและเริ่มแพ็คของเรียบร้อย\\n\\n" +
                    "--------------------------------------------------\\n" +
-                   " รายละเอียดใบสั่งซื้อออเดอร์ #" + data.orderId + "\\n" +
+                   " รายละเอียดใบสั่งซื้อออเดอร์ #" + orderId + "\\n" +
                    "--------------------------------------------------\\n" +
                    "● สินค้าที่สั่งซื้อ: " + itemsStr + "\\n" +
-                   "● ยอดสะสมคะแนน: +" + data.totalBV + " BV (คะแนนไหลเข้าสู่สายงานคุณ)\\n" +
-                   "● ค่าจัดส่งพัสดุด่วน: 50 บาท\\n" +
-                   "● ยอดสุทธิทั้งสิ้น: " + data.totalAmount.toLocaleString() + " บาท\\n" +
+                   "● ยอดสะสมคะแนน: +" + totalBV + " BV (คะแนนไหลเข้าสู่สายงานคุณ)\\n" +
+                   "● ค่าจัดส่งพัสดุด่วน: " + shippingFee + " บาท\\n" +
+                   "● ยอดสุทธิทั้งสิ้น: " + totalAmount.toLocaleString() + " บาท\\n" +
                    "● วิธีการชำระเงิน: " + (data.paymentMethod === "cod" ? "เก็บเงินปลายทาง (ชาร์จเพิ่ม 3%)" : "โอนเงินเข้าบัญชีพร้อมเพย์ คุณไวพจน์ โสมภา 081-160-1092") + "\\n" +
-                   "● ที่อยู่สำหรับการจัดส่ง: " + data.address + "\\n\\n" +
+                   "● ที่อยู่สำหรับการจัดส่ง: " + customerAddress + "\\n\\n" +
                    "--------------------------------------------------\\n" +
                    " 🔑 ข้อมูลสมาชิกและรหัสผู้แนะนำ MLM ของคุณ\\n" +
                    "--------------------------------------------------\\n" +
-                   "● รหัสแนะนำส่วนตัวของคุณ: " + (data.sponsorCode || "") + "\\n" +
+                   "● รหัสแนะนำส่วนตัวของคุณ: " + (data.sponsorCode || data.memberId || "") + "\\n" +
                    "โปรดเก็บรหัสนี้ส่งต่อให้สมาชิกใหม่ใช้ลงทะเบียนต่อผังไบนารีด้านซ้าย/ขวา เพื่อรับโบนัสคอมมิชชันทีมสูงสุด 20% !\\n\\n" +
                    "ขอแสดงความนับถืออย่างสูง,\\nทีมงาน Noinashop Support\\nสายด่วน 081-160-1092";
                    
-        MailApp.sendEmail(data.email, subject, body);
+        MailApp.sendEmail(customerEmail, subject, body);
       }
       
       return ContentService.createTextOutput(JSON.stringify({ status: "success", message: "Order logged and Email Sent!" }))

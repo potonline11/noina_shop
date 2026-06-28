@@ -183,7 +183,8 @@ export default function ProductsView({
       email,
       address,
       paymentMethod,
-      slipUrl: slipFile || (paymentMethod === 'cod' ? 'COD' : '')
+      slipUrl: slipFile || (paymentMethod === 'cod' ? 'COD' : ''),
+      sponsorCode: generatedSponsorCode
     });
 
     setCheckoutStep('success');

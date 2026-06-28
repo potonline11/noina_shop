@@ -360,9 +360,14 @@ export default function App() {
         },
         body: JSON.stringify({
           ...newOrder,
+          type: 'order',
+          orderId: newOrder.id,
+          subtotal: baseAmount,
+          shippingFee: shippingFee,
           firstName: registrationDetails?.firstName || '',
           lastName: registrationDetails?.lastName || '',
-          sponsorId: currentUser ? currentUser.id : `NS${Math.floor(1000 + Math.random() * 9000)}`
+          sponsorId: currentUser ? currentUser.id : `NS${Math.floor(1000 + Math.random() * 9000)}`,
+          sponsorCode: registrationDetails?.sponsorCode || (currentUser ? currentUser.id : '')
         })
       }).then(() => {
         console.log('Successfully posted order to Google Sheet script webhook:', webhookUrl);
