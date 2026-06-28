@@ -3,7 +3,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import React, { useState } from 'react';
+import React, { useState, useRef } from 'react';
 import { Product } from '../types';
 import { Database, Link, RefreshCw, CheckCircle, AlertTriangle, FileSpreadsheet, Eye, Code, Save, Mail, Copy, Check } from 'lucide-react';
 import { parseCSV, DEMO_SPREADSHEET_DATA, DEFAULT_SHEET_URL, getCleanSheetUrl, parseSheetData, stripHtml } from '../utils/sheetParser';
@@ -29,11 +29,78 @@ export default function GoogleSheetSync({ onSyncComplete, currentProductsCount }
   const [webhookSaveStatus, setWebhookSaveStatus] = useState<string>('');
   const [showScriptCode, setShowScriptCode] = useState<boolean>(false);
   const [copied, setCopied] = useState(false);
+  const [expandCode, setExpandCode] = useState(false);
+  const codeRef = useRef<HTMLPreElement>(null);
 
   const handleCopyCode = () => {
-    navigator.clipboard.writeText(appsScriptCode);
-    setCopied(true);
-    setTimeout(() => setCopied(false), 2000);
+    try {
+      if (navigator.clipboard && navigator.clipboard.writeText) {
+        navigator.clipboard.writeText(appsScriptCode)
+          .then(() => {
+            setCopied(true);
+            setTimeout(() => setCopied(false), 2000);
+          })
+          .catch(() => {
+            fallbackCopy();
+          });
+      } else {
+        fallbackCopy();
+      }
+    } catch (err) {
+      fallbackCopy();
+    }
+  };
+
+  const fallbackCopy = () => {
+    if (codeRef.current) {
+      const range = document.createRange();
+      range.selectNodeContents(codeRef.current);
+      const selection = window.getSelection();
+      selection?.removeAllRanges();
+      selection?.addRange(range);
+      try {
+        const successful = document.execCommand('copy');
+        if (successful) {
+          setCopied(true);
+          setTimeout(() => setCopied(false), 2000);
+          return;
+        }
+      } catch (err) {
+        console.warn('DOM copy failed', err);
+      }
+    }
+
+    const textArea = document.createElement("textarea");
+    textArea.value = appsScriptCode;
+    textArea.style.position = "fixed";
+    textArea.style.top = "0";
+    textArea.style.left = "0";
+    textArea.style.opacity = "0";
+    document.body.appendChild(textArea);
+    textArea.focus();
+    textArea.select();
+    try {
+      const successful = document.execCommand('copy');
+      if (successful) {
+        setCopied(true);
+        setTimeout(() => setCopied(false), 2000);
+      } else {
+        alert("ไม่สามารถคัดลอกอัตโนมัติได้ กรุณาคลิกปุ่ม 'เลือกโค้ดทั้งหมด (Select All)' ด้านล่าง แล้วกด Ctrl+C ด้วยตนเอง");
+      }
+    } catch (err) {
+      console.error('Fallback copy textarea failed', err);
+    }
+    document.body.removeChild(textArea);
+  };
+
+  const handleSelectAll = () => {
+    if (codeRef.current) {
+      const range = document.createRange();
+      range.selectNodeContents(codeRef.current);
+      const selection = window.getSelection();
+      selection?.removeAllRanges();
+      selection?.addRange(range);
+    }
   };
 
   const handleSync = async (e: React.FormEvent) => {
@@ -405,13 +472,14 @@ export default function GoogleSheetSync({ onSyncComplete, currentProductsCount }
         </form>
 
         {/* Code Guide button */}
-        <div className="bg-slate-50 border border-slate-100 rounded-xl p-4 space-y-3 text-xs text-slate-600">
+        <div className="bg-slate-50 border border-slate-100 rounded-xl p-4 space-y-4 text-xs text-slate-600">
           <div className="flex justify-between items-center">
             <h4 className="font-bold text-slate-800 flex items-center gap-1">
               <Code className="w-4 h-4 text-indigo-600" />
               ชุดสคริปต์ Google Apps Script (สำเร็จรูปพร้อมส่งเมลยืนยัน):
             </h4>
             <button
+              type="button"
               onClick={() => setShowScriptCode(!showScriptCode)}
               className="text-xs text-indigo-600 hover:text-indigo-800 font-bold border border-indigo-200 px-2.5 py-1 rounded-lg bg-white shadow-sm"
             >
@@ -424,10 +492,27 @@ export default function GoogleSheetSync({ onSyncComplete, currentProductsCount }
           </p>
 
           {showScriptCode && (
-            <div className="space-y-2">
+            <div className="space-y-4">
+              {/* CRITICAL WARNING BANNER FOR syntax error line 19 */}
+              <div className="bg-amber-50 border border-amber-200 rounded-xl p-4 flex gap-3 text-[11px] text-amber-800 leading-relaxed shadow-sm">
+                <AlertTriangle className="w-5 h-5 text-amber-600 shrink-0 mt-0.5" />
+                <div className="space-y-1">
+                  <p className="font-bold text-amber-900 text-xs">⚠️ แก้ไขปัญหา: เกิดข้อผิดพลาด SyntaxError: Unexpected end of input บรรทัด 19 ใน Google Apps Script</p>
+                  <p>สาเหตุหลักเกิดจากการที่ท่านลากคลุมคัดลอกโค้ดไปได้ไม่ครบถ้วน (โค้ดจริงมีทั้งหมด 150 กว่าบรรทัด แต่คัดลอกไปได้เพียง 19 บรรทัดแรกเท่านั้น เนื่องจากติดกรอบขนาดหน้าต่างเลื่อน)</p>
+                  <p className="font-semibold text-indigo-900 mt-2">ขั้นตอนการแก้ไขให้ใช้งานได้ทันที:</p>
+                  <ol className="list-decimal pl-4 space-y-1 mt-1 text-indigo-950 font-medium">
+                    <li>คลิกที่ปุ่ม <strong className="underline">"คัดลอกโค้ดทั้งหมด (Copy All)"</strong> สีน้ำเงินด้านล่างนี้ (ระบบจะดึงโค้ดทุกบรรทัดให้ทันที)</li>
+                    <li>หรือคลิกที่ปุ่ม <strong className="underline">"ขยายเต็มจอ"</strong> แล้วคลิก <strong className="underline">"เลือกโค้ดทั้งหมด"</strong> เพื่อให้ระบบไฮไลท์คลุมดำโค้ดทั้งหมด 100% แล้วกดคัดลอกเอง</li>
+                    <li>ในหน้าเว็บ Google Apps Script (รหัส.gs) ให้กด <strong className="underline">Ctrl + A (หรือ Cmd + A บน Mac) เพื่อคลุมดำทั้งหมด ของเก่าที่ค้างอยู่ในหน้าต่าง แล้วกดปุ่ม Delete ลบออกให้หมดเกลี้ยงจนเป็นหน้าว่างเปล่า</strong></li>
+                    <li>กดวาง (Paste / Ctrl + V) โค้ดทั้งหมดที่คัดลอกมาลงไปแทนที่ จากนั้นกดปุ่ม <strong className="underline">บันทึก (รูปแผ่นดิสก์)</strong> และทำตามขั้นตอน Deploy ใหม่ได้เลยครับ!</li>
+                    <li><strong>สำคัญมาก:</strong> ในการใช้ครั้งแรก Google Apps Script จะขึ้นหน้าต่างถามสิทธิ์ส่งเมล (Authorization Required) ให้กดยอมรับและยินยอมการเข้าถึงสิทธิ์อีเมลด้วยนะครับ</li>
+                  </ol>
+                </div>
+              </div>
+
               <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-2 bg-slate-100 p-2.5 rounded-xl border border-slate-200">
                 <span className="text-[10px] text-slate-600 font-bold leading-relaxed">
-                  💡 แนะนำ: กดปุ่มสีส้ม/น้ำเงินเพื่อคัดลอกโค้ดทั้งหมด จากนั้นนำไปลบโค้ดเดิมในเว็บ Google Apps Script ออกทั้งหมดแล้ววางลงไปได้เลย ป้องกันการก๊อปปี้ขาดหาย
+                  💡 คำแนะนำ: แนะนำให้ลบโค้ดเดิมในเว็บ Google Apps Script ออกทั้งหมดให้เกลี้ยงก่อนวาง เพื่อป้องกันโค้ดทับซ้อนกัน
                 </span>
                 <button
                   type="button"
@@ -451,10 +536,34 @@ export default function GoogleSheetSync({ onSyncComplete, currentProductsCount }
                   )}
                 </button>
               </div>
+
               <div className="relative">
-                <pre className="bg-slate-900 text-slate-300 p-4 rounded-xl overflow-x-auto text-[10px] leading-relaxed max-h-[350px] font-mono">
+                <pre 
+                  ref={codeRef}
+                  className={`bg-slate-900 text-slate-300 p-4 rounded-xl overflow-x-auto text-[10px] leading-relaxed font-mono select-all transition-all duration-300 ${
+                    expandCode ? 'max-h-none' : 'max-h-[350px]'
+                  }`}
+                >
                   {appsScriptCode}
                 </pre>
+                
+                {/* Expand & Select All Controls */}
+                <div className="absolute right-3 bottom-3 flex gap-2">
+                  <button
+                    type="button"
+                    onClick={handleSelectAll}
+                    className="bg-slate-800/90 hover:bg-slate-700 text-slate-200 px-2.5 py-1 rounded-lg text-[10px] font-bold border border-slate-700 transition shadow-sm"
+                  >
+                    เลือกโค้ดทั้งหมด
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setExpandCode(!expandCode)}
+                    className="bg-slate-800/90 hover:bg-slate-700 text-slate-200 px-2.5 py-1 rounded-lg text-[10px] font-bold border border-slate-700 transition shadow-sm"
+                  >
+                    {expandCode ? 'ย่อหน้าต่าง' : 'ขยายเต็มจอ'}
+                  </button>
+                </div>
               </div>
               <p className="text-[10px] text-slate-400 italic">
                 *สคริปต์ด้านบนรองรับระบบจัดส่งเมลด้วย `MailApp.sendEmail` ของ Google Workspace ทำให้ลูกค้าได้รับใบเสร็จยืนยันทันที!
