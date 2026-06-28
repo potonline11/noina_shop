@@ -154,6 +154,7 @@ export default function App() {
       try {
         const response = await fetch('/api/products-store');
         let serverSheetUrl = '';
+        let serverWebhookUrl = '';
         if (response.ok) {
           const data = await response.json();
           if (data.members && data.members.length > 0) {
@@ -165,11 +166,47 @@ export default function App() {
             localStorage.setItem('noina_sheet_url', data.sheetUrl);
           }
           if (data.webhookUrl) {
+            serverWebhookUrl = data.webhookUrl;
             localStorage.setItem('noina_order_webhook_url', data.webhookUrl);
           }
         }
+
+        // Auto-uplink: If the server has no sheetUrl but the browser has a custom one,
+        // send it to the server so it is persisted for all subsequent users.
+        const clientSheetUrl = localStorage.getItem('noina_sheet_url') || '';
+        const clientWebhookUrl = localStorage.getItem('noina_order_webhook_url') || '';
+        
+        let urlToUse = serverSheetUrl;
+        
+        if (!serverSheetUrl && clientSheetUrl && !clientSheetUrl.includes('_example') && clientSheetUrl.startsWith('http')) {
+          urlToUse = clientSheetUrl;
+          console.log('Auto-uplinking sheet URL to server:', clientSheetUrl);
+          try {
+            await fetch('/api/products-store', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ sheetUrl: clientSheetUrl })
+            });
+          } catch (e) {
+            console.warn('Failed to uplink sheetUrl to server:', e);
+          }
+        }
+        
+        if (!serverWebhookUrl && clientWebhookUrl && clientWebhookUrl.startsWith('http')) {
+          console.log('Auto-uplinking webhook URL to server:', clientWebhookUrl);
+          try {
+            await fetch('/api/products-store', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ webhookUrl: clientWebhookUrl })
+            });
+          } catch (e) {
+            console.warn('Failed to uplink webhookUrl to server:', e);
+          }
+        }
+
         // Always fetch product list directly from Google Sheets instead of reading from the DB
-        await autoSyncFromSheet(serverSheetUrl || undefined);
+        await autoSyncFromSheet(urlToUse || undefined);
       } catch (err) {
         console.warn('Failed to load server config, calling auto sync directly:', err);
         await autoSyncFromSheet();

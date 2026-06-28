@@ -66,9 +66,9 @@ export default function GoogleSheetSync({ onSyncComplete, currentProductsCount }
         throw new Error('ไม่พบข้อมูลสินค้าที่ถูกต้องในไฟล์ โปรดตรวจสอบว่ามีแถวหัวข้อ (Header) เช่น Title, Description, Price, BV');
       }
 
+      localStorage.setItem('noina_sheet_url', sheetUrl);
       setPreviewProducts(products);
       onSyncComplete(products);
-      localStorage.setItem('noina_sheet_url', sheetUrl);
       setStatus({
         type: 'success',
         message: `ดึงข้อมูลจาก Google Sheet สำเร็จ! ค้นพบและนำเข้าสินค้าใหม่ทั้งหมด ${products.length} รายการ`
@@ -100,11 +100,22 @@ export default function GoogleSheetSync({ onSyncComplete, currentProductsCount }
     }, 800);
   };
 
-  const handleSaveWebhook = (e: React.FormEvent) => {
+  const handleSaveWebhook = async (e: React.FormEvent) => {
     e.preventDefault();
     localStorage.setItem('noina_order_webhook_url', webhookUrl);
-    setWebhookSaveStatus('บันทึก Webhook URL สำเร็จเรียบร้อยแล้ว!');
-    setTimeout(() => setWebhookSaveStatus(''), 3000);
+    setWebhookSaveStatus('กำลังบันทึกข้อมูลลงเซิร์ฟเวอร์...');
+    try {
+      await fetch('/api/products-store', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ webhookUrl })
+      });
+      setWebhookSaveStatus('บันทึก Webhook URL สำเร็จเรียบร้อยแล้ว!');
+    } catch (err) {
+      console.error(err);
+      setWebhookSaveStatus('บันทึก Webhook URL ในเบราว์เซอร์สำเร็จ แต่บันทึกลงเซิร์ฟเวอร์ล้มเหลว');
+    }
+    setTimeout(() => setWebhookSaveStatus(''), 4000);
   };
 
   const appsScriptCode = `function doPost(e) {
