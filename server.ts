@@ -325,6 +325,24 @@ ${productsContext || 'ขณะนี้ไม่มีสินค้าใน�
     }
   });
 
+  // Recursive helper to follow redirects manually for POST requests (bypasses fetch 302 POST -> GET body loss issue)
+  async function fetchWithPostRedirect(url: string, options: any): Promise<Response> {
+    const response = await fetch(url, {
+      ...options,
+      redirect: 'manual'
+    });
+
+    if ([301, 302, 307, 308].includes(response.status)) {
+      const redirectUrl = response.headers.get('location');
+      if (redirectUrl) {
+        console.log(`[Webhook Proxy Redirect] HTTP ${response.status} redirect detected. Manually forwarding POST to: ${redirectUrl}`);
+        return fetchWithPostRedirect(redirectUrl, options);
+      }
+    }
+
+    return response;
+  }
+
   // Proxy endpoint to trigger Google Apps Script from server-side (Bypasses CORS & works across all devices)
   app.post('/api/webhook-proxy', async (req, res) => {
     try {
@@ -341,7 +359,7 @@ ${productsContext || 'ขณะนี้ไม่มีสินค้าใน�
 
       console.log(`[Webhook Proxy] Forwarding ${req.body.type || 'unknown'} payload to: ${webhookUrl}`);
       
-      const response = await fetch(webhookUrl, {
+      const response = await fetchWithPostRedirect(webhookUrl, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

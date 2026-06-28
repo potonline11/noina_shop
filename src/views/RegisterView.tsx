@@ -9,7 +9,7 @@ import { UserPlus, UserCheck, Shield, Users, Info, AlertTriangle, Key, Sparkles,
 
 interface RegisterViewProps {
   members: Member[];
-  onRegister: (newMember: Member) => void;
+  onRegister: (newMember: Member) => Promise<{ success: boolean; message: string }> | void;
   onNavigate: (view: string) => void;
 }
 
@@ -35,6 +35,12 @@ export default function RegisterView({ members, onRegister, onNavigate }: Regist
     finalParentId: string;
     finalPosition: 'left' | 'right';
   } | null>(null);
+  
+  const [webhookResult, setWebhookResult] = useState<{
+    loading: boolean;
+    success?: boolean;
+    message?: string;
+  }>({ loading: false });
 
   // Auto-find first vacant spot when Sponsor ID changes and isAutoPlacement is enabled
   React.useEffect(() => {
@@ -168,7 +174,25 @@ export default function RegisterView({ members, onRegister, onNavigate }: Regist
     };
 
     // Commit to app state
-    onRegister(newMember);
+    setWebhookResult({ loading: true });
+    const registerPromise = onRegister(newMember);
+    if (registerPromise instanceof Promise) {
+      registerPromise.then((res) => {
+        setWebhookResult({
+          loading: false,
+          success: res?.success,
+          message: res?.message || 'บันทึกข้อมูลและส่งอีเมลเรียบร้อยแล้ว'
+        });
+      }).catch((err) => {
+        setWebhookResult({
+          loading: false,
+          success: false,
+          message: err?.message || 'การเชื่อมต่อเซิร์ฟเวอร์ล้มเหลว'
+        });
+      });
+    } else {
+      setWebhookResult({ loading: false });
+    }
 
     setRegisteredUser(newMember);
     setSuccess(true);
@@ -237,6 +261,39 @@ export default function RegisterView({ members, onRegister, onNavigate }: Regist
                   </div>
                   <p>
                     เนื่องจากตำแหน่งดั้งเดิมคือใต้รหัส <strong className="font-mono">{spilloverInfo.originalParentId}</strong> ฝั่ง{spilloverInfo.originalPosition === 'left' ? 'ซ้าย' : 'ขวา'} เต็มแล้ว ระบบจึงได้ค้นหาและโยนสายงานลงไปที่ตำแหน่งแรกที่ยังว่างอยู่ คือใต้รหัส <strong className="font-mono">{spilloverInfo.finalParentId}</strong> ฝั่ง{spilloverInfo.finalPosition === 'left' ? 'ซ้าย' : 'ขวา'} ให้เรียบร้อยโดยอัตโนมัติ!
+                  </p>
+                </div>
+              )}
+            </div>
+
+            {/* Google Sheets and Email webhook status feedback */}
+            <div className="max-w-sm mx-auto">
+              {webhookResult.loading ? (
+                <div className="bg-slate-50 border border-slate-100 rounded-2xl p-4 text-xs text-center text-slate-500 animate-pulse flex items-center justify-center gap-2">
+                  <span className="w-2 h-2 bg-indigo-600 rounded-full animate-ping"></span>
+                  <span>กำลังบันทึกลง Google Sheet และส่งอีเมลตอบกลับอัตโนมัติ...</span>
+                </div>
+              ) : webhookResult.success ? (
+                <div className="bg-emerald-50 border border-emerald-100 rounded-2xl p-4 text-xs text-left text-emerald-800 space-y-1.5 shadow-sm">
+                  <div className="font-extrabold flex items-center gap-1.5">
+                    <UserCheck className="w-4 h-4 text-emerald-600" />
+                    เชื่อมต่อระบบสำเร็จ!
+                  </div>
+                  <p className="text-[10px] text-emerald-700 leading-normal font-medium">
+                    {webhookResult.message || 'ระบบได้บันทึกรายชื่อสมาชิกลงตาราง Members และส่งอีเมลแจ้งเตือนข้อมูลการล็อกอินเรียบร้อยแล้ว'}
+                  </p>
+                </div>
+              ) : (
+                <div className="bg-amber-50 border border-amber-200 rounded-2xl p-4 text-xs text-left text-amber-800 space-y-2 shadow-sm">
+                  <div className="font-extrabold flex items-center gap-1.5">
+                    <AlertTriangle className="w-4 h-4 text-amber-600" />
+                    ส่งข้อมูลลง Google Sheet / ส่งเมลล้มเหลว
+                  </div>
+                  <p className="text-[10px] text-amber-700 leading-normal">
+                    {webhookResult.message || 'ยังไม่ได้ระบุ Webhook URL ในระบบหลังบ้าน (แท็บ Google Sheets สำหรับแอดมิน) ข้อมูลจึงยังไม่ได้ซิงก์ลงตารางและไม่ได้ส่งเมลแจ้งเตือน'}
+                  </p>
+                  <p className="text-[10px] text-slate-500 leading-normal border-t border-amber-200/50 pt-1.5 mt-1.5 italic">
+                    💡 <strong>คำแนะนำสำหรับเจ้าของร้าน/แอดมิน:</strong> โปรดล็อกอินรหัสแอดมิน <strong>NS001</strong> แล้วไปที่แถบ <strong>เมนูผู้ดูแลระบบ &gt; แท็บ Google Sheets</strong> เพื่อนำสคริปต์ไปติดตั้งและบันทึก Webhook URL
                   </p>
                 </div>
               )}

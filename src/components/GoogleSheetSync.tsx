@@ -143,6 +143,31 @@ export default function GoogleSheetSync({ onSyncComplete, currentProductsCount }
     }
   };
 
+  const handleSaveWebhook = async (e: React.FormEvent) => {
+    e.preventDefault();
+    const cleanWebhook = webhookUrl.trim();
+    localStorage.setItem('noina_order_webhook_url', cleanWebhook);
+    setWebhookSaveStatus('กำลังบันทึกข้อมูลลงระบบเซิร์ฟเวอร์...');
+    
+    try {
+      const response = await fetch('/api/products-store', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ webhookUrl: cleanWebhook })
+      });
+      if (response.ok) {
+        setWebhookSaveStatus('บันทึก Webhook URL ลงเซิร์ฟเวอร์และบราวเซอร์เรียบร้อยแล้ว!');
+      } else {
+        setWebhookSaveStatus('บันทึกเรียบร้อยแล้ว (เว็บบราวเซอร์)');
+      }
+    } catch (err) {
+      console.error('Failed to sync webhook URL to server:', err);
+      setWebhookSaveStatus('บันทึกในบราวเซอร์สำเร็จ แต่ไม่สามารถเชื่อมต่อเซิร์ฟเวอร์ได้');
+    }
+    
+    setTimeout(() => setWebhookSaveStatus(''), 4000);
+  };
+
   const triggerDemoSync = () => {
     setLoading(true);
     setStatus({ type: 'idle', message: '' });
@@ -154,27 +179,9 @@ export default function GoogleSheetSync({ onSyncComplete, currentProductsCount }
       setLoading(false);
       setStatus({
         type: 'success',
-        message: `เชื่อมต่อระบบจำลอง Google Sheet สำเร็จ! โหลดสินค้ามือสองเพิ่มอีก ${products.length} รายการเพื่อทดสอบระบบ`
+        message: `เชื่อมต่อระบบจำลอง Google Sheet สำเร็จ! โหลดสินค้ามือสองเพิ่มอีก ${products.length} รายการ`
       });
-    }, 800);
-  };
-
-  const handleSaveWebhook = async (e: React.FormEvent) => {
-    e.preventDefault();
-    localStorage.setItem('noina_order_webhook_url', webhookUrl);
-    setWebhookSaveStatus('กำลังบันทึกข้อมูลลงเซิร์ฟเวอร์...');
-    try {
-      await fetch('/api/products-store', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ webhookUrl })
-      });
-      setWebhookSaveStatus('บันทึก Webhook URL สำเร็จเรียบร้อยแล้ว!');
-    } catch (err) {
-      console.error(err);
-      setWebhookSaveStatus('บันทึก Webhook URL ในเบราว์เซอร์สำเร็จ แต่บันทึกลงเซิร์ฟเวอร์ล้มเหลว');
-    }
-    setTimeout(() => setWebhookSaveStatus(''), 4000);
+    }, 1000);
   };
 
   const appsScriptCode = `function doPost(e) {
@@ -213,26 +220,26 @@ export default function GoogleSheetSync({ onSyncComplete, currentProductsCount }
       // ส่งเมลยินดีต้อนรับสมาชิกใหม่พร้อมข้อมูลสำหรับเข้าใช้งานทันที!
       if (data.email) {
         var subject = "ยินดีต้อนรับสมาชิกใหม่ Noinashop NLM - รหัสสมาชิก " + (data.id || "");
-        var body = "เรียนคุณ " + (data.name || "") + ",\\\\n\\\\n" +
-                   "ยินดีต้อนรับเข้าสู่ครอบครัว Noinashop NLM (Noina Line Marketing) เครือข่ายไอทีมือสองพรีเมียม!\\\\n" +
-                   "ระบบได้ลงทะเบียนบัญชีผู้ใช้งานของคุณเข้าสู่ผังองค์กรแบบ Binary เรียบร้อยแล้ว\\\\n\\\\n" +
-                   "--------------------------------------------------\\\\n" +
-                   " 🔑 ข้อมูลบัญชีสมาชิกของคุณสำหรับเข้าใช้งาน\\\\n" +
-                   "--------------------------------------------------\\\\n" +
-                   "● รหัสสมาชิก (Member ID): " + (data.id || "") + "\\\\n" +
-                   "● อีเมลสำหรับล็อกอิน: " + (data.email || "") + "\\\\n" +
-                   "● รหัสผ่านเข้าใช้ (Password): " + (data.password || "") + "\\\\n" +
-                   "● ผู้แนะนำตรง (Sponsor ID): " + (data.sponsorId || "") + "\\\\n" +
-                   "● ผู้จัดวางในสายงาน (Parent ID): " + (data.parentUserId || "") + "\\\\n" +
-                   "● ฝั่งสายงาน (Position): " + (data.position === "left" ? "ทีมงานฝั่งซ้าย" : "ทีมงานฝั่งขวา") + "\\\\n" +
-                   "● ระดับสมาชิกเริ่มต้น (Rank): " + (data.rank || "Bronze") + "\\\\n\\\\n" +
-                   "--------------------------------------------------\\\\n" +
-                   " 🚀 ลิงก์ร้านค้าและลิงก์แนะนำขยายงานของคุณ\\\\n" +
-                   "--------------------------------------------------\\\\n" +
-                   "คัดลอกลิงก์ด้านล่างส่งต่อเพื่อขยายสายงานเครือข่ายของคุุณเพื่อสะสมคะแนน BV รับคอมมิชชันแนะนําตรง 100%:\\\\n" +
-                   "https://NoinashopNLM.com/?sponsor=" + (data.id || "") + "\\\\n\\\\n" +
-                   "คุณสามารถนำรหัสสมาชิก หรือ อีเมลด้านบน ร่วมกับรหัสผ่านของคุณ เพื่อล็อกอินเข้าสู่ระบบสมาชิกหลังบ้านเพื่อตรวจสอบสถิติคะแนนสะสม โบนัสจับคู่จ่าย และแผนภาพต้นไม้สายงานได้ทันที!\\\\n\\\\n" +
-                   "ขอแสดงความนับถืออย่างสูง,\\\\nทีมงาน Noinashop Support\\\\nสายด่วนผู้บริหาร คุณไวพจน์ โสมภา 081-160-1092";
+        var body = "เรียนคุณ " + (data.name || "") + ",\\n\\n" +
+                   "ยินดีต้อนรับเข้าสู่ครอบครัว Noinashop NLM (Noina Line Marketing) เครือข่ายไอทีมือสองพรีเมียม!\\n" +
+                   "ระบบได้ลงทะเบียนบัญชีผู้ใช้งานของคุณเข้าสู่ผังองค์กรแบบ Binary เรียบร้อยแล้ว\\n\\n" +
+                   "--------------------------------------------------\\n" +
+                   " 🔑 ข้อมูลบัญชีสมาชิกของคุณสำหรับเข้าใช้งาน\\n" +
+                   "--------------------------------------------------\\n" +
+                   "● รหัสสมาชิก (Member ID): " + (data.id || "") + "\\n" +
+                   "● อีเมลสำหรับล็อกอิน: " + (data.email || "") + "\\n" +
+                   "● รหัสผ่านเข้าใช้ (Password): " + (data.password || "") + "\\n" +
+                   "● ผู้แนะนำตรง (Sponsor ID): " + (data.sponsorId || "") + "\\n" +
+                   "● ผู้จัดวางในสายงาน (Parent ID): " + (data.parentUserId || "") + "\\n" +
+                   "● ฝั่งสายงาน (Position): " + (data.position === "left" ? "ทีมงานฝั่งซ้าย" : "ทีมงานฝั่งขวา") + "\\n" +
+                   "● ระดับสมาชิกเริ่มต้น (Rank): " + (data.rank || "Bronze") + "\\n\\n" +
+                   "--------------------------------------------------\\n" +
+                   " 🚀 ลิงก์ร้านค้าและลิงก์แนะนำขยายงานของคุณ\\n" +
+                   "--------------------------------------------------\\n" +
+                   "คัดลอกลิงก์ด้านล่างส่งต่อเพื่อขยายสายงานเครือข่ายของคุุณเพื่อสะสมคะแนน BV รับคอมมิชชันแนะนําตรง 100%:\\n" +
+                   "https://NoinashopNLM.com/?sponsor=" + (data.id || "") + "\\n\\n" +
+                   "คุณสามารถนำรหัสสมาชิก หรือ อีเมลด้านบน ร่วมกับรหัสผ่านของคุณ เพื่อล็อกอินเข้าสู่ระบบสมาชิกหลังบ้านเพื่อตรวจสอบสถิติคะแนนสะสม โบนัสจับคู่จ่าย และแผนภาพต้นไม้สายงานได้ทันที!\\n\\n" +
+                   "ขอแสดงความนับถืออย่างสูง,\\nทีมงาน Noinashop Support\\nสายด่วนผู้บริหาร คุณไวพจน์ โสมภา 081-160-1092";
                    
         MailApp.sendEmail(data.email, subject, body);
       }
@@ -301,24 +308,24 @@ export default function GoogleSheetSync({ onSyncComplete, currentProductsCount }
       // ส่งอีเมลตอบกลับออเดอร์ถึงผู้รับทันทีตามที่ลูกค้าระบุไว้!
       if (customerEmail) {
         var subject = "ยืนยันคำสั่งซื้อ Noinashop MLM ออเดอร์ #" + orderId;
-        var body = "เรียนคุณ " + customerName + ",\\\\n\\\\n" +
-                   "ขอขอบพระคุณสำหรับการสั่งซื้อสินค้าไอทีมือสองกับ Noinashop ทางเราได้รับยอดจดและเริ่มแพ็คของเรียบร้อย\\\\n\\\\n" +
-                   "--------------------------------------------------\\\\n" +
-                   " รายละเอียดใบสั่งซื้อออเดอร์ #" + orderId + "\\\\n" +
-                   "--------------------------------------------------\\\\n" +
-                   "● สินค้าที่สั่งซื้อ: " + itemsStr + "\\\\n" +
-                   "● ยอดสะสมคะแนน: +" + totalBV + " BV (คะแนนไหลเข้าสู่สายงานคุณ)\\\\n" +
-                   "● ค่าจัดส่งพัสดุด่วน: " + shippingFee + " บาท\\\\n" +
-                   "● ยอดสุทธิทั้งสิ้น: " + totalAmount.toLocaleString() + " บาท\\\\n" +
-                   "● วิธีการชำระเงิน: " + (data.paymentMethod === "cod" ? "เก็บเงินปลายทาง (ชาร์จเพิ่ม 3%)" : "โอนเงินเข้าบัญชีพร้อมเพย์ คุณไวพจน์ โสมภา 081-160-1092") + "\\\\n" +
-                   "● ที่อยู่สำหรับการจัดส่ง: " + customerAddress + "\\\\n\\\\n" +
-                   "--------------------------------------------------\\\\n" +
-                   " 🔑 ข้อมูลสมาชิกและรหัสผู้แนะนำ MLM ของคุณ\\\\n" +
-                   "--------------------------------------------------\\\\n" +
-                   "● รหัสแนะนำส่วนตัวของคุณ: " + (data.sponsorCode || data.memberId || "") + "\\\\n" +
-                   "โปรดเก็บรหัสนี้ส่งต่อให้สมาชิกใหม่ใช้ลงทะเบียนต่อผังไบนารีด้านซ้าย/ขวา เพื่อรับโบนัสคอมมิชชันทีมสูงสุด 20% !\\\\n\\\\n" +
-                   "ขอแสดงความนับถืออย่างสูง,\\\\nทีมงาน Noinashop Support\\\\nสายด่วน 081-160-1092";
-                   
+        var body = "เรียนคุณ " + customerName + ",\\n\\n" +
+                   "ขอขอบพระคุณสำหรับการสั่งซื้อสินค้าไอทีมือสองกับ Noinashop ทางเราได้รับยอดจดและเริ่มแพ็คของเรียบร้อย\\n\\n" +
+                   "--------------------------------------------------\\n" +
+                   " รายละเอียดใบสั่งซื้อออเดอร์ #" + orderId + "\\n" +
+                   "--------------------------------------------------\\n" +
+                   "● สินค้าที่สั่งซื้อ: " + itemsStr + "\\n" +
+                   "● ยอดสะสมคะแนน: +" + totalBV + " BV (คะแนนไหลเข้าสู่สายงานคุณ)\\n" +
+                   "● ค่าจัดส่งพัสดุด่วน: " + shippingFee + " บาท\\n" +
+                   "● ยอดสุทธิทั้งสิ้น: " + totalAmount.toLocaleString() + " บาท\\n" +
+                   "● วิธีการชำระเงิน: " + (data.paymentMethod === "cod" ? "เก็บเงินปลายทาง (ชาร์จเพิ่ม 3%)" : "โอนเงินเข้าบัญชีพร้อมเพย์ คุณไวพจน์ โสมภา 081-160-1092") + "\\n" +
+                   "● ที่อยู่สำหรับการจัดส่ง: " + customerAddress + "\\n\\n" +
+                   "--------------------------------------------------\\n" +
+                   " 🔑 ข้อมูลสมาชิกและรหัสผู้แนะนำ MLM ของคุณ\\n" +
+                   "--------------------------------------------------\\n" +
+                   "● รหัสแนะนำส่วนตัวของคุณ: " + (data.sponsorCode || data.memberId || "") + "\\n" +
+                   "โปรดเก็บรหัสนี้ส่งต่อให้สมาชิกใหม่ใช้ลงทะเบียนต่อผังไบนารีด้านซ้าย/ขวา เพื่อรับโบนัสคอมมิชชันทีมสูงสุด 20% !\\n\\n" +
+                   "ขอแสดงความนับถืออย่างสูง,\\nทีมงาน Noinashop Support\\nสายด่วน 081-160-1092";
+                    
         MailApp.sendEmail(customerEmail, subject, body);
       }
       
@@ -366,7 +373,7 @@ export default function GoogleSheetSync({ onSyncComplete, currentProductsCount }
           <div>
             <label className="block text-xs font-semibold text-slate-700 mb-1.5 flex items-center gap-1">
               <Link className="w-3.5 h-3.5 text-slate-400" />
-              ลิงก์ Google Sheet เผยแพร่แบบ CSV (.csv)
+              ลิงก์ Google Sheet เว็บแบบ CSV (.csv)
             </label>
             <div className="flex gap-2">
               <input

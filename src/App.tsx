@@ -275,7 +275,7 @@ export default function App() {
     });
 
     // Automatically POST new registration to Google Sheets Webhook URL via server-side proxy (Bypasses client-side CORS issues and works across all devices)
-    fetch('/api/webhook-proxy', {
+    return fetch('/api/webhook-proxy', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -296,8 +296,16 @@ export default function App() {
     }).then(res => res.json())
       .then(data => {
         console.log('Server webhook-proxy response for registration:', data);
+        return {
+          success: !!data.success,
+          message: data.message || 'ส่งข้อมูลการสมัครสมาชิกลงชีตสำเร็จ'
+        };
       }).catch(err => {
         console.warn('Post registration to server webhook-proxy failed:', err);
+        return {
+          success: false,
+          message: 'ไม่สามารถส่งข้อมูลสมัครสมาชิกไปยัง Google Sheet ได้: ' + err.message
+        };
       });
   };
 
