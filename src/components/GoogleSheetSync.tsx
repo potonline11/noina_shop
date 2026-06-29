@@ -269,9 +269,20 @@ export default function GoogleSheetSync({ onSyncComplete, currentProductsCount }
           message: '✓ เชื่อมต่อกับ Google Apps Script สำเร็จ 100%! สคริปต์ของท่านทำงานได้ดีและตอบกลับถูกต้อง ข้อมูลการทดสอบถูกนำเข้า Google Sheet แล้ว'
         });
       } else {
+        let displayMessage = data.message || 'เกิดข้อผิดพลาดในการเชื่อมต่อ';
+        const lowerMsg = displayMessage.toLowerCase();
+        
+        if (lowerMsg.includes('not_found') || lowerMsg.includes('could not be found') || lowerMsg.includes('page not found') || response.status === 404) {
+          displayMessage = '❌ ไม่พบหน้าสคริปต์ Google Apps Script (HTTP 404 NOT FOUND): ลิงก์ที่กรอกไม่ถูกต้อง หรือ Deployment ID ไม่มีอยู่จริงในระบบ Google โปรดตรวจสอบว่าท่านคัดลอก Web App URL (ลงท้ายด้วย /exec) มาวางอย่างถูกต้องครบถ้วน และได้กด "บันทึก URL" เรียบร้อยแล้ว';
+        } else if (lowerMsg.includes('unauthorized') || lowerMsg.includes('forbidden') || response.status === 401 || response.status === 403) {
+          displayMessage = '🔒 ติดสิทธิความปลอดภัยของ Google: โปรดแก้ไขสิทธิผู้มีสิทธิเข้าถึง Web App ใน Google Apps Script โดยตั้งค่า Who has access เป็น "Anyone" (ทุกคน) แล้วกด Deploy > New deployment ใหม่ จากนั้นนำลิงก์ /exec ใหม่มาบันทึกในระบบ';
+        } else if (displayMessage.includes('<!DOCTYPE') || displayMessage.includes('<html')) {
+          displayMessage = '⚠️ สคริปต์ตอบกลับเป็นหน้าเว็บ HTML แทนที่จะเป็นข้อมูลผลลัพธ์สำเร็จ! สิ่งนี้มักเกิดจากโค้ด doPost ใน Apps Script มีข้อผิดพลาด หรือตั้งค่าการ Deployment เป็น Web App ไม่ถูกต้อง';
+        }
+        
         setTestResult({
           success: false,
-          message: data.message || 'เกิดข้อผิดพลาดในการเชื่อมต่อ'
+          message: displayMessage
         });
       }
     } catch (err: any) {

@@ -416,9 +416,10 @@ ${productsContext || 'ขณะนี้ไม่มีสินค้าใน�
       const store = await readStore();
       const bodyWebhookUrl = req.body.webhookUrl;
       
-      // Use the server-side configured webhook URL as the primary source of truth.
-      // Fall back to client's provided URL only if server-side store is empty.
-      const rawWebhookUrl = store.webhookUrl || bodyWebhookUrl;
+      // Prioritize the client-provided webhook URL (from the input field) if present,
+      // which is essential for testing a new URL before saving it.
+      // Otherwise, fall back to the saved server-side webhook URL.
+      const rawWebhookUrl = bodyWebhookUrl || store.webhookUrl;
       
       // Validation: Check if they accidentally put a Google Sheet link in the Webhook field
       if (rawWebhookUrl && (rawWebhookUrl.includes('docs.google.com/spreadsheets') || rawWebhookUrl.includes('spreadsheets/d/'))) {
