@@ -332,10 +332,32 @@ ${productsContext || 'ขณะนี้ไม่มีสินค้าใน�
     let cleanUrl = url.trim().replace(/^['"<>[\]\s]+|['"<>[\]\s]+$/g, '');
     cleanUrl = cleanUrl.replace(/\.+\s*$/, '');
     
-    // Auto-convert raw Deployment ID to full Web App URL
-    // e.g. AKfycbyDhc_6DUE-3ToIXGxjozqXx833oZ718JxGNWFpDqEOIKEWiDFuCowmpqilcWnInTwKVg
-    if (/^AKfy[a-zA-Z0-9_\-]{50,80}$/.test(cleanUrl)) {
-      return `https://script.google.com/macros/s/${cleanUrl}/exec`;
+    // 1. Try to extract Deployment ID (starts with AKfy)
+    let id = '';
+    
+    // Check if it's a URL with /s/
+    const sIndex = cleanUrl.indexOf('/s/');
+    if (sIndex !== -1) {
+      const remaining = cleanUrl.substring(sIndex + 3);
+      const match = remaining.match(/^([a-zA-Z0-9_\-]+)/);
+      if (match) {
+        id = match[1];
+      }
+    } else {
+      // Check if the string itself starts with or contains AKfy
+      const akfyIndex = cleanUrl.search(/AKfy/i);
+      if (akfyIndex !== -1) {
+        const remaining = cleanUrl.substring(akfyIndex);
+        const match = remaining.match(/^([a-zA-Z0-9_\-]+)/);
+        if (match) {
+          id = match[1];
+        }
+      }
+    }
+    
+    // 2. If we found a valid Deployment ID (length >= 50), reconstruct the URL perfectly
+    if (id && id.length >= 50) {
+      return `https://script.google.com/macros/s/${id}/exec`;
     }
     
     if (cleanUrl) {
@@ -347,9 +369,6 @@ ${productsContext || 'ขณะนี้ไม่มีสินค้าใน�
       cleanUrl = cleanUrl.replace(/https?:\/\/https?:\/\//gi, 'https://');
       
       // Fix incomplete protocol formats:
-      // - "https:/script.google.com" -> "https://script.google.com"
-      // - "https//script.google.com" -> "https://script.google.com"
-      // - "https:script.google.com" -> "https://script.google.com"
       if (/^https?:\/+(?!\/)/i.test(cleanUrl)) {
         cleanUrl = cleanUrl.replace(/^(https?):\/+/i, '$1://');
       } else if (/^https?\/+/i.test(cleanUrl)) {
@@ -376,7 +395,16 @@ ${productsContext || 'ขณะนี้ไม่มีสินค้าใน�
           queryParams = cleanUrl.substring(queryIndex);
         }
         
-        if (!baseUrl.endsWith('/exec')) {
+        if (baseUrl.includes('/macros/s/')) {
+          const parts = baseUrl.split('/macros/s/');
+          if (parts.length === 2) {
+            const idAndSuffix = parts[1];
+            const idMatch = idAndSuffix.match(/^([a-zA-Z0-9_\-]+)/);
+            if (idMatch) {
+              baseUrl = `https://script.google.com/macros/s/${idMatch[1]}/exec`;
+            }
+          }
+        } else if (!baseUrl.endsWith('/exec')) {
           baseUrl = baseUrl.replace(/\/+$/, '');
           if (!baseUrl.endsWith('/exec')) {
             baseUrl = baseUrl + '/exec';

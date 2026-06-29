@@ -63,25 +63,33 @@ export default function GoogleSheetSync({ onSyncComplete, currentProductsCount }
     let clean = url.trim().replace(/^['"<>[\]\s]+|['"<>[\]\s]+$/g, '');
     clean = clean.replace(/\.+\s*$/, '');
     
-    // If it's a raw deployment ID, check if its length is less than 73
-    if (/^AKfy[a-zA-Z0-9_\-]{50,80}$/.test(clean)) {
-      if (clean.length < 73) {
-        return `⚠️ รหัส Deployment ID ที่กรอกสั้นเกินไป (ยาวเพียง ${clean.length} ตัวอักษร แทนที่จะเป็นอย่างน้อย 74 ตัวอักษร) โปรดคลิกปุ่ม "คัดลอก" (Copy) จากระบบ Google Apps Script เพื่อคัดลอกรหัสที่ถูกต้องและสมบูรณ์มาวางใหม่`;
-      }
-      return null;
-    }
-    
+    // Check if there are dots suggesting ellipsis
     if (clean.includes('...')) {
-      return '⚠️ ตรวจพบอักษรจุดไข่ปลา (...) ในลิงก์! สิ่งนี้เกิดจากการคัดลอกจากหน้าจอที่แสดงไม่ครบถ้วนจาก Google โปรดคัดลอก "รหัสการทำให้ใช้งานได้" (Deployment ID) มาวางในช่องนี้แทนได้เลย ระบบจะแปลงเป็นลิงก์ที่ถูกต้องให้ท่านทันที';
+      return '⚠️ ตรวจพบอักษรจุดไข่ปลา (...) ในลิงก์! สิ่งนี้เกิดจากการคัดลอกจากหน้าจอที่แสดงไม่ครบถ้วนจาก Google โปรดคัดลอก "รหัสการทำให้ใช้งานได้" (Deployment ID) หรือลิงก์เต็มรูปแบบจริง ๆ มาวางใหม่';
     }
     
-    // Try to extract ID from URL
-    const match = clean.match(/\/s\/([a-zA-Z0-9_\-]+)/);
-    if (match) {
-      const id = match[1];
-      if (id.length < 73) {
-        return `⚠️ ตรวจพบลิงก์ถูกตัดตัวอักษรท้าย (รหัส ID ในลิงก์ยาวเพียง ${id.length} ตัวอักษร แทนที่จะเป็นอย่างน้อย 74 ตัวอักษร)! สิ่งนี้เกิดจากการคัดลอกลิงก์แบบย่อที่มีจุดไข่ปลา (...) ซ่อนอยู่ โปรดกดปุ่ม "คัดลอก" ตรง "รหัสการทำให้ใช้งานได้" (Deployment ID) ใน Google Apps Script มาวางแทนได้เลย ระบบจะแปลงเป็นลิงก์ที่ทำงานได้ 100%`;
+    // Extract ID
+    let id = '';
+    const sIndex = clean.indexOf('/s/');
+    if (sIndex !== -1) {
+      const remaining = clean.substring(sIndex + 3);
+      const match = remaining.match(/^([a-zA-Z0-9_\-]+)/);
+      if (match) {
+        id = match[1];
       }
+    } else if (/^AKfy[a-zA-Z0-9_\-]+/i.test(clean)) {
+      const match = clean.match(/^(AKfy[a-zA-Z0-9_\-]+)/i);
+      if (match) {
+        id = match[1];
+      }
+    }
+    
+    if (id) {
+      if (id.length < 60) {
+        return `⚠️ รหัส Deployment ID ที่ตรวจพบสั้นเกินไป (ยาวเพียง ${id.length} ตัวอักษร แทนที่จะเป็นอย่างน้อย 65 ตัวอักษร) โปรดตรวจสอบว่าท่านคัดลอกรหัสที่ถูกต้องและสมบูรณ์มาจาก Google Apps Script และวางใหม่ (หลีกเลี่ยงการคัดลอกแบบย่อที่มีจุดไข่ปลา)`;
+      }
+    } else {
+      return '⚠️ รูปแบบลิงก์ไม่ถูกต้อง: ไม่พบรหัส Deployment ID (ที่ขึ้นต้นด้วย AKfy) ในลิงก์ โปรดตรวจสอบการคัดลอกลิงก์ Web App (ที่ได้จากการ Deploy ใน Google Apps Script) หรือรหัส Deployment ID มาวางใหม่';
     }
     
     return null;
@@ -93,19 +101,43 @@ export default function GoogleSheetSync({ onSyncComplete, currentProductsCount }
     let clean = url.trim().replace(/^['"<>[\]\s]+|['"<>[\]\s]+$/g, '');
     clean = clean.replace(/\.+\s*$/, '');
     
-    // 1. Auto-convert raw Deployment ID to full Web App URL
-    if (/^AKfy[a-zA-Z0-9_\-]{50,80}$/.test(clean)) {
-      return `https://script.google.com/macros/s/${clean}/exec`;
+    // 1. Try to extract Deployment ID (starts with AKfy)
+    let id = '';
+    
+    // Check if it's a URL with /s/
+    const sIndex = clean.indexOf('/s/');
+    if (sIndex !== -1) {
+      const remaining = clean.substring(sIndex + 3);
+      const match = remaining.match(/^([a-zA-Z0-9_\-]+)/);
+      if (match) {
+        id = match[1];
+      }
+    } else {
+      // Check if the string itself starts with or contains AKfy
+      const akfyIndex = clean.search(/AKfy/i);
+      if (akfyIndex !== -1) {
+        const remaining = clean.substring(akfyIndex);
+        const match = remaining.match(/^([a-zA-Z0-9_\-]+)/);
+        if (match) {
+          id = match[1];
+        }
+      }
     }
     
-    // 2. Fix typos in domain name (using a robust pattern so that we don't turn script.google.com into scscript.google.com)
+    // 2. If we found a valid Deployment ID (length >= 50), reconstruct the URL perfectly
+    if (id && id.length >= 50) {
+      return `https://script.google.com/macros/s/${id}/exec`;
+    }
+    
+    // Fallback if no Deployment ID found
+    // Fix typos in domain name
     clean = clean.replace(/[a-zA-Z]*ript\.google\.com/gi, 'script.google.com');
     
-    // 3. Fix any duplicate protocol stacking (e.g., https://https:/, https://http://, etc.)
+    // Fix any duplicate protocol stacking
     clean = clean.replace(/https?:\/\/https?:\/+/gi, 'https://');
     clean = clean.replace(/https?:\/\/https?:\/\//gi, 'https://');
     
-    // 4. Fix incomplete protocol formats:
+    // Fix incomplete protocol formats:
     if (/^https?:\/+(?!\/)/i.test(clean)) {
       clean = clean.replace(/^(https?):\/+/i, '$1://');
     } else if (/^https?\/+/i.test(clean)) {
@@ -114,15 +146,15 @@ export default function GoogleSheetSync({ onSyncComplete, currentProductsCount }
       clean = clean.replace(/^(https?):/i, '$1://');
     }
     
-    // 5. If it has no protocol at all, prepend https://
+    // If it has no protocol at all, prepend https://
     if (!/^https?:\/\//i.test(clean)) {
       clean = 'https://' + clean;
     }
     
-    // 6. Ensure duplicate slashes after protocol are fixed
+    // Ensure duplicate slashes after protocol are fixed
     clean = clean.replace(/^(https?:\/\/)\/+/i, '$1');
     
-    // 7. Ensure it ends with /exec for script.google.com
+    // Ensure it ends with /exec for script.google.com
     if (clean.includes('script.google.com')) {
       let baseUrl = clean;
       let queryParams = '';
@@ -132,7 +164,16 @@ export default function GoogleSheetSync({ onSyncComplete, currentProductsCount }
         queryParams = clean.substring(queryIndex);
       }
       
-      if (!baseUrl.endsWith('/exec')) {
+      if (baseUrl.includes('/macros/s/')) {
+        const parts = baseUrl.split('/macros/s/');
+        if (parts.length === 2) {
+          const idAndSuffix = parts[1];
+          const idMatch = idAndSuffix.match(/^([a-zA-Z0-9_\-]+)/);
+          if (idMatch) {
+            baseUrl = `https://script.google.com/macros/s/${idMatch[1]}/exec`;
+          }
+        }
+      } else if (!baseUrl.endsWith('/exec')) {
         baseUrl = baseUrl.replace(/\/+$/, '');
         if (!baseUrl.endsWith('/exec')) {
           baseUrl = baseUrl + '/exec';
