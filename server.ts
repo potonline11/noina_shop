@@ -441,7 +441,14 @@ ${productsContext || 'ขณะนี้ไม่มีสินค้าใน�
         
         // Standard HTTP redirect behavior:
         // 301, 302, and 303 redirect requests switch POST to GET and drop payload.
-        if ([301, 302, 303].includes(res.status)) {
+        // HOWEVER, Google Apps Script Web Apps (macros) require preserving POST and payload.
+        if (options.method === 'POST') {
+          currentOptions.method = 'POST';
+          currentOptions.body = options.body;
+          if (options.headers) {
+            currentOptions.headers = { ...options.headers };
+          }
+        } else if ([301, 302, 303].includes(res.status)) {
           currentOptions.method = 'GET';
           delete currentOptions.body;
           if (currentOptions.headers) {
