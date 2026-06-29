@@ -311,6 +311,19 @@ export default function App() {
           return JSON.parse(text);
         } catch (e) {
           console.error('[App] Failed to parse webhook JSON response:', text);
+          const lowerText = text.toLowerCase();
+          if (lowerText.includes('not_found') || lowerText.includes('could not be found') || lowerText.includes('page not found')) {
+            return {
+              success: false,
+              message: '❌ ไม่พบหน้าสคริปต์ Google Apps Script (NOT_FOUND): ลิงก์ที่แอดมินกรอกในระบบไม่ถูกต้อง หรือ Deployment ID ไม่มีอยู่จริงในระบบ Google โปรดตรวจสอบว่าคัดลอก Web App URL (ลงท้ายด้วย /exec) มาอย่างถูกต้องครบถ้วนและบันทึกในระบบแอดมิน (NS001)'
+            };
+          }
+          if (lowerText.includes('sign in') || lowerText.includes('accounts.google') || lowerText.includes('login') || lowerText.includes('servicelogin')) {
+            return {
+              success: false,
+              message: '🔒 ไม่สามารถเข้าถึงสคริปต์ได้เนื่องจากติดสิทธิความปลอดภัยของ Google: โปรดแก้ไขสิทธิผู้มีสิทธิเข้าถึง Web App ใน Google Apps Script โดยตั้งค่า Who has access เป็น "Anyone" (ทุกคน) แล้วทำการ Deploy และนำลิงก์ /exec ใหม่มาบันทึกในระบบแอดมิน (NS001)'
+            };
+          }
           return {
             success: false,
             message: text.substring(0, 150) || 'การตอบกลับจากเซิร์ฟเวอร์ไม่ได้อยู่ในรูปแบบ JSON'
@@ -367,6 +380,19 @@ export default function App() {
             try {
               return JSON.parse(text);
             } catch (e) {
+              const lowerText = text.toLowerCase();
+              if (lowerText.includes('not_found') || lowerText.includes('could not be found') || lowerText.includes('page not found')) {
+                return {
+                  success: false,
+                  message: '❌ ไม่พบหน้าสคริปต์ Google Apps Script (NOT_FOUND): ลิงก์ไม่ถูกต้อง โปรดตรวจสอบลิงก์ Web App'
+                };
+              }
+              if (lowerText.includes('sign in') || lowerText.includes('accounts.google') || lowerText.includes('login') || lowerText.includes('servicelogin')) {
+                return {
+                  success: false,
+                  message: '🔒 ติดสิทธิความปลอดภัย Google: โปรดแชร์สิทธิ Web App เป็น "Anyone" (ทุกคน)'
+                };
+              }
               return { success: false, message: text.substring(0, 100) };
             }
           })
@@ -487,6 +513,19 @@ export default function App() {
         try {
           return JSON.parse(text);
         } catch (e) {
+          const lowerText = text.toLowerCase();
+          if (lowerText.includes('not_found') || lowerText.includes('could not be found') || lowerText.includes('page not found')) {
+            return {
+              success: false,
+              message: '❌ ไม่พบหน้าสคริปต์ Google Apps Script (NOT_FOUND): ลิงก์ไม่ถูกต้อง โปรดตรวจสอบลิงก์ Web App'
+            };
+          }
+          if (lowerText.includes('sign in') || lowerText.includes('accounts.google') || lowerText.includes('login') || lowerText.includes('servicelogin')) {
+            return {
+              success: false,
+              message: '🔒 ติดสิทธิความปลอดภัย Google: โปรดแชร์สิทธิ Web App เป็น "Anyone" (ทุกคน)'
+            };
+          }
           return { success: false, message: text.substring(0, 100) };
         }
       })

@@ -390,9 +390,18 @@ ${productsContext || 'ขณะนี้ไม่มีสินค้าใน�
       console.log(`[Webhook Proxy] Google Apps Script replied with Status: ${response.status}`, responseText);
 
       // Check if the response contains typical Google Apps Script errors
-      const isHtml = responseText.trim().toLowerCase().startsWith('<!doctype') || responseText.trim().toLowerCase().startsWith('<html');
-      const isNotFound = response.status === 404 || responseText.includes('NOT_FOUND') || responseText.includes('could not be found');
-      const isAuthError = responseText.includes('Google Accounts') || responseText.includes('Sign in') || responseText.includes('login') || responseText.includes('serviceLogin');
+      const lowerResponse = responseText.trim().toLowerCase();
+      const isHtml = lowerResponse.startsWith('<!doctype') || lowerResponse.startsWith('<html');
+      const isNotFound = response.status === 404 || 
+                         lowerResponse.includes('not_found') || 
+                         lowerResponse.includes('not found') || 
+                         lowerResponse.includes('could not be found') ||
+                         lowerResponse.includes('page not found') ||
+                         lowerResponse.includes('the page could not be found');
+      const isAuthError = lowerResponse.includes('google accounts') || 
+                          lowerResponse.includes('sign in') || 
+                          lowerResponse.includes('login') || 
+                          lowerResponse.includes('servicelogin');
 
       if (isNotFound) {
         console.warn('[Webhook Proxy] Google Apps Script returned a 404 NOT_FOUND error.');
