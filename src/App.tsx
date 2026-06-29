@@ -28,7 +28,7 @@ import AdminPortal from './views/AdminPortal';
 
 const extractSheetId = (url: string): string => {
   if (!url) return '';
-  const match = url.match(/\/spreadsheets\/d\/([a-zA-Z0-9-_]+)/);
+  const match = url.match(/\/spreadsheets\/d\/([a-zA-Z0-9_\-]+)/);
   return match ? match[1] : '';
 };
 

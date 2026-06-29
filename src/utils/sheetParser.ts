@@ -15,7 +15,7 @@ export const getCleanSheetUrl = (url: string): string => {
     return trimmed;
   }
   // Try to match google spreadsheets URL pattern to convert to export
-  const match = trimmed.match(/\/spreadsheets\/d\/([a-zA-Z0-9-_]+)/);
+  const match = trimmed.match(/\/spreadsheets\/d\/([a-zA-Z0-9_\-]+)/);
   if (match && match[1]) {
     return `https://docs.google.com/spreadsheets/d/${match[1]}/export?format=csv`;
   }

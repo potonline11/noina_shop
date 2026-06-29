@@ -23,7 +23,7 @@ function getCleanSheetUrl(url: string): string {
   if (trimmed.includes('output=csv') || trimmed.includes('format=csv')) {
     return trimmed;
   }
-  const match = trimmed.match(/\/spreadsheets\/d\/([a-zA-Z0-9-_]+)/);
+  const match = trimmed.match(/\/spreadsheets\/d\/([a-zA-Z0-9_\-]+)/);
   if (match && match[1]) {
     return `https://docs.google.com/spreadsheets/d/${match[1]}/export?format=csv`;
   }
@@ -333,7 +333,7 @@ ${productsContext || 'ขณะนี้ไม่มีสินค้าใน�
     
     // Auto-convert raw Deployment ID to full Web App URL
     // e.g. AKfycbyDhc_6DUE-3ToIXGxjozqXx833oZ718JxGNWFpDqEOIKEWiDFuCowmpqilcWnInTwKVg
-    if (/^AKfy[a-zA-Z0-9-_]{50,80}$/.test(cleanUrl)) {
+    if (/^AKfy[a-zA-Z0-9_\-]{50,80}$/.test(cleanUrl)) {
       cleanUrl = `https://script.google.com/macros/s/${cleanUrl}/exec`;
     }
     
@@ -454,7 +454,7 @@ ${productsContext || 'ขณะนี้ไม่มีสินค้าใน�
       
       // Use the server-configured sheetId as the primary source of truth to avoid stale client localStorage.
       if (store.sheetUrl) {
-        const match = store.sheetUrl.match(/\/d\/([a-zA-Z0-9-_]+)/);
+        const match = store.sheetUrl.match(/\/d\/([a-zA-Z0-9_\-]+)/);
         if (match && match[1]) {
           forwardBody.sheetId = match[1];
           console.log(`[Webhook Proxy] Using server-configured sheetId: ${forwardBody.sheetId}`);

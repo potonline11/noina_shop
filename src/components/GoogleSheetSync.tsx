@@ -62,8 +62,11 @@ export default function GoogleSheetSync({ onSyncComplete, currentProductsCount }
     if (!url) return null;
     const clean = url.trim().replace(/^['"\s]+|['"\s]+$/g, '');
     
-    // If it's a raw deployment ID, it's fine (will be auto-converted)
-    if (/^AKfy[a-zA-Z0-9-_]{50,80}$/.test(clean)) {
+    // If it's a raw deployment ID, check if its length is less than 75
+    if (/^AKfy[a-zA-Z0-9_\-]{50,80}$/.test(clean)) {
+      if (clean.length < 75) {
+        return `⚠️ รหัส Deployment ID ที่กรอกสั้นเกินไป (ยาวเพียง ${clean.length} ตัวอักษร แทนที่จะเป็น 75 ตัวอักษร) โปรดคลิกปุ่ม "คัดลอก" จากระบบ Google Apps Script เพื่อคัดลอกรหัสที่ถูกต้องและสมบูรณ์มาวางใหม่`;
+      }
       return null;
     }
     
@@ -72,11 +75,11 @@ export default function GoogleSheetSync({ onSyncComplete, currentProductsCount }
     }
     
     // Try to extract ID from URL
-    const match = clean.match(/\/s\/([a-zA-Z0-9-_]+)/);
+    const match = clean.match(/\/s\/([a-zA-Z0-9_\-]+)/);
     if (match) {
       const id = match[1];
-      if (id.length === 72) {
-        return '⚠️ ตรวจพบลิงก์ถูกตัดอักษรท้ายสุด (ยาว 72 ตัวอักษร แทนที่จะเป็น 75 ตัวอักษร)! สิ่งนี้มักเกิดจากที่ระบบ Google แสดงลิงก์แบบย่อแล้วมีจุดไข่ปลา (...) ซ่อนอยู่ โปรดนำ "รหัสการทำให้ใช้งานได้" (Deployment ID) มาวางในช่องนี้แทนได้เลย ระบบจะแปลงเป็นลิงก์ที่ทำงานได้ 100%';
+      if (id.length < 75) {
+        return `⚠️ ตรวจพบลิงก์ถูกตัดตัวอักษรท้าย (รหัส ID ในลิงก์ยาวเพียง ${id.length} ตัวอักษร แทนที่จะเป็น 75 ตัวอักษร)! สิ่งนี้เกิดจากการคัดลอกลิงก์แบบย่อที่มีจุดไข่ปลา (...) ซ่อนอยู่ โปรดกดปุ่ม "คัดลอก" ตรง "รหัสการทำให้ใช้งานได้" (Deployment ID) ยาว 75 ตัวอักษรใน Google Apps Script มาวางแทนได้เลย ระบบจะแปลงเป็นลิงก์ที่ทำงานได้ 100%`;
       }
     }
     
@@ -202,7 +205,7 @@ export default function GoogleSheetSync({ onSyncComplete, currentProductsCount }
     
     // Auto-convert raw Deployment ID to full Web App URL
     // e.g. AKfycbyDhc_6DUE-3ToIXGxjozqXx833oZ718JxGNWFpDqEOIKEWiDFuCowmpqilcWnInTwKVg
-    if (/^AKfy[a-zA-Z0-9-_]{50,80}$/.test(cleanWebhook)) {
+    if (/^AKfy[a-zA-Z0-9_\-]{50,80}$/.test(cleanWebhook)) {
       cleanWebhook = `https://script.google.com/macros/s/${cleanWebhook}/exec`;
     }
     
@@ -267,7 +270,7 @@ export default function GoogleSheetSync({ onSyncComplete, currentProductsCount }
     
     // Sanitize and auto-convert raw Deployment ID to Web App URL
     let cleanWebhook = webhookUrl.trim().replace(/^['"\s]+|['"\s]+$/g, '');
-    if (/^AKfy[a-zA-Z0-9-_]{50,80}$/.test(cleanWebhook)) {
+    if (/^AKfy[a-zA-Z0-9_\-]{50,80}$/.test(cleanWebhook)) {
       cleanWebhook = `https://script.google.com/macros/s/${cleanWebhook}/exec`;
     }
     
@@ -662,7 +665,7 @@ export default function GoogleSheetSync({ onSyncComplete, currentProductsCount }
                 onChange={(e) => {
                   const val = e.target.value.trim();
                   // Check if it is a raw deployment ID (e.g. starts with AKfy and is around 70-80 chars)
-                  if (/^AKfy[a-zA-Z0-9-_]{50,80}$/.test(val)) {
+                  if (/^AKfy[a-zA-Z0-9_\-]{50,80}$/.test(val)) {
                     setWebhookUrl(`https://script.google.com/macros/s/${val}/exec`);
                   } else {
                     setWebhookUrl(e.target.value);
