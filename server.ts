@@ -400,12 +400,12 @@ ${productsContext || 'ขณะนี้ไม่มีสินค้าใน�
       const forwardBody = { ...req.body };
       delete forwardBody.webhookUrl;
       
-      // Fallback sheetId if not provided by client (e.g., registering from new browser)
-      if (!forwardBody.sheetId && store.sheetUrl) {
+      // Use the server-configured sheetId as the primary source of truth to avoid stale client localStorage.
+      if (store.sheetUrl) {
         const match = store.sheetUrl.match(/\/d\/([a-zA-Z0-9-_]+)/);
         if (match && match[1]) {
           forwardBody.sheetId = match[1];
-          console.log(`[Webhook Proxy] Extracted fallback sheetId from server-side store.sheetUrl: ${forwardBody.sheetId}`);
+          console.log(`[Webhook Proxy] Using server-configured sheetId: ${forwardBody.sheetId}`);
         }
       }
       
@@ -424,17 +424,21 @@ ${productsContext || 'ขณะนี้ไม่มีสินค้าใน�
 
       // Check if the response contains typical Google Apps Script errors
       const lowerResponse = responseText.trim().toLowerCase();
-      const isHtml = lowerResponse.startsWith('<!doctype') || lowerResponse.startsWith('<html');
+      const isHtml = lowerResponse.startsWith('<!doctype') || lowerResponse.startsWith('<html') || lowerResponse.includes('<html>') || lowerResponse.includes('<body');
       const isNotFound = response.status === 404 || 
-                         lowerResponse.includes('not_found') || 
-                         lowerResponse.includes('not found') || 
-                         lowerResponse.includes('could not be found') ||
-                         lowerResponse.includes('page not found') ||
-                         lowerResponse.includes('the page could not be found');
-      const isAuthError = lowerResponse.includes('google accounts') || 
-                          lowerResponse.includes('sign in') || 
-                          lowerResponse.includes('login') || 
-                          lowerResponse.includes('servicelogin');
+                         (isHtml && (
+                           lowerResponse.includes('not_found') || 
+                           lowerResponse.includes('not found') || 
+                           lowerResponse.includes('could not be found') ||
+                           lowerResponse.includes('page not found') ||
+                           lowerResponse.includes('the page could not be found')
+                         ));
+      const isAuthError = isHtml && (
+                            lowerResponse.includes('google accounts') || 
+                            lowerResponse.includes('sign in') || 
+                            lowerResponse.includes('login') || 
+                            lowerResponse.includes('servicelogin')
+                          );
 
       if (isNotFound) {
         console.warn('[Webhook Proxy] Google Apps Script returned a 404 NOT_FOUND error.');
