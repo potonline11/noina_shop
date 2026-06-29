@@ -62,10 +62,10 @@ export default function GoogleSheetSync({ onSyncComplete, currentProductsCount }
     if (!url) return null;
     const clean = url.trim().replace(/^['"\s]+|['"\s]+$/g, '');
     
-    // If it's a raw deployment ID, check if its length is less than 74
+    // If it's a raw deployment ID, check if its length is less than 72
     if (/^AKfy[a-zA-Z0-9_\-]{50,80}$/.test(clean)) {
-      if (clean.length < 74) {
-        return `⚠️ รหัส Deployment ID ที่กรอกสั้นเกินไป (ยาวเพียง ${clean.length} ตัวอักษร แทนที่จะเป็น 74 ตัวอักษร) โปรดคลิกปุ่ม "คัดลอก" จากระบบ Google Apps Script เพื่อคัดลอกรหัสที่ถูกต้องและสมบูรณ์มาวางใหม่`;
+      if (clean.length < 72) {
+        return `⚠️ รหัส Deployment ID ที่กรอกสั้นเกินไป (ยาวเพียง ${clean.length} ตัวอักษร แทนที่จะเป็นอย่างน้อย 72 ตัวอักษร) โปรดคลิกปุ่ม "คัดลอก" จากระบบ Google Apps Script เพื่อคัดลอกรหัสที่ถูกต้องและสมบูรณ์มาวางใหม่`;
       }
       return null;
     }
@@ -78,8 +78,8 @@ export default function GoogleSheetSync({ onSyncComplete, currentProductsCount }
     const match = clean.match(/\/s\/([a-zA-Z0-9_\-]+)/);
     if (match) {
       const id = match[1];
-      if (id.length < 74) {
-        return `⚠️ ตรวจพบลิงก์ถูกตัดตัวอักษรท้าย (รหัส ID ในลิงก์ยาวเพียง ${id.length} ตัวอักษร แทนที่จะเป็น 74 ตัวอักษร)! สิ่งนี้เกิดจากการคัดลอกลิงก์แบบย่อที่มีจุดไข่ปลา (...) ซ่อนอยู่ โปรดกดปุ่ม "คัดลอก" ตรง "รหัสการทำให้ใช้งานได้" (Deployment ID) ยาว 74 ตัวอักษรใน Google Apps Script มาวางแทนได้เลย ระบบจะแปลงเป็นลิงก์ที่ทำงานได้ 100%`;
+      if (id.length < 72) {
+        return `⚠️ ตรวจพบลิงก์ถูกตัดตัวอักษรท้าย (รหัส ID ในลิงก์ยาวเพียง ${id.length} ตัวอักษร แทนที่จะเป็น 72 ตัวอักษร)! สิ่งนี้เกิดจากการคัดลอกลิงก์แบบย่อที่มีจุดไข่ปลา (...) ซ่อนอยู่ โปรดกดปุ่ม "คัดลอก" ตรง "รหัสการทำให้ใช้งานได้" (Deployment ID) ยาว 72 ตัวอักษรใน Google Apps Script มาวางแทนได้เลย ระบบจะแปลงเป็นลิงก์ที่ทำงานได้ 100%`;
       }
     }
     
