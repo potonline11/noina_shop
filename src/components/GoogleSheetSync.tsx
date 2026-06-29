@@ -86,6 +86,62 @@ export default function GoogleSheetSync({ onSyncComplete, currentProductsCount }
     return null;
   };
 
+  // Super robust sanitizer for Google Apps Script Webhook URL
+  const superSanitizeWebhookUrl = (url: string): string => {
+    if (!url) return '';
+    let clean = url.trim().replace(/^['"\s]+|['"\s]+$/g, '');
+    
+    // 1. Auto-convert raw Deployment ID to full Web App URL
+    if (/^AKfy[a-zA-Z0-9_\-]{50,80}$/.test(clean)) {
+      return `https://script.google.com/macros/s/${clean}/exec`;
+    }
+    
+    // 2. Fix typos in domain name (e.g., ript.google.com -> script.google.com)
+    clean = clean.replace(/ript\.google\.com/g, 'script.google.com');
+    
+    // 3. Fix any duplicate protocol stacking (e.g., https://https:/, https://http://, etc.)
+    clean = clean.replace(/https?:\/\/https?:\/+/gi, 'https://');
+    clean = clean.replace(/https?:\/\/https?:\/\//gi, 'https://');
+    
+    // 4. Fix incomplete protocol formats:
+    if (/^https?:\/+(?!\/)/i.test(clean)) {
+      clean = clean.replace(/^(https?):\/+/i, '$1://');
+    } else if (/^https?\/+/i.test(clean)) {
+      clean = clean.replace(/^(https?)\/+/i, '$1://');
+    } else if (/^https?:[a-zA-Z0-9]/i.test(clean)) {
+      clean = clean.replace(/^(https?):/i, '$1://');
+    }
+    
+    // 5. If it has no protocol at all, prepend https://
+    if (!/^https?:\/\//i.test(clean)) {
+      clean = 'https://' + clean;
+    }
+    
+    // 6. Ensure duplicate slashes after protocol are fixed
+    clean = clean.replace(/^(https?:\/\/)\/+/i, '$1');
+    
+    // 7. Ensure it ends with /exec for script.google.com
+    if (clean.includes('script.google.com')) {
+      let baseUrl = clean;
+      let queryParams = '';
+      const queryIndex = clean.indexOf('?');
+      if (queryIndex !== -1) {
+        baseUrl = clean.substring(0, queryIndex);
+        queryParams = clean.substring(queryIndex);
+      }
+      
+      if (!baseUrl.endsWith('/exec')) {
+        baseUrl = baseUrl.replace(/\/+$/, '');
+        if (!baseUrl.endsWith('/exec')) {
+          baseUrl = baseUrl + '/exec';
+        }
+      }
+      clean = baseUrl + queryParams;
+    }
+    
+    return clean;
+  };
+
   const handleCopyCode = () => {
     try {
       if (navigator.clipboard && navigator.clipboard.writeText) {
@@ -200,44 +256,8 @@ export default function GoogleSheetSync({ onSyncComplete, currentProductsCount }
   const handleSaveWebhook = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    // Sanitize webhook URL: trim spaces, remove leading/trailing single/double quotes, protocol-relative slashes, and add https:// if missing
-    let cleanWebhook = webhookUrl.trim().replace(/^['"\s]+|['"\s]+$/g, '');
-    
-    // Auto-convert raw Deployment ID to full Web App URL
-    // e.g. AKfycbyDhc_6DUE-3ToIXGxjozqXx833oZ718JxGNWFpDqEOIKEWiDFuCowmpqilcWnInTwKVg
-    if (/^AKfy[a-zA-Z0-9_\-]{50,80}$/.test(cleanWebhook)) {
-      cleanWebhook = `https://script.google.com/macros/s/${cleanWebhook}/exec`;
-    }
-    
-    if (cleanWebhook) {
-      // Remove protocol-relative prefix '//' if present, or any leading slashes
-      cleanWebhook = cleanWebhook.replace(/^\/+/g, '');
-      
-      if (!/^https?:\/\//i.test(cleanWebhook)) {
-        cleanWebhook = 'https://' + cleanWebhook;
-      }
-      
-      // Remove any duplicate slashes after the protocol, e.g. https://// -> https://
-      cleanWebhook = cleanWebhook.replace(/^(https?:\/\/)\/+/i, '$1');
-
-      if (cleanWebhook.includes('script.google.com')) {
-        let baseUrl = cleanWebhook;
-        let queryParams = '';
-        const queryIndex = cleanWebhook.indexOf('?');
-        if (queryIndex !== -1) {
-          baseUrl = cleanWebhook.substring(0, queryIndex);
-          queryParams = cleanWebhook.substring(queryIndex);
-        }
-        
-        if (!baseUrl.endsWith('/exec')) {
-          baseUrl = baseUrl.replace(/\/+$/, '');
-          if (!baseUrl.endsWith('/exec')) {
-            baseUrl = baseUrl + '/exec';
-          }
-        }
-        cleanWebhook = baseUrl + queryParams;
-      }
-    }
+    // Sanitize webhook URL using the super-robust sanitizer
+    const cleanWebhook = superSanitizeWebhookUrl(webhookUrl);
     
     setWebhookUrl(cleanWebhook);
     localStorage.setItem('noina_order_webhook_url', cleanWebhook);
@@ -268,11 +288,8 @@ export default function GoogleSheetSync({ onSyncComplete, currentProductsCount }
       return;
     }
     
-    // Sanitize and auto-convert raw Deployment ID to Web App URL
-    let cleanWebhook = webhookUrl.trim().replace(/^['"\s]+|['"\s]+$/g, '');
-    if (/^AKfy[a-zA-Z0-9_\-]{50,80}$/.test(cleanWebhook)) {
-      cleanWebhook = `https://script.google.com/macros/s/${cleanWebhook}/exec`;
-    }
+    // Sanitize webhook URL using the super-robust sanitizer
+    const cleanWebhook = superSanitizeWebhookUrl(webhookUrl);
     
     setTestingWebhook(true);
     setTestResult(null);
@@ -669,6 +686,11 @@ export default function GoogleSheetSync({ onSyncComplete, currentProductsCount }
                     setWebhookUrl(`https://script.google.com/macros/s/${val}/exec`);
                   } else {
                     setWebhookUrl(e.target.value);
+                  }
+                }}
+                onBlur={(e) => {
+                  if (e.target.value) {
+                    setWebhookUrl(superSanitizeWebhookUrl(e.target.value));
                   }
                 }}
                 placeholder="วาง Web App URL หรือวางรหัส Deployment ID ได้เลยที่นี่"

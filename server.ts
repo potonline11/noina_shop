@@ -334,19 +334,35 @@ ${productsContext || 'ขณะนี้ไม่มีสินค้าใน�
     // Auto-convert raw Deployment ID to full Web App URL
     // e.g. AKfycbyDhc_6DUE-3ToIXGxjozqXx833oZ718JxGNWFpDqEOIKEWiDFuCowmpqilcWnInTwKVg
     if (/^AKfy[a-zA-Z0-9_\-]{50,80}$/.test(cleanUrl)) {
-      cleanUrl = `https://script.google.com/macros/s/${cleanUrl}/exec`;
+      return `https://script.google.com/macros/s/${cleanUrl}/exec`;
     }
     
     if (cleanUrl) {
-      // Remove protocol-relative prefix '//' if present, or any leading slashes
-      cleanUrl = cleanUrl.replace(/^\/+/g, '');
+      // Fix typos in domain name (e.g., ript.google.com -> script.google.com)
+      cleanUrl = cleanUrl.replace(/ript\.google\.com/g, 'script.google.com');
       
-      // Ensure it starts with http:// or https:// to prevent relative path fetch failures
+      // Fix any duplicate protocol stacking (e.g., https://https:/, https://http://, etc.)
+      cleanUrl = cleanUrl.replace(/https?:\/\/https?:\/+/gi, 'https://');
+      cleanUrl = cleanUrl.replace(/https?:\/\/https?:\/\//gi, 'https://');
+      
+      // Fix incomplete protocol formats:
+      // - "https:/script.google.com" -> "https://script.google.com"
+      // - "https//script.google.com" -> "https://script.google.com"
+      // - "https:script.google.com" -> "https://script.google.com"
+      if (/^https?:\/+(?!\/)/i.test(cleanUrl)) {
+        cleanUrl = cleanUrl.replace(/^(https?):\/+/i, '$1://');
+      } else if (/^https?\/+/i.test(cleanUrl)) {
+        cleanUrl = cleanUrl.replace(/^(https?)\/+/i, '$1://');
+      } else if (/^https?:[a-zA-Z0-9]/i.test(cleanUrl)) {
+        cleanUrl = cleanUrl.replace(/^(https?):/i, '$1://');
+      }
+      
+      // If it has no protocol at all (e.g. starts with script.google.com or macros/s/...), prepend https://
       if (!/^https?:\/\//i.test(cleanUrl)) {
         cleanUrl = 'https://' + cleanUrl;
       }
       
-      // Remove any duplicate slashes after the protocol, e.g. https://// -> https://
+      // Ensure any duplicate slashes after protocol are fixed
       cleanUrl = cleanUrl.replace(/^(https?:\/\/)\/+/i, '$1');
       
       // Ensure it ends with /exec if it's a script.google.com link
