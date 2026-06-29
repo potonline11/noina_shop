@@ -338,8 +338,8 @@ ${productsContext || 'ขณะนี้ไม่มีสินค้าใน�
     }
     
     if (cleanUrl) {
-      // Fix typos in domain name (e.g., ript.google.com -> script.google.com)
-      cleanUrl = cleanUrl.replace(/ript\.google\.com/g, 'script.google.com');
+      // Fix typos in domain name (using a robust pattern so that we don't turn script.google.com into scscript.google.com)
+      cleanUrl = cleanUrl.replace(/[a-zA-Z]*ript\.google\.com/gi, 'script.google.com');
       
       // Fix any duplicate protocol stacking (e.g., https://https:/, https://http://, etc.)
       cleanUrl = cleanUrl.replace(/https?:\/\/https?:\/+/gi, 'https://');
