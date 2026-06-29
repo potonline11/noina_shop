@@ -50,6 +50,8 @@ export default function GoogleSheetSync({ onSyncComplete, currentProductsCount }
     fetchConfig();
   }, []);
   const [webhookSaveStatus, setWebhookSaveStatus] = useState<string>('');
+  const [testingWebhook, setTestingWebhook] = useState(false);
+  const [testResult, setTestResult] = useState<{ success: boolean; message: string } | null>(null);
   const [showScriptCode, setShowScriptCode] = useState<boolean>(false);
   const [copied, setCopied] = useState(false);
   const [expandCode, setExpandCode] = useState(false);
@@ -222,6 +224,64 @@ export default function GoogleSheetSync({ onSyncComplete, currentProductsCount }
     }
     
     setTimeout(() => setWebhookSaveStatus(''), 4000);
+  };
+
+  const handleTestWebhook = async () => {
+    if (!webhookUrl) {
+      setTestResult({ success: false, message: '❌ กรุณากรอก Webhook URL ก่อนเริ่มต้นทดสอบเชื่อมต่อ' });
+      return;
+    }
+    
+    setTestingWebhook(true);
+    setTestResult(null);
+    
+    try {
+      const response = await fetch('/api/webhook-proxy', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          webhookUrl: webhookUrl,
+          type: 'registration',
+          id: 'TEST_NS999',
+          name: 'ผู้ทดสอบระบบ (Test Connection)',
+          email: 'test@example.com',
+          phone: '081-111-1111',
+          password: 'TestPassword123',
+          sponsorId: 'NS001',
+          parentUserId: 'NS001',
+          position: 'left',
+          rank: 'Bronze',
+          dateJoined: new Date().toISOString().split('T')[0]
+        })
+      });
+      
+      const text = await response.text();
+      let data;
+      try {
+        data = JSON.parse(text);
+      } catch (e) {
+        data = { success: false, message: text };
+      }
+      
+      if (response.ok && data.success) {
+        setTestResult({
+          success: true,
+          message: '✓ เชื่อมต่อกับ Google Apps Script สำเร็จ 100%! สคริปต์ของท่านทำงานได้ดีและตอบกลับถูกต้อง ข้อมูลการทดสอบถูกนำเข้า Google Sheet แล้ว'
+        });
+      } else {
+        setTestResult({
+          success: false,
+          message: data.message || 'เกิดข้อผิดพลาดในการเชื่อมต่อ'
+        });
+      }
+    } catch (err: any) {
+      setTestResult({
+        success: false,
+        message: '❌ ล้มเหลว: ' + (err.message || 'ไม่สามารถติดต่อเซิร์ฟเวอร์ proxy ได้')
+      });
+    } finally {
+      setTestingWebhook(false);
+    }
   };
 
   const appsScriptCode = `function doPost(e) {
@@ -563,6 +623,28 @@ export default function GoogleSheetSync({ onSyncComplete, currentProductsCount }
             </div>
             {webhookSaveStatus && (
               <p className="text-[11px] text-emerald-600 font-bold mt-1.5">✓ {webhookSaveStatus}</p>
+            )}
+
+            <div className="flex flex-wrap gap-2 mt-3 pt-2 border-t border-slate-100">
+              <button
+                type="button"
+                onClick={handleTestWebhook}
+                disabled={testingWebhook}
+                className="bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold text-[11px] px-3.5 py-2 rounded-xl transition flex items-center gap-1.5 shrink-0 border border-slate-200 shadow-sm disabled:opacity-50"
+              >
+                <RefreshCw className={`w-3.5 h-3.5 text-indigo-600 ${testingWebhook ? 'animate-spin' : ''}`} />
+                {testingWebhook ? 'กำลังทดสอบเชื่อมต่อ...' : '⚡ ทดสอบการเชื่อมต่อ (Test Webhook)'}
+              </button>
+            </div>
+
+            {testResult && (
+              <div className={`mt-3 p-3.5 rounded-xl text-xs border leading-relaxed ${
+                testResult.success 
+                  ? 'bg-emerald-50 border-emerald-200 text-emerald-800 font-semibold' 
+                  : 'bg-rose-50 border-rose-200 text-rose-800'
+              }`}>
+                {testResult.message}
+              </div>
             )}
           </div>
         </form>
