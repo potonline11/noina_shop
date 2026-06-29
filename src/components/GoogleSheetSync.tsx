@@ -281,9 +281,21 @@ export default function GoogleSheetSync({ onSyncComplete, currentProductsCount }
       localStorage.setItem('noina_sheet_url', sheetUrl);
       setPreviewProducts(products);
       onSyncComplete(products);
+
+      // Save the sheetUrl and synced products to backend store so they persist globally
+      try {
+        await fetch('/api/products-store', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ sheetUrl, products })
+        });
+      } catch (srvErr) {
+        console.error('Failed to sync sheet data to server:', srvErr);
+      }
+
       setStatus({
         type: 'success',
-        message: `ดึงข้อมูลจาก Google Sheet สำเร็จ! ค้นพบและนำเข้าสินค้าใหม่ทั้งหมด ${products.length} รายการ`
+        message: `ดึงข้อมูลจาก Google Sheet สำเร็จ! ค้นพบและนำเข้าสินค้าใหม่ทั้งหมด ${products.length} รายการ และบันทึกข้อมูลลงเซิร์ฟเวอร์เรียบร้อย`
       });
     } catch (err: any) {
       console.error(err);
@@ -376,7 +388,12 @@ export default function GoogleSheetSync({ onSyncComplete, currentProductsCount }
         const lowerMsg = displayMessage.toLowerCase();
         
         if (lowerMsg.includes('not_found') || lowerMsg.includes('could not be found') || lowerMsg.includes('page not found') || response.status === 404) {
-          displayMessage = '❌ ไม่พบหน้าสคริปต์ Google Apps Script (HTTP 404 NOT FOUND): ลิงก์ที่กรอกไม่ถูกต้อง หรือ Deployment ID ไม่มีอยู่จริงในระบบ Google โปรดตรวจสอบว่าท่านคัดลอก Web App URL (ลงท้ายด้วย /exec) มาวางอย่างถูกต้องครบถ้วน และได้กด "บันทึก URL" เรียบร้อยแล้ว';
+          displayMessage = '❌ ไม่พบหน้าสคริปต์ Google Apps Script (HTTP 404 Not Found)\n\n' +
+            'สาเหตุที่เป็นไปได้สูงที่สุด:\n' +
+            '1. บั๊กการล็อกอินหลายบัญชีของ Google: หากท่านล็อกอิน Google หลายตัวพร้อมกันในเบราว์เซอร์ตอนกด Deploy ระบบมักจะสร้าง Deployment ID ที่ใช้งานไม่ได้\n' +
+            '   👉 วิธีแก้ไข: โปรดเปิด "หน้าต่างไม่ระบุตัวตน" (Incognito Window) -> ล็อกอินเข้าบัญชี pnmall4u@gmail.com บัญชีเดียวเท่านั้น -> เข้าหน้าแก้ไขสคริปต์ -> กด Deploy > New deployment ใหม่ จากนั้นนำลิงก์ที่ลงท้ายด้วย /exec ตัวใหม่มาบันทึกและทดสอบอีกครั้ง\n\n' +
+            '2. เลือกการ Deployment ผิดประเภท: ตรวจสอบว่าท่านเลือกชนิดเป็น "เว็บแอป" (Web App) หรือไม่ (ไม่ใช่ไลบรารีหรือ API)\n' +
+            '   👉 วิธีแก้ไข: ตรวจสอบขั้นตอนการ Deploy ในคู่มือด้านล่าง โดยตั้งค่า "การเข้าถึงเป็น: ทุกคน (Anyone)" และ "ทำงานในฐานะ: ฉัน (pnmall4u@gmail.com)" เสมอ';
         } else if (lowerMsg.includes('unauthorized') || lowerMsg.includes('forbidden') || response.status === 401 || response.status === 403) {
           displayMessage = '🔒 ติดสิทธิความปลอดภัยของ Google: โปรดแก้ไขสิทธิผู้มีสิทธิเข้าถึง Web App ใน Google Apps Script โดยตั้งค่า Who has access เป็น "Anyone" (ทุกคน) แล้วกด Deploy > New deployment ใหม่ จากนั้นนำลิงก์ /exec ใหม่มาบันทึกในระบบ';
         } else if (displayMessage.includes('<!DOCTYPE') || displayMessage.includes('<html')) {
@@ -644,8 +661,9 @@ export default function GoogleSheetSync({ onSyncComplete, currentProductsCount }
               <input
                 type="text"
                 value={sheetUrl}
-                disabled
-                className="flex-grow px-3.5 py-2 text-xs rounded-xl border border-slate-200 bg-slate-50 text-slate-500 cursor-not-allowed"
+                onChange={(e) => setSheetUrl(e.target.value)}
+                placeholder="วางลิงก์ Google Sheet แบบ CSV (.csv) ที่แชร์ต่อสาธารณะแล้ว"
+                className="flex-grow px-3.5 py-2 text-xs rounded-xl border border-slate-300 focus:outline-none focus:ring-1 focus:ring-emerald-500 bg-white"
               />
               <button
                 type="submit"
