@@ -60,7 +60,8 @@ export default function GoogleSheetSync({ onSyncComplete, currentProductsCount }
   // Helper to check if a URL is likely truncated
   const getUrlWarning = (url: string) => {
     if (!url) return null;
-    const clean = url.trim().replace(/^['"\s]+|['"\s]+$/g, '');
+    let clean = url.trim().replace(/^['"<>[\]\s]+|['"<>[\]\s]+$/g, '');
+    clean = clean.replace(/\.+\s*$/, '');
     
     // If it's a raw deployment ID, check if its length is less than 73
     if (/^AKfy[a-zA-Z0-9_\-]{50,80}$/.test(clean)) {
@@ -89,7 +90,8 @@ export default function GoogleSheetSync({ onSyncComplete, currentProductsCount }
   // Super robust sanitizer for Google Apps Script Webhook URL
   const superSanitizeWebhookUrl = (url: string): string => {
     if (!url) return '';
-    let clean = url.trim().replace(/^['"\s]+|['"\s]+$/g, '');
+    let clean = url.trim().replace(/^['"<>[\]\s]+|['"<>[\]\s]+$/g, '');
+    clean = clean.replace(/\.+\s*$/, '');
     
     // 1. Auto-convert raw Deployment ID to full Web App URL
     if (/^AKfy[a-zA-Z0-9_\-]{50,80}$/.test(clean)) {

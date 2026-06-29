@@ -328,8 +328,9 @@ ${productsContext || 'ขณะนี้ไม่มีสินค้าใน�
   // Helper to sanitize Google Apps Script Webhook URL and ensure it has /exec
   function sanitizeWebhookUrl(url: string): string {
     if (!url) return '';
-    // Trim spaces and remove any leading/trailing single or double quotes
-    let cleanUrl = url.trim().replace(/^['"\s]+|['"\s]+$/g, '');
+    // Trim spaces and remove any leading/trailing single/double quotes, angle brackets, brackets, or dots
+    let cleanUrl = url.trim().replace(/^['"<>[\]\s]+|['"<>[\]\s]+$/g, '');
+    cleanUrl = cleanUrl.replace(/\.+\s*$/, '');
     
     // Auto-convert raw Deployment ID to full Web App URL
     // e.g. AKfycbyDhc_6DUE-3ToIXGxjozqXx833oZ718JxGNWFpDqEOIKEWiDFuCowmpqilcWnInTwKVg
