@@ -5,7 +5,7 @@
 
 import React, { useState } from 'react';
 import { Member, Order, CommissionLog } from '../types';
-import { Link, Clipboard, ShoppingBag, FolderGit2, CreditCard, Award, ArrowUpRight, LogOut, CheckCircle, Info } from 'lucide-react';
+import { Link, Clipboard, ShoppingBag, FolderGit2, CreditCard, Award, ArrowUpRight, LogOut, CheckCircle, Info, Mail, MessageSquare, Check } from 'lucide-react';
 import TreeChart from '../components/TreeChart';
 
 interface MemberPortalProps {
@@ -21,6 +21,37 @@ type SubMenu = 'referral' | 'orders' | 'tree' | 'income';
 export default function MemberPortal({ currentUser, members, orders, commissionLogs, onLogout }: MemberPortalProps) {
   const [activeTab, setActiveTab] = useState<SubMenu>('referral');
   const [copySuccess, setCopySuccess] = useState(false);
+  const [copiedId, setCopiedId] = useState<string | null>(null);
+
+  const handleCopyText = (id: string, text: string) => {
+    navigator.clipboard.writeText(text);
+    setCopiedId(id);
+    setTimeout(() => setCopiedId(null), 2000);
+  };
+
+  const getOrderShareText = (o: Order) => {
+    const itemsText = o.items.map(i => `• ${i.name} x ${i.quantity}`).join('\n');
+    const paymentText = o.paymentMethod === 'cod' ? 'เก็บเงินปลายทาง (COD +3%)' : 'เงินสด / โอนเงินผ่านระบบพร้อมเพย์';
+    return (
+      `ใบเสร็จรับเงิน Noina Shop (รหัสคำสั่งซื้อ: ${o.id})\n` +
+      `----------------------------------------\n` +
+      `👤 ลูกค้าผู้สั่งซื้อ: คุณ ${o.memberName} (${o.memberId})\n` +
+      `📦 รายการที่สั่งซื้อ:\n${itemsText}\n` +
+      `----------------------------------------\n` +
+      `💰 ยอดรวมสุทธิ: ${o.totalAmount.toLocaleString()} บาท\n` +
+      `📈 คะแนนได้รับ: +${o.totalBV} BV (ไหลขึ้นสายงานแล้ว)\n` +
+      `🚚 วิธีการจัดส่ง/ชำระเงิน: ${paymentText}\n` +
+      `📍 ที่อยู่จัดส่ง: ${o.address || 'รับหน้าร้าน'}\n` +
+      `----------------------------------------\n` +
+      `ขอบพระคุณที่อุดหนุนสินค้าไอทีคุณภาพดีจากร้าน Noina Shop!`
+    );
+  };
+
+  const sendOrderEmail = (o: Order) => {
+    const subject = encodeURIComponent(`ใบเสร็จและการยืนยันคำสั่งซื้อ ${o.id} - Noina Shop`);
+    const body = encodeURIComponent(getOrderShareText(o));
+    window.open(`mailto:${o.email || ''}?subject=${subject}&body=${body}`, '_blank');
+  };
 
   // Filter orders for current member
   const memberOrders = orders.filter(o => o.memberId === currentUser.id);
@@ -221,6 +252,34 @@ export default function MemberPortal({ currentUser, members, orders, commissionL
                         <span className="text-[9px] text-slate-400 block">ยอดชำระสุทธิ</span>
                         <span className="text-xs font-extrabold text-slate-800">{order.totalAmount.toLocaleString()} ฿</span>
                       </div>
+                    </div>
+
+                    <div className="flex justify-end gap-2 pt-2 border-t border-dashed border-slate-200 mt-2">
+                      <button
+                        onClick={() => sendOrderEmail(order)}
+                        className="flex items-center gap-1.5 px-2.5 py-1.5 bg-indigo-50 hover:bg-indigo-100 text-indigo-700 font-semibold text-[10px] rounded-lg transition"
+                        title="ส่งสลิปผ่านทาง Email"
+                      >
+                        <Mail className="w-3.5 h-3.5" />
+                        อีเมลแจ้งใบเสร็จ
+                      </button>
+                      <button
+                        onClick={() => handleCopyText(order.id, getOrderShareText(order))}
+                        className="flex items-center gap-1.5 px-2.5 py-1.5 bg-emerald-50 hover:bg-emerald-100 text-emerald-700 font-semibold text-[10px] rounded-lg transition"
+                        title="คัดลอกข้อความสำหรับส่ง LINE/SMS"
+                      >
+                        {copiedId === order.id ? (
+                          <>
+                            <Check className="w-3.5 h-3.5 text-emerald-600 animate-pulse" />
+                            คัดลอกเรียบร้อยแล้ว
+                          </>
+                        ) : (
+                          <>
+                            <MessageSquare className="w-3.5 h-3.5" />
+                            ส่งใบเสร็จทาง LINE
+                          </>
+                        )}
+                      </button>
                     </div>
                   </div>
                 ))}

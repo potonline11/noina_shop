@@ -28,7 +28,8 @@ import {
   Trash2,
   Plus,
   Minus,
-  CheckSquare
+  CheckSquare,
+  MessageSquare
 } from 'lucide-react';
 
 interface ProductsViewProps {
@@ -93,6 +94,38 @@ export default function ProductsView({
   const [generatedOrderId, setGeneratedOrderId] = useState<string>('');
   const [generatedSponsorCode, setGeneratedSponsorCode] = useState<string>('');
   const [completedOrderSummary, setCompletedOrderSummary] = useState<any>(null);
+
+  const [copiedOrderSuccess, setCopiedOrderSuccess] = useState<boolean>(false);
+
+  const getOrderSuccessShareText = (o: any) => {
+    const itemsText = o.items.map((i: any) => `• ${i.product.name} x ${i.quantity}`).join('\n');
+    const paymentText = o.paymentMethod === 'cod' ? 'เก็บเงินปลายทาง (COD +3%)' : 'เงินสด / โอนเงินผ่านระบบพร้อมเพย์';
+    return (
+      `ใบเสร็จรับเงิน Noina Shop (รหัสคำสั่งซื้อ: ${o.orderId})\n` +
+      `----------------------------------------\n` +
+      `👤 ลูกค้าผู้สั่งซื้อ: คุณ ${o.firstName} ${o.lastName}\n` +
+      `📦 รายการที่สั่งซื้อ:\n${itemsText}\n` +
+      `----------------------------------------\n` +
+      `💰 ยอดรวมสุทธิ: ${o.totalAmount.toLocaleString()} บาท\n` +
+      `📈 คะแนนได้รับ: +${o.totalBV} BV (ไหลขึ้นสายงานแล้ว)\n` +
+      `🚚 วิธีการจัดส่ง/ชำระเงิน: ${paymentText}\n` +
+      `📍 ที่อยู่จัดส่ง: ${o.address || 'รับหน้าร้าน'}\n` +
+      `----------------------------------------\n` +
+      `ขอบพระคุณที่อุดหนุนสินค้าไอทีคุณภาพดีจากร้าน Noina Shop!`
+    );
+  };
+
+  const handleCopyOrderSuccess = (o: any) => {
+    navigator.clipboard.writeText(getOrderSuccessShareText(o));
+    setCopiedOrderSuccess(true);
+    setTimeout(() => setCopiedOrderSuccess(false), 2000);
+  };
+
+  const sendOrderSuccessEmail = (o: any) => {
+    const subject = encodeURIComponent(`ใบเสร็จและการยืนยันคำสั่งซื้อ ${o.orderId} - Noina Shop`);
+    const body = encodeURIComponent(getOrderSuccessShareText(o));
+    window.open(`mailto:${o.email || ''}?subject=${subject}&body=${body}`, '_blank');
+  };
 
   // Auto-fill names if logged in
   useEffect(() => {
@@ -1066,6 +1099,34 @@ export default function ProductsView({
                         <span className="font-bold text-slate-700 block">✓ เชื่อมต่อ Google Sheets เรียบร้อยแล้ว!</span>
                         ข้อมูลออเดอร์นี้ได้ส่ง POST ไร้การปิดกั้นไปยังลิงก์ Google Sheet Script Webhook แล้ว หากท่านเป็นผู้ดูแลร้าน ท่านสามารถไปดูโค้ดการเชื่อมต่อระบบอีเมลอัตโนมัติและสเปรดชีตจริงได้ในเมนู <strong>หลังบ้านผู้ดูแลระบบ (Admin)</strong>
                       </div>
+                    </div>
+
+                    <div className="grid grid-cols-2 gap-2 my-1">
+                      <button
+                        onClick={() => sendOrderSuccessEmail(completedOrderSummary)}
+                        className="flex items-center justify-center gap-1.5 py-2.5 bg-indigo-50 hover:bg-indigo-100 text-indigo-700 font-bold text-xs rounded-xl transition shadow-sm"
+                        title="ส่งสลิปผ่านทาง Email"
+                      >
+                        <Mail className="w-4 h-4" />
+                        อีเมลแจ้งใบเสร็จ
+                      </button>
+                      <button
+                        onClick={() => handleCopyOrderSuccess(completedOrderSummary)}
+                        className="flex items-center justify-center gap-1.5 py-2.5 bg-emerald-50 hover:bg-emerald-100 text-emerald-700 font-bold text-xs rounded-xl transition shadow-sm"
+                        title="คัดลอกข้อความสำหรับส่ง LINE/SMS"
+                      >
+                        {copiedOrderSuccess ? (
+                          <>
+                            <Check className="w-4 h-4 text-emerald-600 animate-pulse" />
+                            คัดลอกเรียบร้อย!
+                          </>
+                        ) : (
+                          <>
+                            <MessageSquare className="w-4 h-4" />
+                            ส่งใบเสร็จทาง LINE
+                          </>
+                        )}
+                      </button>
                     </div>
                     
                     <button
