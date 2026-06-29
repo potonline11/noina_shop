@@ -328,11 +328,21 @@ ${productsContext || 'ขณะนี้ไม่มีสินค้าใน�
   // Helper to sanitize Google Apps Script Webhook URL and ensure it has /exec
   function sanitizeWebhookUrl(url: string): string {
     if (!url) return '';
-    let cleanUrl = url.trim();
-    if (cleanUrl.includes('script.google.com') && !cleanUrl.endsWith('/exec')) {
-      cleanUrl = cleanUrl.replace(/\/+$/, '');
-      if (!cleanUrl.endsWith('/exec')) {
-        cleanUrl = cleanUrl + '/exec';
+    // Trim spaces and remove any leading/trailing single or double quotes
+    let cleanUrl = url.trim().replace(/^['"\s]+|['"\s]+$/g, '');
+    
+    if (cleanUrl) {
+      // Ensure it starts with http:// or https:// to prevent relative path fetch failures
+      if (!/^https?:\/\//i.test(cleanUrl)) {
+        cleanUrl = 'https://' + cleanUrl;
+      }
+      
+      // Ensure it ends with /exec if it's a script.google.com link
+      if (cleanUrl.includes('script.google.com') && !cleanUrl.endsWith('/exec')) {
+        cleanUrl = cleanUrl.replace(/\/+$/, '');
+        if (!cleanUrl.endsWith('/exec')) {
+          cleanUrl = cleanUrl + '/exec';
+        }
       }
     }
     return cleanUrl;

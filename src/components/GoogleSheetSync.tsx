@@ -145,7 +145,22 @@ export default function GoogleSheetSync({ onSyncComplete, currentProductsCount }
 
   const handleSaveWebhook = async (e: React.FormEvent) => {
     e.preventDefault();
-    const cleanWebhook = webhookUrl.trim();
+    
+    // Sanitize webhook URL: trim spaces, remove leading/trailing single/double quotes, and add https:// if missing
+    let cleanWebhook = webhookUrl.trim().replace(/^['"\s]+|['"\s]+$/g, '');
+    if (cleanWebhook) {
+      if (!/^https?:\/\//i.test(cleanWebhook)) {
+        cleanWebhook = 'https://' + cleanWebhook;
+      }
+      if (cleanWebhook.includes('script.google.com') && !cleanWebhook.endsWith('/exec')) {
+        cleanWebhook = cleanWebhook.replace(/\/+$/, '');
+        if (!cleanWebhook.endsWith('/exec')) {
+          cleanWebhook = cleanWebhook + '/exec';
+        }
+      }
+    }
+    
+    setWebhookUrl(cleanWebhook);
     localStorage.setItem('noina_order_webhook_url', cleanWebhook);
     setWebhookSaveStatus('กำลังบันทึกข้อมูลลงระบบเซิร์ฟเวอร์...');
     
