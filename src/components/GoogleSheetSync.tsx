@@ -146,17 +146,35 @@ export default function GoogleSheetSync({ onSyncComplete, currentProductsCount }
   const handleSaveWebhook = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    // Sanitize webhook URL: trim spaces, remove leading/trailing single/double quotes, and add https:// if missing
+    // Sanitize webhook URL: trim spaces, remove leading/trailing single/double quotes, protocol-relative slashes, and add https:// if missing
     let cleanWebhook = webhookUrl.trim().replace(/^['"\s]+|['"\s]+$/g, '');
     if (cleanWebhook) {
+      // Remove protocol-relative prefix '//' if present, or any leading slashes
+      cleanWebhook = cleanWebhook.replace(/^\/+/g, '');
+      
       if (!/^https?:\/\//i.test(cleanWebhook)) {
         cleanWebhook = 'https://' + cleanWebhook;
       }
-      if (cleanWebhook.includes('script.google.com') && !cleanWebhook.endsWith('/exec')) {
-        cleanWebhook = cleanWebhook.replace(/\/+$/, '');
-        if (!cleanWebhook.endsWith('/exec')) {
-          cleanWebhook = cleanWebhook + '/exec';
+      
+      // Remove any duplicate slashes after the protocol, e.g. https://// -> https://
+      cleanWebhook = cleanWebhook.replace(/^(https?:\/\/)\/+/i, '$1');
+
+      if (cleanWebhook.includes('script.google.com')) {
+        let baseUrl = cleanWebhook;
+        let queryParams = '';
+        const queryIndex = cleanWebhook.indexOf('?');
+        if (queryIndex !== -1) {
+          baseUrl = cleanWebhook.substring(0, queryIndex);
+          queryParams = cleanWebhook.substring(queryIndex);
         }
+        
+        if (!baseUrl.endsWith('/exec')) {
+          baseUrl = baseUrl.replace(/\/+$/, '');
+          if (!baseUrl.endsWith('/exec')) {
+            baseUrl = baseUrl + '/exec';
+          }
+        }
+        cleanWebhook = baseUrl + queryParams;
       }
     }
     

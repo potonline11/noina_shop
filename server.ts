@@ -314,7 +314,7 @@ ${productsContext || 'ขณะนี้ไม่มีสินค้าใน�
       const { sheetUrl, webhookUrl, products, members } = req.body;
       const store = await readStore();
       if (sheetUrl !== undefined) store.sheetUrl = sheetUrl;
-      if (webhookUrl !== undefined) store.webhookUrl = webhookUrl;
+      if (webhookUrl !== undefined) store.webhookUrl = sanitizeWebhookUrl(webhookUrl);
       if (products !== undefined) store.products = products;
       if (members !== undefined) store.members = members;
       await writeStore(store);
@@ -332,17 +332,34 @@ ${productsContext || 'ขณะนี้ไม่มีสินค้าใน�
     let cleanUrl = url.trim().replace(/^['"\s]+|['"\s]+$/g, '');
     
     if (cleanUrl) {
+      // Remove protocol-relative prefix '//' if present, or any leading slashes
+      cleanUrl = cleanUrl.replace(/^\/+/g, '');
+      
       // Ensure it starts with http:// or https:// to prevent relative path fetch failures
       if (!/^https?:\/\//i.test(cleanUrl)) {
         cleanUrl = 'https://' + cleanUrl;
       }
       
+      // Remove any duplicate slashes after the protocol, e.g. https://// -> https://
+      cleanUrl = cleanUrl.replace(/^(https?:\/\/)\/+/i, '$1');
+      
       // Ensure it ends with /exec if it's a script.google.com link
-      if (cleanUrl.includes('script.google.com') && !cleanUrl.endsWith('/exec')) {
-        cleanUrl = cleanUrl.replace(/\/+$/, '');
-        if (!cleanUrl.endsWith('/exec')) {
-          cleanUrl = cleanUrl + '/exec';
+      if (cleanUrl.includes('script.google.com')) {
+        let baseUrl = cleanUrl;
+        let queryParams = '';
+        const queryIndex = cleanUrl.indexOf('?');
+        if (queryIndex !== -1) {
+          baseUrl = cleanUrl.substring(0, queryIndex);
+          queryParams = cleanUrl.substring(queryIndex);
         }
+        
+        if (!baseUrl.endsWith('/exec')) {
+          baseUrl = baseUrl.replace(/\/+$/, '');
+          if (!baseUrl.endsWith('/exec')) {
+            baseUrl = baseUrl + '/exec';
+          }
+        }
+        cleanUrl = baseUrl + queryParams;
       }
     }
     return cleanUrl;
@@ -385,6 +402,15 @@ ${productsContext || 'ขณะนี้ไม่มีสินค้าใน�
       // Remove webhookUrl from body before forwarding to Apps Script
       const forwardBody = { ...req.body };
       delete forwardBody.webhookUrl;
+      
+      // Fallback sheetId if not provided by client (e.g., registering from new browser)
+      if (!forwardBody.sheetId && store.sheetUrl) {
+        const match = store.sheetUrl.match(/\/d\/([a-zA-Z0-9-_]+)/);
+        if (match && match[1]) {
+          forwardBody.sheetId = match[1];
+          console.log(`[Webhook Proxy] Extracted fallback sheetId from server-side store.sheetUrl: ${forwardBody.sheetId}`);
+        }
+      }
       
       const response = await fetch(webhookUrl, {
         method: 'POST',
