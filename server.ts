@@ -331,6 +331,12 @@ ${productsContext || 'ขณะนี้ไม่มีสินค้าใน�
     // Trim spaces and remove any leading/trailing single or double quotes
     let cleanUrl = url.trim().replace(/^['"\s]+|['"\s]+$/g, '');
     
+    // Auto-convert raw Deployment ID to full Web App URL
+    // e.g. AKfycbyDhc_6DUE-3ToIXGxjozqXx833oZ718JxGNWFpDqEOIKEWiDFuCowmpqilcWnInTwKVg
+    if (/^AKfy[a-zA-Z0-9-_]{50,80}$/.test(cleanUrl)) {
+      cleanUrl = `https://script.google.com/macros/s/${cleanUrl}/exec`;
+    }
+    
     if (cleanUrl) {
       // Remove protocol-relative prefix '//' if present, or any leading slashes
       cleanUrl = cleanUrl.replace(/^\/+/g, '');

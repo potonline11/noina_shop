@@ -57,6 +57,32 @@ export default function GoogleSheetSync({ onSyncComplete, currentProductsCount }
   const [expandCode, setExpandCode] = useState(false);
   const codeRef = useRef<HTMLPreElement>(null);
 
+  // Helper to check if a URL is likely truncated
+  const getUrlWarning = (url: string) => {
+    if (!url) return null;
+    const clean = url.trim().replace(/^['"\s]+|['"\s]+$/g, '');
+    
+    // If it's a raw deployment ID, it's fine (will be auto-converted)
+    if (/^AKfy[a-zA-Z0-9-_]{50,80}$/.test(clean)) {
+      return null;
+    }
+    
+    if (clean.includes('...')) {
+      return '⚠️ ตรวจพบอักษรจุดไข่ปลา (...) ในลิงก์! สิ่งนี้เกิดจากการคัดลอกจากหน้าจอที่แสดงไม่ครบถ้วนจาก Google โปรดคัดลอก "รหัสการทำให้ใช้งานได้" (Deployment ID) มาวางในช่องนี้แทนได้เลย ระบบจะแปลงเป็นลิงก์ที่ถูกต้องให้ท่านทันที';
+    }
+    
+    // Try to extract ID from URL
+    const match = clean.match(/\/s\/([a-zA-Z0-9-_]+)/);
+    if (match) {
+      const id = match[1];
+      if (id.length === 72) {
+        return '⚠️ ตรวจพบลิงก์ถูกตัดอักษรท้ายสุด (ยาว 72 ตัวอักษร แทนที่จะเป็น 75 ตัวอักษร)! สิ่งนี้มักเกิดจากที่ระบบ Google แสดงลิงก์แบบย่อแล้วมีจุดไข่ปลา (...) ซ่อนอยู่ โปรดนำ "รหัสการทำให้ใช้งานได้" (Deployment ID) มาวางในช่องนี้แทนได้เลย ระบบจะแปลงเป็นลิงก์ที่ทำงานได้ 100%';
+      }
+    }
+    
+    return null;
+  };
+
   const handleCopyCode = () => {
     try {
       if (navigator.clipboard && navigator.clipboard.writeText) {
@@ -173,6 +199,13 @@ export default function GoogleSheetSync({ onSyncComplete, currentProductsCount }
     
     // Sanitize webhook URL: trim spaces, remove leading/trailing single/double quotes, protocol-relative slashes, and add https:// if missing
     let cleanWebhook = webhookUrl.trim().replace(/^['"\s]+|['"\s]+$/g, '');
+    
+    // Auto-convert raw Deployment ID to full Web App URL
+    // e.g. AKfycbyDhc_6DUE-3ToIXGxjozqXx833oZ718JxGNWFpDqEOIKEWiDFuCowmpqilcWnInTwKVg
+    if (/^AKfy[a-zA-Z0-9-_]{50,80}$/.test(cleanWebhook)) {
+      cleanWebhook = `https://script.google.com/macros/s/${cleanWebhook}/exec`;
+    }
+    
     if (cleanWebhook) {
       // Remove protocol-relative prefix '//' if present, or any leading slashes
       cleanWebhook = cleanWebhook.replace(/^\/+/g, '');
@@ -232,6 +265,12 @@ export default function GoogleSheetSync({ onSyncComplete, currentProductsCount }
       return;
     }
     
+    // Sanitize and auto-convert raw Deployment ID to Web App URL
+    let cleanWebhook = webhookUrl.trim().replace(/^['"\s]+|['"\s]+$/g, '');
+    if (/^AKfy[a-zA-Z0-9-_]{50,80}$/.test(cleanWebhook)) {
+      cleanWebhook = `https://script.google.com/macros/s/${cleanWebhook}/exec`;
+    }
+    
     setTestingWebhook(true);
     setTestResult(null);
     
@@ -240,7 +279,7 @@ export default function GoogleSheetSync({ onSyncComplete, currentProductsCount }
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          webhookUrl: webhookUrl,
+          webhookUrl: cleanWebhook,
           type: 'registration',
           id: 'TEST_NS999',
           name: 'ผู้ทดสอบระบบ (Test Connection)',
@@ -620,8 +659,16 @@ export default function GoogleSheetSync({ onSyncComplete, currentProductsCount }
               <input 
                 type="text"
                 value={webhookUrl}
-                onChange={(e) => setWebhookUrl(e.target.value)}
-                placeholder="https://script.google.com/macros/s/.../exec"
+                onChange={(e) => {
+                  const val = e.target.value.trim();
+                  // Check if it is a raw deployment ID (e.g. starts with AKfy and is around 70-80 chars)
+                  if (/^AKfy[a-zA-Z0-9-_]{50,80}$/.test(val)) {
+                    setWebhookUrl(`https://script.google.com/macros/s/${val}/exec`);
+                  } else {
+                    setWebhookUrl(e.target.value);
+                  }
+                }}
+                placeholder="วาง Web App URL หรือวางรหัส Deployment ID ได้เลยที่นี่"
                 className="flex-grow px-3.5 py-2 text-xs rounded-xl border border-slate-300 focus:outline-none focus:ring-1 focus:ring-indigo-500 bg-white"
               />
               <button
@@ -634,6 +681,13 @@ export default function GoogleSheetSync({ onSyncComplete, currentProductsCount }
             </div>
             {webhookSaveStatus && (
               <p className="text-[11px] text-emerald-600 font-bold mt-1.5">✓ {webhookSaveStatus}</p>
+            )}
+
+            {getUrlWarning(webhookUrl) && (
+              <div className="mt-2.5 p-3.5 rounded-xl bg-amber-50 border border-amber-200 text-amber-900 text-[11px] leading-relaxed font-medium">
+                <span className="font-bold block mb-1">💡 ตรวจพบความผิดปกติของลิงก์:</span>
+                {getUrlWarning(webhookUrl)}
+              </div>
             )}
 
             <div className="flex flex-wrap gap-2 mt-3 pt-2 border-t border-slate-100">
