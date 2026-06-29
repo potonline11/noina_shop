@@ -3,7 +3,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { Product } from '../types';
 import { Database, Link, RefreshCw, CheckCircle, AlertTriangle, FileSpreadsheet, Eye, Code, Save, Mail, Copy, Check } from 'lucide-react';
 import { parseCSV, DEMO_SPREADSHEET_DATA, DEFAULT_SHEET_URL, getCleanSheetUrl, parseSheetData, stripHtml } from '../utils/sheetParser';
@@ -16,7 +16,7 @@ interface GoogleSheetSyncProps {
 export default function GoogleSheetSync({ onSyncComplete, currentProductsCount }: GoogleSheetSyncProps) {
   // Product CSV sync states
   const [sheetUrl, setSheetUrl] = useState(() => {
-    return DEFAULT_SHEET_URL;
+    return localStorage.getItem('noina_sheet_url') || DEFAULT_SHEET_URL;
   });
   const [loading, setLoading] = useState(false);
   const [status, setStatus] = useState<{ type: 'idle' | 'success' | 'error'; message: string }>({ type: 'idle', message: '' });
@@ -26,6 +26,29 @@ export default function GoogleSheetSync({ onSyncComplete, currentProductsCount }
   const [webhookUrl, setWebhookUrl] = useState(() => {
     return localStorage.getItem('noina_order_webhook_url') || '';
   });
+
+  // Fetch configuration on mount to ensure server configuration is in sync
+  useEffect(() => {
+    const fetchConfig = async () => {
+      try {
+        const res = await fetch('/api/products-store');
+        if (res.ok) {
+          const data = await res.json();
+          if (data.webhookUrl) {
+            setWebhookUrl(data.webhookUrl);
+            localStorage.setItem('noina_order_webhook_url', data.webhookUrl);
+          }
+          if (data.sheetUrl) {
+            setSheetUrl(data.sheetUrl);
+            localStorage.setItem('noina_sheet_url', data.sheetUrl);
+          }
+        }
+      } catch (err) {
+        console.error('Failed to load products-store config:', err);
+      }
+    };
+    fetchConfig();
+  }, []);
   const [webhookSaveStatus, setWebhookSaveStatus] = useState<string>('');
   const [showScriptCode, setShowScriptCode] = useState<boolean>(false);
   const [copied, setCopied] = useState(false);
