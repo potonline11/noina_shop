@@ -748,6 +748,7 @@ export default function App() {
           />
         )}
       </main>
+           <OrderFormSection />
 
       {/* Universal footer bar */}
       <Footer onNavigate={setCurrentView} />
@@ -755,6 +756,78 @@ export default function App() {
       {/* Floating AI Chat support widget */}
       <AIChatWidget products={products} />
 
+    </div>
+  );
+}
+// ฟังก์ชันแยกสำหรับแสดงผลหน้าต่างฟอร์มลงทะเบียนสั่งซื้อ
+function OrderFormSection() {
+  const [name, setName] = useState('');
+  const [email, setEmail] = useState('');
+  const [product, setProduct] = useState('คอร์สเรียนออนไลน์ VIP - 1 เดือน');
+  const [price, setPrice] = useState(490);
+  const [loading, setLoading] = useState(false);
+
+  const handleRegisterOrder = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!name || !email) {
+      alert('กรุณากรอกชื่อและอีเมลให้ครบถ้วนก่อนลงทะเบียนครับ');
+      return;
+    }
+
+    setLoading(true);
+    try {
+      const response = await fetch('/api/order', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          customerName: name,
+          customerEmail: email,
+          orderDetails: `🎁 รายการลงทะเบียน: ${product}`,
+          totalPrice: price,
+        }),
+      });
+
+      const data = await response.json();
+      if (data.success) {
+        alert('🎉 ลงทะเบียนสั่งซื้อสำเร็จ! ระบบบันทึกเข้า Google Sheets และส่งอีเมลเรียบร้อยแล้วครับ');
+        setName('');
+        setEmail('');
+      } else {
+        alert('❌ ระบบแจ้งข้อผิดพลาด: ' + data.error);
+      }
+    } catch (error) {
+      console.error(error);
+      alert('❌ เกิดข้อผิดพลาดในการเชื่อมต่อระบบลงทะเบียน');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  return (
+    <div style={{ maxWidth: '500px', margin: '40px auto', padding: '30px', fontFamily: 'sans-serif', border: '1px solid #e0e0e0', borderRadius: '12px', boxShadow: '0 4px 12px rgba(0,0,0,0.05)', background: '#fff', color: '#333' }}>
+      <h2 style={{ textAlign: 'center', color: '#0070f3', marginTop: 0, marginBottom: '10px' }}>📝 ฟอร์มลงทะเบียนสั่งซื้อ</h2>
+      <p style={{ textAlign: 'center', fontSize: '13px', color: '#666', marginBottom: '25px' }}>กรอกข้อมูลด้านล่างเพื่อบันทึกประวัติออเดอร์และรับอีเมลยืนยัน</p>
+
+      <form onSubmit={handleRegisterOrder}>
+        <div style={{ marginBottom: '15px' }}>
+          <label style={{ display: 'block', fontSize: '14px', fontWeight: 'bold', marginBottom: '5px' }}>👤 ชื่อ-นามสกุล:</label>
+          <input type="text" value={name} onChange={(e) => setName(e.target.value)} placeholder="เช่น สมชาย รักดี" style={{ width: '100%', padding: '10px', boxSizing: 'border-box', borderRadius: '6px', border: '1px solid #ccc', fontSize: '14px', background: '#fff', color: '#333' }} />
+        </div>
+
+        <div style={{ marginBottom: '15px' }}>
+          <label style={{ display: 'block', fontSize: '14px', fontWeight: 'bold', marginBottom: '5px' }}>✉️ อีเมลสำหรับรับคำยืนยัน:</label>
+          <input type="email" value={email} onChange={(e) => setEmail(e.target.value)} placeholder="เช่น customer@gmail.com" style={{ width: '100%', padding: '10px', boxSizing: 'border-box', borderRadius: '6px', border: '1px solid #ccc', fontSize: '14px', background: '#fff', color: '#333' }} />
+        </div>
+
+        <div style={{ marginBottom: '20px', padding: '12px', background: '#f9f9f9', borderRadius: '6px', border: '1px solid #eee' }}>
+          <p style={{ margin: '0 0 5px 0', fontSize: '13px', color: '#666' }}>📦 สินค้าที่เลือก: <strong>{product}</strong></p>
+          <p style={{ margin: '0', fontSize: '15px', fontWeight: 'bold', color: '#0070f3' }}>ยอดเงินสุทธิ: {price} บาท</p>
+        </div>
+
+        <button type="submit" disabled={loading} style={{ width: '100%', padding: '12px', background: loading ? '#ccc' : '#0070f3', color: '#fff', border: 'none', borderRadius: '6px', fontSize: '16px', fontWeight: 'bold', cursor: loading ? 'not-allowed' : 'pointer' }}>
+          {loading ? 'กำลังประมวลผล โปรดรอสักครู่...' : '🚀 ยืนยันการลงทะเบียนสั่งซื้อ'}
+        </button>
+      </form>
     </div>
   );
 }
