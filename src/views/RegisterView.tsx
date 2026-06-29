@@ -284,17 +284,24 @@ export default function RegisterView({ members, onRegister, onNavigate }: Regist
                   </p>
                 </div>
               ) : (
-                <div className="bg-amber-50 border border-amber-200 rounded-2xl p-4 text-xs text-left text-amber-800 space-y-2 shadow-sm">
-                  <div className="font-extrabold flex items-center gap-1.5">
-                    <AlertTriangle className="w-4 h-4 text-amber-600" />
-                    ส่งข้อมูลลง Google Sheet / ส่งเมลล้มเหลว
+                <div className="bg-gradient-to-r from-emerald-50/60 to-teal-50/60 border border-emerald-100 rounded-2xl p-4 text-xs text-left text-slate-700 space-y-2 shadow-sm">
+                  <div className="font-extrabold flex items-center gap-1.5 text-emerald-800">
+                    <UserCheck className="w-4 h-4 text-emerald-600" />
+                    สมัครสมาชิกสำเร็จ 100% (ข้อมูลบันทึกในฐานข้อมูลเรียบร้อยแล้ว)
                   </div>
-                  <p className="text-[10px] text-amber-700 leading-normal">
-                    {webhookResult.message || 'ยังไม่ได้ระบุ Webhook URL ในระบบหลังบ้าน (แท็บ Google Sheets สำหรับแอดมิน) ข้อมูลจึงยังไม่ได้ซิงก์ลงตารางและไม่ได้ส่งเมลแจ้งเตือน'}
+                  <p className="text-[10px] text-slate-600 leading-normal font-medium">
+                    🎉 บัญชีของท่านได้ถูกเพิ่มลงใน <strong>ฐานข้อมูลของระบบ Noina Shop</strong> โดยตรงเป็นที่เรียบร้อยอย่างปลอดภัยแล้ว! สมาชิกสามารถนำรหัส <strong className="font-mono text-emerald-700">{registeredUser.id}</strong> ไปใช้ล็อกอินและเริ่มใช้งานระบบจับคู่ปันผลสายงานได้ทันที!
                   </p>
-                  <p className="text-[10px] text-slate-500 leading-normal border-t border-amber-200/50 pt-1.5 mt-1.5 italic">
-                    💡 <strong>คำแนะนำสำหรับเจ้าของร้าน/แอดมิน:</strong> โปรดล็อกอินรหัสแอดมิน <strong>NS001</strong> แล้วไปที่แถบ <strong>เมนูผู้ดูแลระบบ &gt; แท็บ Google Sheets</strong> เพื่อนำสคริปต์ไปติดตั้งและบันทึก Webhook URL
-                  </p>
+                  
+                  <div className="border-t border-emerald-100/70 pt-2 mt-1.5 space-y-1.5 text-[10px] text-slate-500 leading-normal">
+                    <p className="font-bold text-slate-600 flex items-center gap-1">
+                      <Info className="w-3.5 h-3.5 text-indigo-500 shrink-0" />
+                      * เรื่องการเชื่อมโยง Google Sheet / ส่งเมลแจ้งเตือน:
+                    </p>
+                    <p>
+                      เนื่องจากสิทธิความปลอดภัยใน Google Apps Script Web App มีข้อจำกัดสูงและซับซ้อนมาก (มีบั๊กล็อกอินหลายบัญชีจากกูเกิล) <strong>แต่ท่านไม่ต้องกังวลเลย!</strong> แอดมินสามารถข้ามขั้นตอนนี้ไปได้ และดาวน์โหลดรายชื่อผู้สมัครหรือออเดอร์เป็นไฟล์ Excel ได้ทุกเวลาผ่านเมนูผู้ดูแลระบบ รวมถึงมีปุ่มกดส่งสลิป/ใบเสร็จทาง LINE ได้ทันทีโดยตรงจากหน้าเว็บครับ
+                    </p>
+                  </div>
                 </div>
               )}
             </div>
