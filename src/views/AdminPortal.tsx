@@ -5,7 +5,7 @@
 
 import React, { useState } from 'react';
 import { Member, Product, Order, CommissionLog } from '../types';
-import { Users, FileSpreadsheet, Layers, ShoppingBag, DollarSign, Award, RefreshCw, Trash2, PlusCircle, ShieldAlert, BarChart3, Plus, ArrowUpRight } from 'lucide-react';
+import { Users, FileSpreadsheet, Layers, ShoppingBag, DollarSign, Award, RefreshCw, Trash2, PlusCircle, ShieldAlert, BarChart3, Plus, ArrowUpRight, Mail, MessageSquare, Download, Copy, Check } from 'lucide-react';
 import GoogleSheetSync from '../components/GoogleSheetSync';
 import TreeChart from '../components/TreeChart';
 
@@ -35,6 +35,118 @@ export default function AdminPortal({
   onLogout
 }: AdminPortalProps) {
   const [activeTab, setActiveTab] = useState<AdminTab>('dashboard');
+  
+  // Local states for CSV copy and confirmations
+  const [copiedId, setCopiedId] = useState<string | null>(null);
+
+  const handleCopyText = (id: string, text: string) => {
+    navigator.clipboard.writeText(text);
+    setCopiedId(id);
+    setTimeout(() => setCopiedId(null), 2000);
+  };
+
+  const exportMembersToCSV = () => {
+    const headers = ['รหัสสมาชิก (Member ID)', 'ชื่อ-นามสกุล (Name)', 'อีเมล (Email)', 'เบอร์โทร (Phone)', 'รหัสผ่าน (Password)', 'ผู้แนะนำ (Sponsor ID)', 'รหัสอัปลิงก์ (Parent ID)', 'ตำแหน่งผัง (Position)', 'ตำแหน่งเกียรติยศ (Rank)', 'คะแนนซ้าย (Left BV)', 'คะแนนขวา (Right BV)', 'รายได้สะสม (Wallet Balance)'];
+    const rows = members.map(m => [
+      m.id,
+      m.name,
+      m.email || '',
+      m.phone || '',
+      m.password || '',
+      m.sponsorId || '',
+      m.parentUserId || '',
+      m.position || '',
+      m.rank || 'Bronze',
+      m.leftBV,
+      m.rightBV,
+      m.walletBalance
+    ]);
+    
+    let csvContent = "\uFEFF"; // UTF-8 BOM for Excel Thai language support
+    csvContent += [headers.join(','), ...rows.map(row => row.map(val => `"${String(val).replace(/"/g, '""')}"`).join(','))].join('\n');
+    
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.setAttribute("href", url);
+    link.setAttribute("download", `noina_members_${new Date().toISOString().split('T')[0]}.csv`);
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  };
+
+  const exportOrdersToCSV = () => {
+    const headers = ['รหัสใบสั่งซื้อ (Order ID)', 'วันที่ (Date)', 'รหัสผู้ซื้อ (Buyer ID)', 'ชื่อผู้ซื้อ (Buyer Name)', 'สินค้าที่สั่งซื้อ (Items)', 'ยอดรวมสุทธิ (Total Amount)', 'คะแนนรวม (Total BV)', 'เบอร์โทรจัดส่ง (Shipping Phone)', 'อีเมล (Email)', 'ที่อยู่จัดส่ง (Address)', 'วิธีชำระเงิน (Payment Method)'];
+    const rows = orders.map(o => [
+      o.id,
+      o.date,
+      o.memberId,
+      o.memberName,
+      o.items.map(i => `${i.name} (${i.quantity} ชิ้น)`).join(' | '),
+      o.totalAmount,
+      o.totalBV,
+      o.phone || '',
+      o.email || '',
+      o.address || '',
+      o.paymentMethod === 'cod' ? 'เก็บเงินปลายทาง' : 'เงินสด/โอนเงิน'
+    ]);
+    
+    let csvContent = "\uFEFF"; // UTF-8 BOM for Excel Thai language support
+    csvContent += [headers.join(','), ...rows.map(row => row.map(val => `"${String(val).replace(/"/g, '""')}"`).join(','))].join('\n');
+    
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.setAttribute("href", url);
+    link.setAttribute("download", `noina_orders_${new Date().toISOString().split('T')[0]}.csv`);
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  };
+
+  const getMemberShareText = (m: Member) => {
+    return (
+      `ยินดีต้อนรับสมาชิกใหม่ Noina Shop เครือข่าย NLM!\n` +
+      `----------------------------------------\n` +
+      `🔑 รหัสสมาชิกของคุณ: ${m.id}\n` +
+      `🔑 รหัสผ่านในการล็อกอิน: ${m.password}\n` +
+      `📈 ระดับตำแหน่งเริ่มต้น: ${m.rank}\n` +
+      `👥 ผู้แนะนำรหัส: ${m.sponsorId || 'ไม่ระบุ'}\n` +
+      `🔗 เข้าสู่ระบบได้ที่เว็บไซต์ Noina Shop หน้าร้านของคุณ\n` +
+      `----------------------------------------\n` +
+      `สะสมแต้ม BV เพื่อรับรายได้โบนัสสายงานไบนารี 100%!`
+    );
+  };
+
+  const getOrderShareText = (o: Order) => {
+    const itemsText = o.items.map(i => `• ${i.name} x ${i.quantity}`).join('\n');
+    const paymentText = o.paymentMethod === 'cod' ? 'เก็บเงินปลายทาง (COD +3%)' : 'เงินสด / โอนเงินผ่านระบบพร้อมเพย์';
+    return (
+      `ใบเสร็จรับเงิน Noina Shop (รหัสคำสั่งซื้อ: ${o.id})\n` +
+      `----------------------------------------\n` +
+      `👤 ลูกค้าผู้สั่งซื้อ: คุณ ${o.memberName} (${o.memberId})\n` +
+      `📦 รายการที่สั่งซื้อ:\n${itemsText}\n` +
+      `----------------------------------------\n` +
+      `💰 ยอดรวมสุทธิ: ${o.totalAmount.toLocaleString()} บาท\n` +
+      `📈 คะแนนได้รับ: +${o.totalBV} BV (ไหลขึ้นสายงานแล้ว)\n` +
+      `🚚 วิธีการจัดส่ง/ชำระเงิน: ${paymentText}\n` +
+      `📍 ที่อยู่จัดส่ง: ${o.address || 'รับหน้าร้าน'}\n` +
+      `----------------------------------------\n` +
+      `ขอบพระคุณที่อุดหนุนสินค้าไอทีคุณภาพดีจากร้าน Noina Shop!`
+    );
+  };
+
+  const sendMemberEmail = (m: Member) => {
+    const subject = encodeURIComponent(`ยินดีต้อนรับสู่ Noina Shop - ข้อมูลรหัสสมาชิก ${m.id}`);
+    const body = encodeURIComponent(getMemberShareText(m));
+    window.open(`mailto:${m.email || ''}?subject=${subject}&body=${body}`, '_blank');
+  };
+
+  const sendOrderEmail = (o: Order) => {
+    const subject = encodeURIComponent(`ใบเสร็จและการยืนยันคำสั่งซื้อ ${o.id} - Noina Shop`);
+    const body = encodeURIComponent(getOrderShareText(o));
+    window.open(`mailto:${o.email || ''}?subject=${subject}&body=${body}`, '_blank');
+  };
   
   // Local states for adding custom products manually
   const [showAddForm, setShowAddForm] = useState(false);
@@ -235,9 +347,18 @@ export default function AdminPortal({
         {/* SUBTAB 2: รายละเอียดสมาชิกทั้งหมด (Members list) */}
         {activeTab === 'members' && (
           <div className="space-y-6">
-            <div>
-              <h3 className="text-base font-extrabold text-slate-800">ข้อมูลสมาชิกเครือข่ายองค์กรทั้งหมด</h3>
-              <p className="text-xs text-slate-500 mt-1">รายละเอียดรายบุคคล ยอดสปอนเซอร์ และยอดกระเป๋าคอมมิชชันสะสมของสมาชิก Noinashop ทุกระดับชั้น</p>
+            <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4">
+              <div>
+                <h3 className="text-base font-extrabold text-slate-800">ข้อมูลสมาชิกเครือข่ายองค์กรทั้งหมด</h3>
+                <p className="text-xs text-slate-500 mt-1">รายละเอียดรายบุคคล ยอดสปอนเซอร์ และยอดกระเป๋าคอมมิชชันสะสมของสมาชิก Noinashop ทุกระดับชั้น</p>
+              </div>
+              <button
+                onClick={exportMembersToCSV}
+                className="bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs px-3.5 py-2.5 rounded-xl transition flex items-center gap-1.5 shadow-sm shrink-0 self-start sm:self-center"
+              >
+                <Download className="w-4 h-4" />
+                ดาวน์โหลดข้อมูลสมาชิก (Excel / CSV)
+              </button>
             </div>
 
             <div className="overflow-x-auto border border-slate-100 rounded-2xl bg-white shadow-sm">
@@ -251,6 +372,7 @@ export default function AdminPortal({
                     <th className="py-3 px-4">ตำแหน่ง</th>
                     <th className="py-3 px-4 text-center">คะแนน ซ้าย | ขวา</th>
                     <th className="py-3 px-4 text-right">รายได้สะสม</th>
+                    <th className="py-3 px-4 text-center">ส่งแจ้งเตือน</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-100">
@@ -272,6 +394,28 @@ export default function AdminPortal({
                       </td>
                       <td className="py-3.5 px-4 text-right font-extrabold text-emerald-600">
                         {m.walletBalance.toLocaleString()} ฿
+                      </td>
+                      <td className="py-3.5 px-4">
+                        <div className="flex items-center justify-center gap-3">
+                          <button
+                            onClick={() => sendMemberEmail(m)}
+                            title="ส่งอีเมลข้อมูลล็อกอิน"
+                            className="p-1.5 text-slate-400 hover:text-indigo-600 hover:bg-indigo-50 rounded-lg transition"
+                          >
+                            <Mail className="w-4 h-4" />
+                          </button>
+                          <button
+                            onClick={() => handleCopyText(m.id, getMemberShareText(m))}
+                            title="คัดลอกข้อความสำหรับส่ง LINE/SMS"
+                            className="p-1.5 text-slate-400 hover:text-emerald-600 hover:bg-emerald-50 rounded-lg transition flex items-center gap-1"
+                          >
+                            {copiedId === m.id ? (
+                              <Check className="w-4 h-4 text-emerald-600 animate-pulse" />
+                            ) : (
+                              <MessageSquare className="w-4 h-4" />
+                            )}
+                          </button>
+                        </div>
                       </td>
                     </tr>
                   ))}
@@ -477,9 +621,18 @@ export default function AdminPortal({
         {/* SUBTAB 6: ประวัติใบสั่งซื้อทั้งหมดในเครือข่าย (Orders monitor) */}
         {activeTab === 'orders' && (
           <div className="space-y-6">
-            <div>
-              <h3 className="text-base font-extrabold text-slate-800">ประวัติการสั่งซื้อทั้งหมดในเครือข่าย</h3>
-              <p className="text-xs text-slate-500 mt-1">แอดมินสามารถเห็นใบสั่งซื้อสินค้าและปริมาณคะแนน BV ที่ไหลสะสมเข้าสู่โครงสร้างดาวน์ไลน์ของทุกคนได้ทั้งหมด</p>
+            <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4">
+              <div>
+                <h3 className="text-base font-extrabold text-slate-800">ประวัติการสั่งซื้อทั้งหมดในเครือข่าย</h3>
+                <p className="text-xs text-slate-500 mt-1">แอดมินสามารถเห็นใบสั่งซื้อสินค้าและปริมาณคะแนน BV ที่ไหลสะสมเข้าสู่โครงสร้างดาวน์ไลน์ของทุกคนได้ทั้งหมด</p>
+              </div>
+              <button
+                onClick={exportOrdersToCSV}
+                className="bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs px-3.5 py-2.5 rounded-xl transition flex items-center gap-1.5 shadow-sm shrink-0 self-start sm:self-center"
+              >
+                <Download className="w-4 h-4" />
+                ดาวน์โหลดประวัติการสั่งซื้อ (Excel / CSV)
+              </button>
             </div>
 
             {orders.length === 0 ? (
@@ -533,6 +686,33 @@ export default function AdminPortal({
                               ✓ สลิปผ่านการตรวจ AI ({order.slipUrl})
                             </span>
                           )}
+                        </div>
+                        <div className="flex justify-end gap-2 pt-2 border-t border-dashed border-slate-100 mt-2">
+                          <button
+                            onClick={() => sendOrderEmail(order)}
+                            className="flex items-center gap-1.5 px-2.5 py-1.5 bg-indigo-50 hover:bg-indigo-100 text-indigo-700 font-semibold text-[10px] rounded-lg transition"
+                            title="ส่งสลิปผ่านทาง Email"
+                          >
+                            <Mail className="w-3.5 h-3.5" />
+                            อีเมลแจ้งใบเสร็จ
+                          </button>
+                          <button
+                            onClick={() => handleCopyText(order.id, getOrderShareText(order))}
+                            className="flex items-center gap-1.5 px-2.5 py-1.5 bg-emerald-50 hover:bg-emerald-100 text-emerald-700 font-semibold text-[10px] rounded-lg transition"
+                            title="คัดลอกข้อความสำหรับส่ง LINE/SMS"
+                          >
+                            {copiedId === order.id ? (
+                              <>
+                                <Check className="w-3.5 h-3.5 text-emerald-600 animate-pulse" />
+                                คัดลอกเรียบร้อยแล้ว
+                              </>
+                            ) : (
+                              <>
+                                <MessageSquare className="w-3.5 h-3.5" />
+                                ส่งใบเสร็จทาง LINE
+                              </>
+                            )}
+                          </button>
                         </div>
                       </div>
                     )}

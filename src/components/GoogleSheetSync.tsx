@@ -5,7 +5,7 @@
 
 import React, { useState, useRef, useEffect } from 'react';
 import { Product } from '../types';
-import { Database, Link, RefreshCw, CheckCircle, AlertTriangle, FileSpreadsheet, Eye, Code, Save, Mail, Copy, Check } from 'lucide-react';
+import { Database, Link, RefreshCw, CheckCircle, AlertTriangle, FileSpreadsheet, Eye, Code, Save, Mail, Copy, Check, Sparkles } from 'lucide-react';
 import { parseCSV, DEMO_SPREADSHEET_DATA, DEFAULT_SHEET_URL, getCleanSheetUrl, parseSheetData, stripHtml } from '../utils/sheetParser';
 
 interface GoogleSheetSyncProps {
@@ -732,6 +732,36 @@ export default function GoogleSheetSync({ onSyncComplete, currentProductsCount }
             <h3 className="text-sm md:text-base font-bold text-slate-800">ระบบบันทึกออเดอร์ & ส่งอีเมลยืนยันอัตโนมัติ (Google Sheets)</h3>
             <p className="text-[11px] text-slate-500 mt-0.5">เชื่อมต่อใบสั่งซื้อจากทางหน้าเว็บ ยิงข้อมูลเข้าชีต และส่งอีเมลหาลูกค้าทันทีเมื่อกดซื้อสินค้าสำเร็จ</p>
           </div>
+        </div>
+
+        {/* Empathy & Alternative Solution Banner for Admin */}
+        <div className="bg-gradient-to-r from-indigo-50 via-sky-50 to-emerald-50 border border-indigo-100/80 rounded-2xl p-4 md:p-5 text-slate-700 text-xs shadow-sm space-y-3">
+          <div className="flex items-start gap-2.5">
+            <Sparkles className="w-5 h-5 text-indigo-600 shrink-0 mt-0.5 animate-bounce" />
+            <div>
+              <h4 className="font-bold text-indigo-900 text-xs sm:text-sm">💡 เหนื่อยกับการดีพลอยสคริปต์ Google Apps Script หรือติดปัญหา 404 ใช่ไหม? มีวิธีที่ง่ายกว่านั้น 100%!</h4>
+              <p className="text-[11px] text-slate-600 mt-1 leading-relaxed">
+                เนื่องจากปัญหาระบบของ Google (Multi-Account Login Bug) ทำให้บ่อยครั้งที่การ Deploy สคริปต์ Web App เกิดข้อผิดพลาดและส่งเมลหรือเขียนข้อมูลไม่เข้า ซึ่งเป็นปัญหาที่พบบ่อยระดับโลก... <strong>เราเตรียมทางเลือกใหม่ที่เป็นระบบอัตโนมัติและเสถียรที่สุดมาให้คุณแล้ว:</strong>
+              </p>
+            </div>
+          </div>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-3 pt-2 text-[10px] md:text-[11px]">
+            <div className="bg-white/80 backdrop-blur-sm p-3 rounded-xl border border-indigo-100/50 space-y-1">
+              <span className="block font-bold text-slate-800">📊 บันทึกลงเซิร์ฟเวอร์เรียลไทม์</span>
+              <p className="text-slate-500 text-[10px]">ข้อมูลสมาชิก ออเดอร์ และสายงาน จะถูกเซฟลงระบบ Noina Shop โดยตรง ไม่ต้องตั้งค่า Webhook ใดๆ</p>
+            </div>
+            <div className="bg-white/80 backdrop-blur-sm p-3 rounded-xl border border-indigo-100/50 space-y-1">
+              <span className="block font-bold text-slate-800">📥 ดาวน์โหลด Excel ได้ใน 1 คลิก</span>
+              <p className="text-slate-500 text-[10px]">ในแท็บ "ข้อมูลสมาชิก" และ "รายการสั่งซื้อ" จะมีปุ่มดาวน์โหลดไฟล์ Excel/CSV นำไปวางใน Google Sheets ได้เลย</p>
+            </div>
+            <div className="bg-white/80 backdrop-blur-sm p-3 rounded-xl border border-indigo-100/50 space-y-1">
+              <span className="block font-bold text-indigo-700">💬 ส่งแจ้งเตือน LINE / อีเมล</span>
+              <p className="text-slate-500 text-[10px]">มีปุ่ม "ส่งใบเสร็จทาง LINE" และ "ส่งเมล" กดส่งหาลูกค้าได้ทันทีจากหน้าเว็บ สวยงาม สะดวกสบาย ไร้ปัญหาเชื่อมต่อ!</p>
+            </div>
+          </div>
+          <p className="text-[10px] text-slate-400 text-center italic pt-1">
+            * หากขี้เกียจดีพลอย Apps Script คุณสามารถข้ามขั้นตอนกรอก Webhook ด้านล่างนี้ไปได้เลย และใช้ระบบออฟไลน์/อัจฉริยะในการบริหารร้าน Noina Shop ได้อย่างสมบูรณ์แบบร้อยเปอร์เซ็นต์!
+          </p>
         </div>
 
         <form onSubmit={handleSaveWebhook} className="space-y-4">

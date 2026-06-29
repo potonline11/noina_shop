@@ -111,11 +111,37 @@ export default function App() {
 
   useEffect(() => {
     localStorage.setItem('noina_orders', JSON.stringify(orders));
-  }, [orders]);
+    const saveOrdersToServer = async () => {
+      if (!isStoreLoaded) return;
+      try {
+        await fetch('/api/products-store', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ orders })
+        });
+      } catch (err) {
+        console.error('Failed to sync orders to server:', err);
+      }
+    };
+    saveOrdersToServer();
+  }, [orders, isStoreLoaded]);
 
   useEffect(() => {
     localStorage.setItem('noina_commissions', JSON.stringify(commissionLogs));
-  }, [commissionLogs]);
+    const saveCommissionsToServer = async () => {
+      if (!isStoreLoaded) return;
+      try {
+        await fetch('/api/products-store', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ commissionLogs })
+        });
+      } catch (err) {
+        console.error('Failed to sync commissions to server:', err);
+      }
+    };
+    saveCommissionsToServer();
+  }, [commissionLogs, isStoreLoaded]);
 
   // Load server-side synced products and configurations on startup
   useEffect(() => {
@@ -172,6 +198,14 @@ export default function App() {
           if (data.members && data.members.length > 0) {
             setMembers(data.members);
             localStorage.setItem('noina_members', JSON.stringify(data.members));
+          }
+          if (data.orders && data.orders.length > 0) {
+            setOrders(data.orders);
+            localStorage.setItem('noina_orders', JSON.stringify(data.orders));
+          }
+          if (data.commissionLogs && data.commissionLogs.length > 0) {
+            setCommissionLogs(data.commissionLogs);
+            localStorage.setItem('noina_commissions', JSON.stringify(data.commissionLogs));
           }
           if (data.sheetUrl) {
             serverSheetUrl = data.sheetUrl;
