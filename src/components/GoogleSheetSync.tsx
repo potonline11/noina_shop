@@ -62,10 +62,10 @@ export default function GoogleSheetSync({ onSyncComplete, currentProductsCount }
     if (!url) return null;
     const clean = url.trim().replace(/^['"\s]+|['"\s]+$/g, '');
     
-    // If it's a raw deployment ID, check if its length is less than 75
+    // If it's a raw deployment ID, check if its length is less than 74
     if (/^AKfy[a-zA-Z0-9_\-]{50,80}$/.test(clean)) {
-      if (clean.length < 75) {
-        return `⚠️ รหัส Deployment ID ที่กรอกสั้นเกินไป (ยาวเพียง ${clean.length} ตัวอักษร แทนที่จะเป็น 75 ตัวอักษร) โปรดคลิกปุ่ม "คัดลอก" จากระบบ Google Apps Script เพื่อคัดลอกรหัสที่ถูกต้องและสมบูรณ์มาวางใหม่`;
+      if (clean.length < 74) {
+        return `⚠️ รหัส Deployment ID ที่กรอกสั้นเกินไป (ยาวเพียง ${clean.length} ตัวอักษร แทนที่จะเป็น 74 ตัวอักษร) โปรดคลิกปุ่ม "คัดลอก" จากระบบ Google Apps Script เพื่อคัดลอกรหัสที่ถูกต้องและสมบูรณ์มาวางใหม่`;
       }
       return null;
     }
@@ -78,8 +78,8 @@ export default function GoogleSheetSync({ onSyncComplete, currentProductsCount }
     const match = clean.match(/\/s\/([a-zA-Z0-9_\-]+)/);
     if (match) {
       const id = match[1];
-      if (id.length < 75) {
-        return `⚠️ ตรวจพบลิงก์ถูกตัดตัวอักษรท้าย (รหัส ID ในลิงก์ยาวเพียง ${id.length} ตัวอักษร แทนที่จะเป็น 75 ตัวอักษร)! สิ่งนี้เกิดจากการคัดลอกลิงก์แบบย่อที่มีจุดไข่ปลา (...) ซ่อนอยู่ โปรดกดปุ่ม "คัดลอก" ตรง "รหัสการทำให้ใช้งานได้" (Deployment ID) ยาว 75 ตัวอักษรใน Google Apps Script มาวางแทนได้เลย ระบบจะแปลงเป็นลิงก์ที่ทำงานได้ 100%`;
+      if (id.length < 74) {
+        return `⚠️ ตรวจพบลิงก์ถูกตัดตัวอักษรท้าย (รหัส ID ในลิงก์ยาวเพียง ${id.length} ตัวอักษร แทนที่จะเป็น 74 ตัวอักษร)! สิ่งนี้เกิดจากการคัดลอกลิงก์แบบย่อที่มีจุดไข่ปลา (...) ซ่อนอยู่ โปรดกดปุ่ม "คัดลอก" ตรง "รหัสการทำให้ใช้งานได้" (Deployment ID) ยาว 74 ตัวอักษรใน Google Apps Script มาวางแทนได้เลย ระบบจะแปลงเป็นลิงก์ที่ทำงานได้ 100%`;
       }
     }
     
@@ -680,13 +680,23 @@ export default function GoogleSheetSync({ onSyncComplete, currentProductsCount }
                 type="text"
                 value={webhookUrl}
                 onChange={(e) => {
-                  const val = e.target.value.trim();
-                  // Check if it is a raw deployment ID (e.g. starts with AKfy and is around 70-80 chars)
-                  if (/^AKfy[a-zA-Z0-9_\-]{50,80}$/.test(val)) {
-                    setWebhookUrl(`https://script.google.com/macros/s/${val}/exec`);
-                  } else {
-                    setWebhookUrl(e.target.value);
+                  let val = e.target.value;
+                  const trimmed = val.trim();
+                  
+                  // If it contains "ript.google.com" or "https:" typos, or is a long pasted string (length > 20) with standard patterns,
+                  // we sanitize it instantly to provide real-time correction.
+                  if (
+                    trimmed.includes('ript.google') || 
+                    trimmed.includes('https://https') || 
+                    trimmed.includes('https:/s') || 
+                    trimmed.includes('https//s') ||
+                    (trimmed.length > 20 && !trimmed.includes(' ') && (trimmed.includes('script.google') || /^AKfy/.test(trimmed)))
+                  ) {
+                    val = superSanitizeWebhookUrl(val);
+                  } else if (/^AKfy[a-zA-Z0-9_\-]{50,80}$/.test(trimmed)) {
+                    val = `https://script.google.com/macros/s/${trimmed}/exec`;
                   }
+                  setWebhookUrl(val);
                 }}
                 onBlur={(e) => {
                   if (e.target.value) {
