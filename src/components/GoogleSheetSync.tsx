@@ -781,12 +781,66 @@ export default function GoogleSheetSync({ onSyncComplete, currentProductsCount }
             </div>
 
             {testResult && (
-              <div className={`mt-3 p-3.5 rounded-xl text-xs border leading-relaxed ${
-                testResult.success 
-                  ? 'bg-emerald-50 border-emerald-200 text-emerald-800 font-semibold' 
-                  : 'bg-rose-50 border-rose-200 text-rose-800'
-              }`}>
-                {testResult.message}
+              <div className="space-y-3 mt-3">
+                <div className={`p-3.5 rounded-xl text-xs border leading-relaxed ${
+                  testResult.success 
+                    ? 'bg-emerald-50 border-emerald-200 text-emerald-800 font-semibold' 
+                    : 'bg-rose-50 border-rose-200 text-rose-800'
+                }`}>
+                  {testResult.message}
+                </div>
+
+                {!testResult.success && (testResult.message.includes('404') || testResult.message.includes('ไม่พบหน้า')) && (
+                  <div className="bg-amber-50 border border-amber-200 rounded-xl p-4 text-xs text-amber-900 space-y-3 shadow-sm">
+                    <div className="flex items-center gap-2 pb-2 border-b border-amber-200/60">
+                      <AlertTriangle className="w-4 h-4 text-amber-600 shrink-0" />
+                      <h5 className="font-bold text-amber-950 text-[13px]">📍 คู่มือแก้ไขปัญหาข้อผิดพลาด 404 (ด่วนที่สุดใน 1 นาที)</h5>
+                    </div>
+                    <p className="leading-relaxed text-[11.5px]">
+                      สาเหตุหลักที่ขึ้น <strong>404 Not Found</strong> เกิดจากระบบของ Google มองไม่เห็น Deployment ID ที่ส่งไป (สคริปต์ยังไม่ได้ถูกทำเป็น Web App อย่างถูกต้อง หรือสิทธิ์จำกัดไว้เฉพาะตัวเอง) โปรดทำตามขั้นตอนนี้เพื่อเปิดสิทธิ์และแก้ไขให้ใช้งานได้ทันทีครับ:
+                    </p>
+                    <div className="space-y-2.5 pl-1">
+                      <div className="flex gap-2 text-[11.5px] leading-relaxed">
+                        <span className="flex items-center justify-center w-5 h-5 rounded-full bg-amber-200 text-amber-900 font-bold text-[10px] shrink-0 mt-0.5">1</span>
+                        <div>
+                          <p className="font-bold text-amber-950">ต้องทำการ "Deploy" (การทำให้ใช้งานได้จริง) ใหม่ทุกครั้ง</p>
+                          <p className="text-amber-800 text-[11px]">หากมีการแก้ไขสคริปต์หรือเพิ่งแปะโค้ดเป็นครั้งแรก ท่านต้องกดปุ่ม <strong>Deploy &gt; New deployment (การทำให้ใช้งานได้ใหม่)</strong> เสมอครับ (การกดเซฟแผ่นดิสก์เฉยๆ จะไม่มีผลต่อลิงก์เว็บ)</p>
+                        </div>
+                      </div>
+                      <div className="flex gap-2 text-[11.5px] leading-relaxed">
+                        <span className="flex items-center justify-center w-5 h-5 rounded-full bg-amber-200 text-amber-900 font-bold text-[10px] shrink-0 mt-0.5">2</span>
+                        <div>
+                          <p className="font-bold text-amber-950">ตรวจสอบ "ประเภท" ของการ Deploy (ต้องเลือก "เว็บแอป")</p>
+                          <p className="text-amber-800 text-[11px]">ในหน้าต่าง New deployment ให้คลิกรูป <strong>ฟันเฟือง (Gear)</strong> ถัดจากหัวข้อ "เลือกประเภท (Select type)" แล้วเลือก <strong>"เว็บแอป" (Web App)</strong> <span className="text-rose-700 font-semibold">(สำคัญมาก! หากไม่ได้เลือกเป็นเว็บแอป Google จะตอบกลับเป็น 404)</span></p>
+                        </div>
+                      </div>
+                      <div className="flex gap-2 text-[11.5px] leading-relaxed">
+                        <span className="flex items-center justify-center w-5 h-5 rounded-full bg-amber-200 text-amber-900 font-bold text-[10px] shrink-0 mt-0.5">3</span>
+                        <div>
+                          <p className="font-bold text-amber-950">ตั้งค่าสิทธิ์ผู้เข้าถึงให้เป็น "ทุกคน" (Anyone)</p>
+                          <ul className="list-disc pl-4 mt-1 text-amber-800 text-[11px] space-y-0.5">
+                            <li><strong>Execute as (เรียกใช้ในฐานะ):</strong> เลือกเป็น <span className="font-semibold text-amber-950">"Me" (ฉัน - pnmall4u@gmail.com)</span></li>
+                            <li><strong>Who has access (ผู้มีสิทธิ์เข้าถึง):</strong> ต้องเปลี่ยนจาก "Only myself" เป็น <strong className="text-rose-700 font-bold">"Anyone" (ทุกคน)</strong></li>
+                          </ul>
+                        </div>
+                      </div>
+                      <div className="flex gap-2 text-[11.5px] leading-relaxed">
+                        <span className="flex items-center justify-center w-5 h-5 rounded-full bg-amber-200 text-amber-900 font-bold text-[10px] shrink-0 mt-0.5">4</span>
+                        <div>
+                          <p className="font-bold text-amber-950">กดปุ่ม Deploy และยืนยันสิทธิ์ความปลอดภัย (Authorize Access)</p>
+                          <p className="text-amber-800 text-[11px]">หลังกด Deploy จะมีปุ่มสีฟ้าคำว่า <strong>"Authorize Access"</strong> ให้คลิกแล้วล็อกอินบัญชี Google ของท่าน จากนั้นเลือก <strong>"Advanced" (ขั้นสูง) &gt; "Go to... (unsafe)" &gt; "Allow" (อนุญาต)</strong> เพื่ออนุญาตให้สคริปต์ทำงานและส่งเมลได้</p>
+                        </div>
+                      </div>
+                      <div className="flex gap-2 text-[11.5px] leading-relaxed">
+                        <span className="flex items-center justify-center w-5 h-5 rounded-full bg-amber-200 text-amber-900 font-bold text-[10px] shrink-0 mt-0.5">5</span>
+                        <div>
+                          <p className="font-bold text-amber-950">คัดลอกลิงก์ Web App ลิงก์ที่ลงท้ายด้วย "/exec" มาวาง</p>
+                          <p className="text-amber-800 text-[11px]">คัดลอก URL สี่เหลี่ยมสีน้ำเงินด้านล่างสุดของหน้าจอสำเร็จ สังเกตว่าจะลงท้ายด้วย <code>/exec</code> เสมอ แล้วนำมาวางในช่อง บันทึก URL ด้านบนนี้ แล้วทดสอบใหม่อีกครั้งครับ!</p>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                )}
               </div>
             )}
           </div>
