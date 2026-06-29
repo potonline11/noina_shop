@@ -51,7 +51,7 @@ export default function GoogleSheetSync({ onSyncComplete, currentProductsCount }
   }, []);
   const [webhookSaveStatus, setWebhookSaveStatus] = useState<string>('');
   const [testingWebhook, setTestingWebhook] = useState(false);
-  const [testResult, setTestResult] = useState<{ success: boolean; message: string } | null>(null);
+  const [testResult, setTestResult] = useState<{ success: boolean; message: string; trace?: any[] } | null>(null);
   const [showScriptCode, setShowScriptCode] = useState<boolean>(false);
   const [copied, setCopied] = useState(false);
   const [expandCode, setExpandCode] = useState(false);
@@ -368,7 +368,8 @@ export default function GoogleSheetSync({ onSyncComplete, currentProductsCount }
       if (response.ok && data.success) {
         setTestResult({
           success: true,
-          message: '✓ เชื่อมต่อกับ Google Apps Script สำเร็จ 100%! สคริปต์ของท่านทำงานได้ดีและตอบกลับถูกต้อง ข้อมูลการทดสอบถูกนำเข้า Google Sheet แล้ว'
+          message: '✓ เชื่อมต่อกับ Google Apps Script สำเร็จ 100%! สคริปต์ของท่านทำงานได้ดีและตอบกลับถูกต้อง ข้อมูลการทดสอบถูกนำเข้า Google Sheet แล้ว',
+          trace: data.trace
         });
       } else {
         let displayMessage = data.message || 'เกิดข้อผิดพลาดในการเชื่อมต่อ';
@@ -384,13 +385,15 @@ export default function GoogleSheetSync({ onSyncComplete, currentProductsCount }
         
         setTestResult({
           success: false,
-          message: displayMessage
+          message: displayMessage,
+          trace: data.trace
         });
       }
     } catch (err: any) {
       setTestResult({
         success: false,
-        message: '❌ ล้มเหลว: ' + (err.message || 'ไม่สามารถติดต่อเซิร์ฟเวอร์ proxy ได้')
+        message: '❌ ล้มเหลว: ' + (err.message || 'ไม่สามารถติดต่อเซิร์ฟเวอร์ proxy ได้'),
+        trace: err.trace || []
       });
     } finally {
       setTestingWebhook(false);
@@ -789,6 +792,40 @@ export default function GoogleSheetSync({ onSyncComplete, currentProductsCount }
                 }`}>
                   {testResult.message}
                 </div>
+
+                {testResult.trace && testResult.trace.length > 0 && (
+                  <div className="bg-slate-900 text-slate-100 rounded-xl p-3.5 font-mono text-[10.5px] leading-relaxed space-y-1.5 overflow-x-auto shadow-inner border border-slate-800">
+                    <div className="text-slate-400 font-sans font-bold border-b border-slate-800 pb-1.5 mb-1.5 flex justify-between items-center">
+                      <span className="flex items-center gap-1.5">🕵️ รายละเอียดขั้นตอนการเชื่อมต่อ (Request Trace Logs)</span>
+                      <span className="text-[9px] bg-indigo-900/60 border border-indigo-700 px-1.5 py-0.5 rounded text-indigo-300 font-bold uppercase tracking-wider">Technical Log</span>
+                    </div>
+                    {testResult.trace.map((step: any, index: number) => (
+                      <div key={index} className="space-y-0.5 pb-1 border-b border-slate-800/40 last:border-0 last:pb-0">
+                        <div className="flex flex-wrap items-center gap-x-2">
+                          <span className={step.status === 200 || step.status === 302 ? 'text-emerald-400 font-bold' : 'text-rose-400 font-bold'}>
+                            [Step {step.step}] {step.method}
+                          </span>
+                          <span className={step.status === 200 || step.status === 302 ? 'text-emerald-300 bg-emerald-950/60 px-1 py-0.2 rounded border border-emerald-900' : 'text-rose-300 bg-rose-950/60 px-1 py-0.2 rounded border border-rose-900'}>
+                            {step.status || 'Failed'} {step.statusText || ''}
+                          </span>
+                        </div>
+                        <div className="text-slate-400 break-all pl-3 text-[10px]">
+                          URL: <span className="text-sky-300 select-all font-mono">{step.url}</span>
+                        </div>
+                        {step.redirectUrl && (
+                          <div className="text-amber-400 break-all pl-3 text-[10px]">
+                            ➡️ Redirect to: <span className="text-amber-300 font-mono">{step.redirectUrl}</span>
+                          </div>
+                        )}
+                        {step.error && (
+                          <div className="text-rose-400 pl-3 text-[10px] font-bold">
+                            ⚠️ Error: {step.error}
+                          </div>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                )}
 
                 {!testResult.success && (testResult.message.includes('404') || testResult.message.includes('ไม่พบหน้า')) && (
                   <div className="bg-amber-50 border border-amber-200 rounded-xl p-4 text-xs text-amber-900 space-y-3 shadow-sm">
