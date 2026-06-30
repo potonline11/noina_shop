@@ -5,7 +5,7 @@
 
 import React, { useState } from 'react';
 import { Member } from '../types';
-import { UserPlus, UserCheck, Shield, Users, Info, AlertTriangle, Key, Sparkles, Eye, EyeOff } from 'lucide-react';
+import { UserPlus, UserCheck, Shield, Users, Info, AlertTriangle, Key, Sparkles, Eye, EyeOff, Mail, MessageSquare, Check } from 'lucide-react';
 
 interface RegisterViewProps {
   members: Member[];
@@ -41,6 +41,41 @@ export default function RegisterView({ members, onRegister, onNavigate }: Regist
     success?: boolean;
     message?: string;
   }>({ loading: false });
+
+  const [copiedRegSuccess, setCopiedRegSuccess] = useState(false);
+
+  const getRegShareText = (user: Member) => {
+    return (
+      `ยินดีต้อนรับสมาชิกใหม่ Noinashop NLM!\n` +
+      `----------------------------------------\n` +
+      `👤 ชื่อสมาชิก: คุณ ${user.name}\n` +
+      `🔑 รหัสสมาชิก (Member ID): ${user.id}\n` +
+      `📧 อีเมลใช้ล็อกอิน: ${user.email}\n` +
+      `🔒 รหัสผ่านเข้าใช้ (Password): ${user.password}\n` +
+      `----------------------------------------\n` +
+      `👥 ผู้แนะนำตรง (Sponsor): ${user.sponsorId}\n` +
+      `📍 สายงานจัดวางใต้: ${user.parentUserId} (${user.position === 'left' ? 'ทีมงานฝั่งซ้าย' : 'ทีมงานฝั่งขวา'})\n` +
+      `🌟 ระดับสมาชิก: ${user.rank || 'Bronze'}\n` +
+      `----------------------------------------\n` +
+      `🔗 ลิงก์ร้านค้าของคุณสำหรับขยายทีมงาน:\n` +
+      `https://NoinashopNLM.com/?sponsor=${user.id}\n\n` +
+      `คุณสามารถนำรหัสสมาชิก หรืออีเมล ร่วมกับรหัสผ่านด้านบน ล็อกอินเข้าสู่ระบบหลังบ้านเพื่อตรวจสอบคะแนนสะสม โบนัสจับคู่จ่าย และแผนภาพสายงานได้ทันที!`
+    );
+  };
+
+  const sendRegEmail = (user: Member) => {
+    const subject = encodeURIComponent(`ยินดีต้อนรับสมาชิกใหม่ Noinashop NLM - รหัสสมาชิก ${user.id}`);
+    const body = encodeURIComponent(getRegShareText(user));
+    window.open(`mailto:${user.email}?subject=${subject}&body=${body}`, '_blank');
+  };
+
+  const handleCopyReg = (user: Member) => {
+    const text = getRegShareText(user);
+    navigator.clipboard.writeText(text).then(() => {
+      setCopiedRegSuccess(true);
+      setTimeout(() => setCopiedRegSuccess(false), 3000);
+    });
+  };
 
   // Auto-find first vacant spot when Sponsor ID changes and isAutoPlacement is enabled
   React.useEffect(() => {
@@ -267,7 +302,7 @@ export default function RegisterView({ members, onRegister, onNavigate }: Regist
             </div>
 
             {/* Google Sheets and Email webhook status feedback */}
-            <div className="max-w-sm mx-auto">
+            <div className="max-w-sm mx-auto space-y-4">
               {webhookResult.loading ? (
                 <div className="bg-slate-50 border border-slate-100 rounded-2xl p-4 text-xs text-center text-slate-500 animate-pulse flex items-center justify-center gap-2">
                   <span className="w-2 h-2 bg-indigo-600 rounded-full animate-ping"></span>
@@ -277,30 +312,81 @@ export default function RegisterView({ members, onRegister, onNavigate }: Regist
                 <div className="bg-emerald-50 border border-emerald-100 rounded-2xl p-4 text-xs text-left text-emerald-800 space-y-1.5 shadow-sm">
                   <div className="font-extrabold flex items-center gap-1.5">
                     <UserCheck className="w-4 h-4 text-emerald-600" />
-                    เชื่อมต่อระบบสำเร็จ!
+                    เชื่อมต่อระบบ Google Sheet สำเร็จ!
                   </div>
                   <p className="text-[10px] text-emerald-700 leading-normal font-medium">
-                    {webhookResult.message || 'ระบบได้บันทึกรายชื่อสมาชิกลงตาราง Members และส่งอีเมลแจ้งเตือนข้อมูลการล็อกอินเรียบร้อยแล้ว'}
+                    {webhookResult.message || 'ระบบได้บันทึกรายชื่อสมาชิกลงตาราง Members และส่งอีเมลแจ้งเตือนข้อมูลการล็อกอินผ่าน Google Workspace เรียบร้อยแล้ว'}
                   </p>
                 </div>
               ) : (
-                <div className="bg-gradient-to-r from-emerald-50/60 to-teal-50/60 border border-emerald-100 rounded-2xl p-4 text-xs text-left text-slate-700 space-y-2 shadow-sm">
-                  <div className="font-extrabold flex items-center gap-1.5 text-emerald-800">
-                    <UserCheck className="w-4 h-4 text-emerald-600" />
-                    สมัครสมาชิกสำเร็จ 100% (ข้อมูลบันทึกในฐานข้อมูลเรียบร้อยแล้ว)
+                <div className="bg-gradient-to-r from-indigo-50/60 to-emerald-50/60 border border-indigo-100/50 rounded-2xl p-4 text-xs text-left text-slate-700 space-y-3 shadow-sm">
+                  <div className="font-extrabold flex items-center gap-1.5 text-indigo-800">
+                    <UserCheck className="w-4 h-4 text-indigo-600" />
+                    สมัครสมาชิกสำเร็จ 100% (บันทึกในระบบเรียบร้อย)
                   </div>
                   <p className="text-[10px] text-slate-600 leading-normal font-medium">
-                    🎉 บัญชีของท่านได้ถูกเพิ่มลงใน <strong>ฐานข้อมูลของระบบ Noina Shop</strong> โดยตรงเป็นที่เรียบร้อยอย่างปลอดภัยแล้ว! สมาชิกสามารถนำรหัส <strong className="font-mono text-emerald-700">{registeredUser.id}</strong> ไปใช้ล็อกอินและเริ่มใช้งานระบบจับคู่ปันผลสายงานได้ทันที!
+                    🎉 บัญชีของท่านถูกบันทึกลงในฐานข้อมูล Noina Shop แล้ว! รหัสสมาชิกของคุณคือ <strong className="font-mono text-indigo-700 text-xs px-1.5 py-0.5 bg-indigo-50 rounded border border-indigo-100">{registeredUser?.id}</strong> สมาชิกสามารถนำไปเข้าสู่ระบบสายงานได้ทันที!
                   </p>
                   
-                  <div className="border-t border-emerald-100/70 pt-2 mt-1.5 space-y-1.5 text-[10px] text-slate-500 leading-normal">
+                  <div className="border-t border-indigo-100/40 pt-2.5 mt-2 space-y-2 text-[10px] text-slate-500 leading-normal">
                     <p className="font-bold text-slate-600 flex items-center gap-1">
                       <Info className="w-3.5 h-3.5 text-indigo-500 shrink-0" />
-                      * เรื่องการเชื่อมโยง Google Sheet / ส่งเมลแจ้งเตือน:
+                      * สิทธิ์การส่งอีเมลยืนยันอัตโนมัติ:
                     </p>
-                    <p>
-                      เนื่องจากสิทธิความปลอดภัยใน Google Apps Script Web App มีข้อจำกัดสูงและซับซ้อนมาก (มีบั๊กล็อกอินหลายบัญชีจากกูเกิล) <strong>แต่ท่านไม่ต้องกังวลเลย!</strong> แอดมินสามารถข้ามขั้นตอนนี้ไปได้ และดาวน์โหลดรายชื่อผู้สมัครหรือออเดอร์เป็นไฟล์ Excel ได้ทุกเวลาผ่านเมนูผู้ดูแลระบบ รวมถึงมีปุ่มกดส่งสลิป/ใบเสร็จทาง LINE ได้ทันทีโดยตรงจากหน้าเว็บครับ
+                    <p className="text-slate-500 text-[10px] leading-relaxed">
+                      หากแอดมินยังไม่ได้ดีพลอย Google Apps Script Web App ภายใต้บัญชี Google Workspace <strong className="text-indigo-800">admin@noinashop.business</strong> ระบบจะไม่สามารถส่งอีเมลอัตโนมัติได้
                     </p>
+                  </div>
+                </div>
+              )}
+
+              {/* Quick backup notification utilities for admin/customer */}
+              {registeredUser && (
+                <div className="bg-slate-50 border border-slate-100 rounded-2xl p-4 text-xs text-left space-y-3 shadow-sm">
+                  <span className="font-bold text-slate-700 flex items-center gap-1.5 text-[11px]">
+                    <Sparkles className="w-3.5 h-3.5 text-amber-500" />
+                    เครื่องมือช่วยแชร์และแจ้งเตือนผู้สมัคร (Backup Utility):
+                  </span>
+                  
+                  <div className="grid grid-cols-1 gap-2">
+                    <button
+                      onClick={() => sendRegEmail(registeredUser)}
+                      className="w-full bg-white hover:bg-slate-100 border border-slate-200 text-slate-700 font-bold py-2 px-3 rounded-xl transition flex items-center justify-center gap-2 text-[11px] shadow-sm cursor-pointer"
+                    >
+                      <Mail className="w-3.5 h-3.5 text-red-500" />
+                      📧 ส่งอีเมลรหัสสมาชิก (สำรองผ่าน Mail Client)
+                    </button>
+                    
+                    <button
+                      onClick={() => {
+                        const text = getRegShareText(registeredUser);
+                        window.open(`https://line.me/R/share?text=${encodeURIComponent(text)}`, '_blank');
+                      }}
+                      className="w-full bg-emerald-50 hover:bg-emerald-100 border border-emerald-200 text-emerald-800 font-bold py-2 px-3 rounded-xl transition flex items-center justify-center gap-2 text-[11px] shadow-sm cursor-pointer"
+                    >
+                      <MessageSquare className="w-3.5 h-3.5 text-emerald-600" />
+                      💬 ส่งข้อมูลสมาชิกเข้า LINE
+                    </button>
+                    
+                    <button
+                      onClick={() => handleCopyReg(registeredUser)}
+                      className={`w-full font-bold py-2 px-3 rounded-xl transition flex items-center justify-center gap-2 text-[11px] shadow-sm border cursor-pointer ${
+                        copiedRegSuccess 
+                          ? 'bg-indigo-50 border-indigo-200 text-indigo-700' 
+                          : 'bg-white hover:bg-slate-100 border-slate-200 text-slate-700'
+                      }`}
+                    >
+                      {copiedRegSuccess ? (
+                        <>
+                          <Check className="w-3.5 h-3.5 text-indigo-600" />
+                          คัดลอกลงคลิปบอร์ดสำเร็จแล้ว!
+                        </>
+                      ) : (
+                        <>
+                          <span>📋 คัดลอกรหัสเข้าใช้ & ลิงก์ร้านค้า</span>
+                        </>
+                      )}
+                    </button>
                   </div>
                 </div>
               )}

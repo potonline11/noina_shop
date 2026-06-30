@@ -391,9 +391,9 @@ export default function GoogleSheetSync({ onSyncComplete, currentProductsCount }
           displayMessage = '❌ ไม่พบหน้าสคริปต์ Google Apps Script (HTTP 404 Not Found)\n\n' +
             'สาเหตุที่เป็นไปได้สูงที่สุด:\n' +
             '1. บั๊กการล็อกอินหลายบัญชีของ Google: หากท่านล็อกอิน Google หลายตัวพร้อมกันในเบราว์เซอร์ตอนกด Deploy ระบบมักจะสร้าง Deployment ID ที่ใช้งานไม่ได้\n' +
-            '   👉 วิธีแก้ไข: โปรดเปิด "หน้าต่างไม่ระบุตัวตน" (Incognito Window) -> ล็อกอินเข้าบัญชี pnmall4u@gmail.com บัญชีเดียวเท่านั้น -> เข้าหน้าแก้ไขสคริปต์ -> กด Deploy > New deployment ใหม่ จากนั้นนำลิงก์ที่ลงท้ายด้วย /exec ตัวใหม่มาบันทึกและทดสอบอีกครั้ง\n\n' +
+            '   👉 วิธีแก้ไข: โปรดเปิด "หน้าต่างไม่ระบุตัวตน" (Incognito Window) -> ล็อกอินเข้าบัญชี admin@noinashop.business บัญชีเดียวเท่านั้น -> เข้าหน้าแก้ไขสคริปต์ -> กด Deploy > New deployment ใหม่ จากนั้นนำลิงก์ที่ลงท้ายด้วย /exec ตัวใหม่มาบันทึกและทดสอบอีกครั้ง\n\n' +
             '2. เลือกการ Deployment ผิดประเภท: ตรวจสอบว่าท่านเลือกชนิดเป็น "เว็บแอป" (Web App) หรือไม่ (ไม่ใช่ไลบรารีหรือ API)\n' +
-            '   👉 วิธีแก้ไข: ตรวจสอบขั้นตอนการ Deploy ในคู่มือด้านล่าง โดยตั้งค่า "การเข้าถึงเป็น: ทุกคน (Anyone)" และ "ทำงานในฐานะ: ฉัน (pnmall4u@gmail.com)" เสมอ';
+            '   👉 วิธีแก้ไข: ตรวจสอบขั้นตอนการ Deploy ในคู่มือด้านล่าง โดยตั้งค่า "การเข้าถึงเป็น: ทุกคน (Anyone)" และ "ทำงานในฐานะ: ฉัน (admin@noinashop.business)" เสมอ';
         } else if (lowerMsg.includes('unauthorized') || lowerMsg.includes('forbidden') || response.status === 401 || response.status === 403) {
           displayMessage = '🔒 ติดสิทธิความปลอดภัยของ Google: โปรดแก้ไขสิทธิผู้มีสิทธิเข้าถึง Web App ใน Google Apps Script โดยตั้งค่า Who has access เป็น "Anyone" (ทุกคน) แล้วกด Deploy > New deployment ใหม่ จากนั้นนำลิงก์ /exec ใหม่มาบันทึกในระบบ';
         } else if (displayMessage.includes('<!DOCTYPE') || displayMessage.includes('<html')) {
@@ -904,7 +904,7 @@ export default function GoogleSheetSync({ onSyncComplete, currentProductsCount }
                         <div>
                           <p className="font-bold text-amber-950">ตั้งค่าสิทธิ์ผู้เข้าถึงให้เป็น "ทุกคน" (Anyone)</p>
                           <ul className="list-disc pl-4 mt-1 text-amber-800 text-[11px] space-y-0.5">
-                            <li><strong>Execute as (เรียกใช้ในฐานะ):</strong> เลือกเป็น <span className="font-semibold text-amber-950">"Me" (ฉัน - pnmall4u@gmail.com)</span></li>
+                            <li><strong>Execute as (เรียกใช้ในฐานะ):</strong> เลือกเป็น <span className="font-semibold text-amber-950">"Me" (ฉัน - admin@noinashop.business)</span></li>
                             <li><strong>Who has access (ผู้มีสิทธิ์เข้าถึง):</strong> ต้องเปลี่ยนจาก "Only myself" เป็น <strong className="text-rose-700 font-bold">"Anyone" (ทุกคน)</strong></li>
                           </ul>
                         </div>
