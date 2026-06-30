@@ -318,8 +318,8 @@ export default function App() {
     const clientSheetUrl = localStorage.getItem('noina_sheet_url') || '';
     const sheetId = extractSheetId(clientSheetUrl);
 
-    // Automatically POST new registration to Google Sheets Webhook URL via server-side proxy (Bypasses client-side CORS issues and works across all devices)
-    return fetch('/api/webhook-proxy', {
+    // Automatically POST new registration to Google Sheets Webhook URL & Send SMTP Email via unified backend route /api/register
+    return fetch('/api/register', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
