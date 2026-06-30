@@ -569,8 +569,8 @@ ${productsContext || 'ขณะนี้ไม่มีสินค้าใน�
       }
 
       // 2. Send welcome email via Google Workspace SMTP
-      const smtpUser = process.env.SMTP_USER || process.env.SMTP_USERNAME;
-      const smtpPass = process.env.SMTP_PASS || process.env.SMTP_PASSWORD;
+      const smtpUser = process.env.EMAIL_USER || process.env.SMTP_USER || process.env.SMTP_USERNAME;
+      const smtpPass = process.env.EMAIL_PASS || process.env.SMTP_PASS || process.env.SMTP_PASSWORD;
 
       if (!smtpUser || !smtpPass) {
         console.warn('[Register Service] SMTP credentials (SMTP_USER/SMTP_PASS) are not configured in server environment.');

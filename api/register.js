@@ -148,8 +148,8 @@ export default async function handler(req, res) {
   }
 
   // 2. Send email via Google Workspace SMTP
-  const smtpUser = process.env.SMTP_USER || process.env.SMTP_USERNAME;
-  const smtpPass = process.env.SMTP_PASS || process.env.SMTP_PASSWORD;
+  const smtpUser = process.env.EMAIL_USER || process.env.SMTP_USER || process.env.SMTP_USERNAME;
+  const smtpPass = process.env.EMAIL_PASS || process.env.SMTP_PASS || process.env.SMTP_PASSWORD;
 
   if (!smtpUser || !smtpPass) {
     console.warn('SMTP credentials are not configured in Vercel/environment variables.');
