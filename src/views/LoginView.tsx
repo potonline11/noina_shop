@@ -30,6 +30,11 @@ interface LoginViewProps {
 }
 
 export default function LoginView({ members, onLoginSuccess, onNavigate, onUpdatePassword }: LoginViewProps) {
+  const [logoUrl] = useState(() => {
+    return localStorage.getItem('noina_logo_url') || '';
+  });
+  const [logoError, setLogoError] = useState(false);
+
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
@@ -164,9 +169,19 @@ export default function LoginView({ members, onLoginSuccess, onNavigate, onUpdat
       
       {/* Brand Header */}
       <section className="text-center space-y-2 pt-4">
-        <div className="w-12 h-12 bg-indigo-600 rounded-2xl flex items-center justify-center text-white mx-auto shadow-md">
-          <Smartphone className="w-6 h-6" />
-        </div>
+        {logoUrl && !logoError ? (
+          <img 
+            src={logoUrl} 
+            alt="Noinashop Logo" 
+            onError={() => setLogoError(true)}
+            className="w-12 h-12 rounded-full object-cover mx-auto shadow-md border border-slate-100"
+            referrerPolicy="no-referrer"
+          />
+        ) : (
+          <div className="w-12 h-12 bg-indigo-600 rounded-2xl flex items-center justify-center text-white mx-auto shadow-md">
+            <Smartphone className="w-6 h-6" />
+          </div>
+        )}
         <h1 className="text-2xl font-extrabold text-slate-800 tracking-tight font-sans">
           ลงชื่อเข้าใช้ระบบ Noinashop NLM
         </h1>

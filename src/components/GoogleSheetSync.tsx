@@ -27,6 +27,12 @@ export default function GoogleSheetSync({ onSyncComplete, currentProductsCount }
     return localStorage.getItem('noina_order_webhook_url') || '';
   });
 
+  // Logo image URL state
+  const [logoUrl, setLogoUrl] = useState(() => {
+    return localStorage.getItem('noina_logo_url') || '';
+  });
+  const [logoSaveStatus, setLogoSaveStatus] = useState<string>('');
+
   // Fetch configuration on mount to ensure server configuration is in sync
   useEffect(() => {
     const fetchConfig = async () => {
@@ -41,6 +47,10 @@ export default function GoogleSheetSync({ onSyncComplete, currentProductsCount }
           if (data.sheetUrl) {
             setSheetUrl(data.sheetUrl);
             localStorage.setItem('noina_sheet_url', data.sheetUrl);
+          }
+          if (data.logoUrl) {
+            setLogoUrl(data.logoUrl);
+            localStorage.setItem('noina_logo_url', data.logoUrl);
           }
         }
       } catch (err) {
@@ -335,6 +345,35 @@ export default function GoogleSheetSync({ onSyncComplete, currentProductsCount }
     }
     
     setTimeout(() => setWebhookSaveStatus(''), 4000);
+  };
+
+  const handleSaveLogo = async (e: React.FormEvent) => {
+    e.preventDefault();
+    
+    const cleanLogo = logoUrl.trim();
+    setLogoUrl(cleanLogo);
+    localStorage.setItem('noina_logo_url', cleanLogo);
+    setLogoSaveStatus('กำลังบันทึกข้อมูล...');
+    
+    try {
+      const response = await fetch('/api/products-store', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ logoUrl: cleanLogo })
+      });
+      if (response.ok) {
+        setLogoSaveStatus('บันทึกโลโก้ร้านลงเซิร์ฟเวอร์เรียบร้อยแล้ว!');
+        // Trigger a simple custom event so other components know the logo has been updated instantly
+        window.dispatchEvent(new Event('logoUpdated'));
+      } else {
+        setLogoSaveStatus('บันทึกเรียบร้อยแล้ว (บราวเซอร์)');
+      }
+    } catch (err) {
+      console.error('Failed to sync logo URL to server:', err);
+      setLogoSaveStatus('บันทึกในบราวเซอร์สำเร็จ แต่ไม่สามารถเชื่อมต่อเซิร์ฟเวอร์ได้');
+    }
+    
+    setTimeout(() => setLogoSaveStatus(''), 4000);
   };
 
   const handleTestWebhook = async () => {
@@ -930,6 +969,62 @@ export default function GoogleSheetSync({ onSyncComplete, currentProductsCount }
             )}
           </div>
         </form>
+
+        {/* Logo Configuration Section */}
+        <div className="border-t border-slate-100 pt-6 mt-6">
+          <div className="flex items-center gap-3 mb-4">
+            <div className="w-8 h-8 rounded-lg bg-indigo-50 border border-indigo-100 flex items-center justify-center text-indigo-600">
+              <Sparkles className="w-4.5 h-4.5" />
+            </div>
+            <div>
+              <h3 className="text-sm md:text-base font-bold text-slate-800">ตั้งค่าโลโก้ร้าน (Logo Shop Settings)</h3>
+              <p className="text-[11px] text-slate-500 mt-0.5">วางลิงก์รูปภาพโลโก้ร้านที่คุณต้องการนำมาแสดงผลแทนไอคอนโทรศัพท์ของระบบ</p>
+            </div>
+          </div>
+
+          <form onSubmit={handleSaveLogo} className="space-y-4">
+            <div>
+              <label className="block text-xs font-bold text-slate-700 mb-1.5">
+                ที่อยู่อินเทอร์เน็ตของไฟล์รูปโลโก้ (Logo Image URL)
+              </label>
+              <div className="flex gap-2">
+                <input 
+                  type="text"
+                  value={logoUrl}
+                  onChange={(e) => setLogoUrl(e.target.value)}
+                  placeholder="ตัวอย่างเช่น: https://example.com/logo.png หรือ ลิงก์รูปภาพอัปโหลดอื่นๆ"
+                  className="flex-grow px-3.5 py-2 text-xs rounded-xl border border-slate-300 focus:outline-none focus:ring-1 focus:ring-indigo-500 bg-white"
+                />
+                <button
+                  type="submit"
+                  className="bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-xs px-4 py-2 rounded-xl transition flex items-center gap-1.5 shrink-0 shadow-sm"
+                >
+                  <Save className="w-3.5 h-3.5" />
+                  บันทึกโลโก้
+                </button>
+              </div>
+              {logoSaveStatus && (
+                <p className="text-[11px] text-emerald-600 font-bold mt-1.5">✓ {logoSaveStatus}</p>
+              )}
+              
+              {logoUrl && (
+                <div className="mt-3 flex items-center gap-3 p-3 bg-slate-50 border border-slate-100 rounded-xl">
+                  <div className="text-xs font-semibold text-slate-500">ตัวอย่างโลโก้:</div>
+                  <img 
+                    src={logoUrl} 
+                    alt="Logo Preview" 
+                    className="w-12 h-12 rounded-full object-cover border border-slate-200 bg-white"
+                    onError={(e) => {
+                      (e.target as HTMLImageElement).src = 'https://picsum.photos/seed/noinalogo/100/100';
+                    }}
+                    referrerPolicy="no-referrer"
+                  />
+                  <span className="text-[10px] text-slate-400 italic">หากภาพไม่ขึ้น โปรดตรวจสอบว่าลิงก์รูปภาพเป็นสาธารณะจริงและถูกต้อง</span>
+                </div>
+              )}
+            </div>
+          </form>
+        </div>
 
         {/* Code Guide button */}
         <div className="bg-slate-50 border border-slate-100 rounded-xl p-4 space-y-4 text-xs text-slate-600">

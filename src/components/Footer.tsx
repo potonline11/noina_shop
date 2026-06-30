@@ -3,7 +3,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { Smartphone, Mail, Phone, MapPin, ShieldCheck, Heart } from 'lucide-react';
 
 interface FooterProps {
@@ -11,6 +11,25 @@ interface FooterProps {
 }
 
 export default function Footer({ onNavigate }: FooterProps) {
+  const [logoUrl, setLogoUrl] = useState(() => {
+    return localStorage.getItem('noina_logo_url') || '';
+  });
+  const [logoError, setLogoError] = useState(false);
+
+  useEffect(() => {
+    const handleUpdate = () => {
+      setLogoUrl(localStorage.getItem('noina_logo_url') || '');
+      setLogoError(false);
+    };
+    
+    window.addEventListener('logoUpdated', handleUpdate);
+    const interval = setInterval(handleUpdate, 2000);
+    return () => {
+      window.removeEventListener('logoUpdated', handleUpdate);
+      clearInterval(interval);
+    };
+  }, []);
+
   return (
     <footer className="bg-slate-900 text-slate-400 text-xs md:text-sm pt-12 pb-8 border-t border-slate-800" id="main-footer">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -19,9 +38,19 @@ export default function Footer({ onNavigate }: FooterProps) {
           {/* Column 1: Brand details */}
           <div className="space-y-4">
             <div className="flex items-center gap-2.5">
-              <div className="w-9 h-9 bg-indigo-600 text-white rounded-lg flex items-center justify-center">
-                <Smartphone className="w-5 h-5" />
-              </div>
+              {logoUrl && !logoError ? (
+                <img 
+                  src={logoUrl} 
+                  alt="Noinashop Logo" 
+                  onError={() => setLogoError(true)}
+                  className="w-9 h-9 rounded-full object-cover shadow-md border border-slate-750"
+                  referrerPolicy="no-referrer"
+                />
+              ) : (
+                <div className="w-9 h-9 bg-indigo-600 text-white rounded-lg flex items-center justify-center">
+                  <Smartphone className="w-5 h-5" />
+                </div>
+              )}
               <span className="font-sans font-bold text-lg text-white tracking-tight">Noinashop</span>
             </div>
             <p className="text-slate-400 text-xs leading-relaxed">
@@ -70,15 +99,15 @@ export default function Footer({ onNavigate }: FooterProps) {
             <h4 className="text-xs font-bold uppercase tracking-wider text-slate-200 mb-4">ติดต่อเรา</h4>
             <div className="flex items-start gap-2.5">
               <MapPin className="w-4 h-4 text-indigo-500 shrink-0 mt-0.5" />
-              <span>123/45 ซอยสุขุมวิท 22 แขวงคลองเตย เขตคลองเตย กรุงเทพมหานคร 10110</span>
+              <span>128/12 หมู่4 ต.กรอกสมบูรณ์ ศรีมหาโพธิ ปราจีนบุรี 25140</span>
             </div>
             <div className="flex items-center gap-2.5">
               <Phone className="w-4 h-4 text-indigo-500 shrink-0" />
-              <span>081-234-5678 (ฝ่ายบริการลูกค้า)</span>
+              <span>081-160-1092</span>
             </div>
             <div className="flex items-center gap-2.5">
               <Mail className="w-4 h-4 text-indigo-500 shrink-0" />
-              <span>contact@noinashop.com</span>
+              <span>admin@noinashop.business</span>
             </div>
           </div>
 

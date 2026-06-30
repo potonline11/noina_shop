@@ -215,6 +215,9 @@ export default function App() {
             serverWebhookUrl = data.webhookUrl;
             localStorage.setItem('noina_order_webhook_url', data.webhookUrl);
           }
+          if (data.logoUrl) {
+            localStorage.setItem('noina_logo_url', data.logoUrl);
+          }
           if (data.products && data.products.length > 0) {
             setProducts(data.products);
             localStorage.setItem('noina_products', JSON.stringify(data.products));

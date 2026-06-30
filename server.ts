@@ -129,13 +129,14 @@ async function readStore() {
     return {
       sheetUrl: parsed.sheetUrl || '',
       webhookUrl: parsed.webhookUrl || '',
+      logoUrl: parsed.logoUrl || '',
       products: parsed.products || [],
       members: parsed.members || [],
       orders: parsed.orders || [],
       commissionLogs: parsed.commissionLogs || []
     };
   } catch (error) {
-    return { sheetUrl: '', webhookUrl: '', products: [], members: [], orders: [], commissionLogs: [] };
+    return { sheetUrl: '', webhookUrl: '', logoUrl: '', products: [], members: [], orders: [], commissionLogs: [] };
   }
 }
 
@@ -314,10 +315,11 @@ ${productsContext || 'ขณะนี้ไม่มีสินค้าใน�
 
   app.post('/api/products-store', async (req, res) => {
     try {
-      const { sheetUrl, webhookUrl, products, members, orders, commissionLogs } = req.body;
+      const { sheetUrl, webhookUrl, logoUrl, products, members, orders, commissionLogs } = req.body;
       const store = await readStore();
       if (sheetUrl !== undefined) store.sheetUrl = sheetUrl;
       if (webhookUrl !== undefined) store.webhookUrl = sanitizeWebhookUrl(webhookUrl);
+      if (logoUrl !== undefined) store.logoUrl = logoUrl;
       if (products !== undefined) store.products = products;
       if (members !== undefined) store.members = members;
       if (orders !== undefined) store.orders = orders;

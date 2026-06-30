@@ -47,7 +47,7 @@ export default function ContactView() {
                 </div>
                 <div>
                   <span className="block font-bold text-slate-800 mb-0.5">ที่อยู่ร้าน (หน้าร้าน)</span>
-                  <span className="leading-relaxed">123/45 ซอยสุขุมวิท 22 แขวงคลองเตย เขตคลองเตย กรุงเทพมหานคร 10110 (อยู่ห่างจาก BTS พร้อมพงษ์ 500 เมตร มีที่จอดรถสะดวกสบาย)</span>
+                  <span className="leading-relaxed">128/12 หมู่4 ต.กรอกสมบูรณ์ ศรีมหาโพธิ ปราจีนบุรี 25140</span>
                 </div>
               </div>
 
@@ -57,7 +57,7 @@ export default function ContactView() {
                 </div>
                 <div>
                   <span className="block font-bold text-slate-800 mb-0.5">เบอร์โทรศัพท์ติดต่อ</span>
-                  <span className="leading-relaxed">081-234-5678 (ฝ่ายบริการลูกค้าและการตลาดเครือข่าย)</span>
+                  <span className="leading-relaxed">081-160-1092</span>
                 </div>
               </div>
 
@@ -67,7 +67,7 @@ export default function ContactView() {
                 </div>
                 <div>
                   <span className="block font-bold text-slate-800 mb-0.5">อีเมลติดต่อฝ่ายขาย</span>
-                  <span className="leading-relaxed">contact@noinashop.com | sales@noinashop.com</span>
+                  <span className="leading-relaxed">admin@noinashop.business</span>
                 </div>
               </div>
 

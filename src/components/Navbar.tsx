@@ -3,7 +3,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { Member } from '../types';
 import { Smartphone, LogIn, UserPlus, LogOut, LayoutDashboard, User, ShieldAlert, ShoppingCart } from 'lucide-react';
 import { shouldShowAdmin } from '../utils/domainHelper';
@@ -18,6 +18,25 @@ interface NavbarProps {
 }
 
 export default function Navbar({ currentView, onNavigate, currentUser, onLogout, cartCount = 0, onCartClick }: NavbarProps) {
+  const [logoUrl, setLogoUrl] = useState(() => {
+    return localStorage.getItem('noina_logo_url') || '';
+  });
+  const [logoError, setLogoError] = useState(false);
+
+  useEffect(() => {
+    const handleUpdate = () => {
+      setLogoUrl(localStorage.getItem('noina_logo_url') || '');
+      setLogoError(false);
+    };
+    
+    window.addEventListener('logoUpdated', handleUpdate);
+    const interval = setInterval(handleUpdate, 2000);
+    return () => {
+      window.removeEventListener('logoUpdated', handleUpdate);
+      clearInterval(interval);
+    };
+  }, []);
+
   const menuItems = [
     { id: 'home', label: 'หน้าแรก' },
     { id: 'about', label: 'เกี่ยวกับเรา' },
@@ -36,9 +55,19 @@ export default function Navbar({ currentView, onNavigate, currentUser, onLogout,
             onClick={() => onNavigate('home')} 
             className="flex items-center gap-2.5 cursor-pointer hover:opacity-90 transition group"
           >
-            <div className="w-10 h-10 md:w-12 md:h-12 bg-gradient-to-tr from-indigo-600 to-indigo-800 rounded-xl flex items-center justify-center text-white shadow-md shadow-indigo-200 group-hover:rotate-3 transition duration-200">
-              <Smartphone className="w-5.5 h-5.5 md:w-6 md:h-6" />
-            </div>
+            {logoUrl && !logoError ? (
+              <img 
+                src={logoUrl} 
+                alt="Noinashop Logo" 
+                onError={() => setLogoError(true)}
+                className="w-10 h-10 md:w-12 md:h-12 rounded-full object-cover shadow-md border border-slate-100 group-hover:rotate-3 transition duration-200"
+                referrerPolicy="no-referrer"
+              />
+            ) : (
+              <div className="w-10 h-10 md:w-12 md:h-12 bg-gradient-to-tr from-indigo-600 to-indigo-800 rounded-xl flex items-center justify-center text-white shadow-md shadow-indigo-200 group-hover:rotate-3 transition duration-200">
+                <Smartphone className="w-5.5 h-5.5 md:w-6 md:h-6" />
+              </div>
+            )}
             <div>
               <span className="block font-sans font-bold text-lg md:text-xl text-slate-800 tracking-tight leading-none">Noinashop</span>
               <span className="block text-[10px] md:text-xs text-indigo-600 font-medium tracking-wider uppercase mt-0.5">IT Network & Second-Hand</span>

@@ -14,6 +14,11 @@ interface RegisterViewProps {
 }
 
 export default function RegisterView({ members, onRegister, onNavigate }: RegisterViewProps) {
+  const [logoUrl] = useState(() => {
+    return localStorage.getItem('noina_logo_url') || '';
+  });
+  const [logoError, setLogoError] = useState(false);
+
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
   const [phone, setPhone] = useState('');
@@ -58,7 +63,7 @@ export default function RegisterView({ members, onRegister, onNavigate }: Regist
       `🌟 ระดับสมาชิก: ${user.rank || 'Bronze'}\n` +
       `----------------------------------------\n` +
       `🔗 ลิงก์ร้านค้าของคุณสำหรับขยายทีมงาน:\n` +
-      `https://noina-shop.vercel.app/?sponsor=${user.id}\n\n` +
+      `https://NoinashopNLM.com/?sponsor=${user.id}\n\n` +
       `คุณสามารถนำรหัสสมาชิก หรืออีเมล ร่วมกับรหัสผ่านด้านบน ล็อกอินเข้าสู่ระบบหลังบ้านเพื่อตรวจสอบคะแนนสะสม โบนัสจับคู่จ่าย และแผนภาพสายงานได้ทันที!`
     );
   };
@@ -286,7 +291,16 @@ export default function RegisterView({ members, onRegister, onNavigate }: Regist
     <div className="max-w-2xl mx-auto space-y-8 pb-16">
       
       {/* Title Header */}
-      <section className="text-center space-y-2 pt-4">
+      <section className="text-center space-y-3 pt-4">
+        {logoUrl && !logoError && (
+          <img 
+            src={logoUrl} 
+            alt="Noinashop Logo" 
+            onError={() => setLogoError(true)}
+            className="w-16 h-16 rounded-full object-cover mx-auto shadow-md border border-slate-100 mb-2"
+            referrerPolicy="no-referrer"
+          />
+        )}
         <h1 className="text-2xl md:text-3xl font-extrabold text-slate-800 tracking-tight font-sans">
           สมัครสมาชิก Noinashop NLM
         </h1>
@@ -355,7 +369,7 @@ export default function RegisterView({ members, onRegister, onNavigate }: Regist
                 <div className="bg-emerald-50 border border-emerald-100 rounded-2xl p-4 text-xs text-left text-emerald-800 space-y-1.5 shadow-sm">
                   <div className="font-extrabold flex items-center gap-1.5">
                     <UserCheck className="w-4 h-4 text-emerald-600" />
-                    เชื่อมต่อระบบเรียบร้อยแล้ว!
+                    เชื่อมต่อระบบ Google Sheet สำเร็จ!
                   </div>
                   <p className="text-[10px] text-emerald-700 leading-normal font-medium">
                     {webhookResult.message || 'ระบบได้บันทึกรายชื่อสมาชิกลงตาราง Members และส่งอีเมลแจ้งเตือนข้อมูลการล็อกอินผ่าน Google Workspace เรียบร้อยแล้ว'}
@@ -377,7 +391,7 @@ export default function RegisterView({ members, onRegister, onNavigate }: Regist
                       * สิทธิ์การส่งอีเมลยืนยันอัตโนมัติ:
                     </p>
                     <p className="text-slate-500 text-[10px] leading-relaxed">
-                      หากแอดมินตั้งค่าตัวแปร <strong className="text-indigo-800">EMAIL_USER</strong> และ <strong className="text-indigo-800">EMAIL_PASS</strong> ใน Vercel เรียบร้อยแล้ว ระบบจะยิง SMTP ออกทันที
+                      หากแอดมินยังไม่ได้ดีพลอย Google Apps Script Web App ภายใต้บัญชี Google Workspace <strong className="text-indigo-800">admin@noinashop.business</strong> ระบบจะไม่สามารถส่งอีเมลอัตโนมัติได้
                     </p>
                   </div>
                 </div>
