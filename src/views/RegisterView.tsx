@@ -58,7 +58,7 @@ export default function RegisterView({ members, onRegister, onNavigate }: Regist
       `🌟 ระดับสมาชิก: ${user.rank || 'Bronze'}\n` +
       `----------------------------------------\n` +
       `🔗 ลิงก์ร้านค้าของคุณสำหรับขยายทีมงาน:\n` +
-      `https://NoinashopNLM.com/?sponsor=${user.id}\n\n` +
+      `https://noina-shop.vercel.app/?sponsor=${user.id}\n\n` +
       `คุณสามารถนำรหัสสมาชิก หรืออีเมล ร่วมกับรหัสผ่านด้านบน ล็อกอินเข้าสู่ระบบหลังบ้านเพื่อตรวจสอบคะแนนสะสม โบนัสจับคู่จ่าย และแผนภาพสายงานได้ทันที!`
     );
   };
@@ -355,7 +355,7 @@ export default function RegisterView({ members, onRegister, onNavigate }: Regist
                 <div className="bg-emerald-50 border border-emerald-100 rounded-2xl p-4 text-xs text-left text-emerald-800 space-y-1.5 shadow-sm">
                   <div className="font-extrabold flex items-center gap-1.5">
                     <UserCheck className="w-4 h-4 text-emerald-600" />
-                    เชื่อมต่อระบบ Google Sheet สำเร็จ!
+                    เชื่อมต่อระบบเรียบร้อยแล้ว!
                   </div>
                   <p className="text-[10px] text-emerald-700 leading-normal font-medium">
                     {webhookResult.message || 'ระบบได้บันทึกรายชื่อสมาชิกลงตาราง Members และส่งอีเมลแจ้งเตือนข้อมูลการล็อกอินผ่าน Google Workspace เรียบร้อยแล้ว'}
@@ -377,7 +377,7 @@ export default function RegisterView({ members, onRegister, onNavigate }: Regist
                       * สิทธิ์การส่งอีเมลยืนยันอัตโนมัติ:
                     </p>
                     <p className="text-slate-500 text-[10px] leading-relaxed">
-                      หากแอดมินยังไม่ได้ดีพลอย Google Apps Script Web App ภายใต้บัญชี Google Workspace <strong className="text-indigo-800">admin@noinashop.business</strong> ระบบจะไม่สามารถส่งอีเมลอัตโนมัติได้
+                      หากแอดมินตั้งค่าตัวแปร <strong className="text-indigo-800">EMAIL_USER</strong> และ <strong className="text-indigo-800">EMAIL_PASS</strong> ใน Vercel เรียบร้อยแล้ว ระบบจะยิง SMTP ออกทันที
                     </p>
                   </div>
                 </div>
