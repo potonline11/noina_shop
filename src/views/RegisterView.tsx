@@ -210,24 +210,67 @@ export default function RegisterView({ members, onRegister, onNavigate }: Regist
 
     // Commit to app state
     setWebhookResult({ loading: true });
-    const registerPromise = onRegister(newMember);
-    if (registerPromise instanceof Promise) {
-      registerPromise.then((res) => {
-        setWebhookResult({
-          loading: false,
-          success: res?.success,
-          message: res?.message || 'บันทึกข้อมูลและส่งอีเมลเรียบร้อยแล้ว'
-        });
-      }).catch((err) => {
-        setWebhookResult({
-          loading: false,
-          success: false,
-          message: err?.message || 'การเชื่อมต่อเซิร์ฟเวอร์ล้มเหลว'
-        });
+    
+    // Call the parent state update handler to insert the member into the local memory tree
+    onRegister(newMember);
+
+    // Get Webhook URL and Sheet URL from localStorage (configured in Admin panel)
+    const clientWebhookUrl = localStorage.getItem('noina_order_webhook_url') || '';
+    const clientSheetUrl = localStorage.getItem('noina_sheet_url') || '';
+    
+    // Extract sheetId from Google Sheets URL
+    const extractSheetIdLocal = (url: string) => {
+      const match = url.match(/\/d\/([a-zA-Z0-9_\-]+)/);
+      return match ? match[1] : '';
+    };
+    const sheetId = extractSheetIdLocal(clientSheetUrl);
+
+    // Directly call the Vercel backend route /api/register to save to Google Sheets and send SMTP email
+    fetch('/api/register', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        webhookUrl: clientWebhookUrl,
+        sheetId: sheetId,
+        type: 'registration',
+        id: newMember.id,
+        name: newMember.name,
+        email: newMember.email,
+        phone: newMember.phone,
+        password: newMember.password,
+        sponsorId: newMember.sponsorId,
+        parentUserId: newMember.parentUserId,
+        position: newMember.position,
+        rank: newMember.rank,
+        dateJoined: newMember.dateJoined
+      })
+    })
+    .then(async (res) => {
+      const text = await res.text();
+      let parsed;
+      try {
+        parsed = JSON.parse(text);
+      } catch (e) {
+        console.error('[RegisterView] Failed to parse JSON response:', text);
+        parsed = { success: true, message: 'ส่งคำสมัครสำเร็จ (ไม่สามารถถอดรหัส JSON ได้)' };
+      }
+
+      setWebhookResult({
+        loading: false,
+        success: parsed.success !== false,
+        message: parsed.message || 'ระบบได้บันทึกรายชื่อสมาชิกลงสเปรดชีต และส่งอีเมลยืนยันตัวตนเรียบร้อยแล้ว!'
       });
-    } else {
-      setWebhookResult({ loading: false });
-    }
+    })
+    .catch((err) => {
+      console.error('[RegisterView] Webhook API connection error:', err);
+      setWebhookResult({
+        loading: false,
+        success: false,
+        message: err?.message || 'การเชื่อมต่อระบบเซิร์ฟเวอร์หลังบ้านล้มเหลว'
+      });
+    });
 
     setRegisteredUser(newMember);
     setSuccess(true);
