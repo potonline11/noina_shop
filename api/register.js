@@ -4,11 +4,11 @@ export default async function handler(req, res) {
   if (req.method === 'POST') {
     const data = req.body;
     
-    // ตั้งค่า URL ของ Google Apps Script ตัวล่าสุดของฝั่ง Gmail ส่วนตัวคุณ (มี /exec แล้ว)
+    // 🚨 ลิงก์ Apps Script ฝั่ง Gmail ส่วนตัว (pnmail4u@gmail.com) ตัวล่าสุดของคุณ
     const GOOGLE_SCRIPT_URL = "https://google.com";
 
     try {
-      // 1. ส่งข้อมูลทะลุไปบันทึกที่ Google Sheet ฝั่ง Gmail (ระบบใน Sheets จะแยกแท็บ Members/Orders ให้เองอัตโนมัติ)
+      // 1. ส่งข้อมูลทะลุไปบันทึกที่ Google Sheet (ระบบใน Sheets ฝั่ง Gmail จะแยกแท็บ Members/Orders ให้เองอัตโนมัติ)
       try {
         await fetch(GOOGLE_SCRIPT_URL, {
           method: 'POST',
@@ -19,7 +19,7 @@ export default async function handler(req, res) {
         console.error("Google Sheet Save Error:", sheetErr);
       }
 
-      // 2. ตั้งค่าระบบส่งอีเมลผ่าน SMTP ของ Google Workspace ของร้านคุณ
+      // 2. ระบบส่งอีเมลผ่าน SMTP ของ Google Workspace ของร้านคุณ
       const transporter = nodemailer.createTransport({
         host: '://gmail.com',
         port: 465,
@@ -30,7 +30,7 @@ export default async function handler(req, res) {
         },
       });
 
-      // 🚨 ตรวจสอบประเภทข้อมูล: หากเป็นข้อมูลการสั่งซื้อสินค้า (Order)
+      // ตรวจสอบประเภทข้อมูล: หากเป็นข้อมูลการสั่งซื้อสินค้า (Order)
       if (data.type === "order" || data.items !== undefined || data.totalPrice !== undefined || data.products !== undefined) {
         const customerName = data.customerName || data.fullName || "ลูกค้า Noinashop";
         const targetEmail = data.email || data.emailAddress || "";
@@ -46,7 +46,7 @@ export default async function handler(req, res) {
                 <p>สวัสดีคุณ <b>${customerName}</b>,</p>
                 <p>ระบบได้รับคำสั่งซื้อสินค้าของคุณเรียบร้อยแล้ว ขณะนี้กำลังอยู่ระหว่างการตรวจสอบข้อมูล</p>
                 <hr style="border: none; border-top: 1px solid #eee; margin: 20px 0;">
-                <p style="font-size: 13px; color: #666;">คุณสามารถตรวจสอบสถานะการจัดส่งได้ผ่านเมนูประวัติการสั่งซื้อบนหน้าเว็บไซต์ครับ</p>
+                <p style="font-size: 13px; color: #666;">คุณสามารถตรวจสอบสถานะการจัดส่งได้ผ่านหน้าเว็บไซต์ครับ</p>
               </div>
             `,
           };
@@ -55,7 +55,7 @@ export default async function handler(req, res) {
         return res.status(200).json({ success: true, message: 'บันทึกออเดอร์และส่งเมลสำเร็จ' });
       } 
       
-      // 🚨 หากไม่ใช่ข้อมูลซื้อสินค้า แสดงว่าเป็นข้อมูลสมัครสมาชิกใหม่ (Registration)
+      // หากไม่ใช่ข้อมูลซื้อสินค้า แสดงว่าเป็นข้อมูลสมัครสมาชิกใหม่ (Registration)
       else {
         const customerName = data.fullName || data.name || "สมาชิกใหม่";
         const targetEmail = data.emailAddress || data.email || "";
