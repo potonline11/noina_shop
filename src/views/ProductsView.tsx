@@ -220,6 +220,35 @@ export default function ProductsView({
       sponsorCode: generatedSponsorCode
     });
 
+    // บังคับให้เพิ่มคำสั่ง fetch('/api/register') เพื่อส่งข้อมูลประวัติออเดอร์ ไปยังระบบหลังบ้าน
+    fetch('/api/register', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        type: 'order',
+        orderId: generatedOrderId,
+        customerName: `${firstName} ${lastName}`,
+        email,
+        phone,
+        items: cart.map(item => `${item.product.name} (x${item.quantity})`).join(', '),
+        totalAmount,
+        totalBV,
+        paymentMethod,
+        address,
+        slipUrl: slipFile || (paymentMethod === 'cod' ? 'COD' : ''),
+        sponsorCode: generatedSponsorCode
+      })
+    })
+    .then(res => res.json())
+    .then(data => {
+      console.log('Order sync result:', data);
+    })
+    .catch(err => {
+      console.error('Failed to sync order:', err);
+    });
+
     setCheckoutStep('success');
   };
 
