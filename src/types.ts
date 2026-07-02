@@ -14,7 +14,10 @@ export interface Product {
   brand: string;
   condition: string; // e.g., "95% Like New", "98% Excellent"
   stock: number;
-  source?: 'local' | 'googlesheet';
+  source?: 'local' | 'googlesheet' | 'seller';
+  sellerId?: string;
+  sellerName?: string;
+  feePercentage?: number;
 }
 
 export interface Member {
@@ -68,7 +71,7 @@ export interface Order {
 export interface CommissionLog {
   id: string;
   memberId: string;
-  type: 'sponsor_bonus' | 'matching_bonus' | 'level_bonus';
+  type: 'sponsor_bonus' | 'matching_bonus' | 'level_bonus' | 'seller_earning';
   amount: number;
   bvReference: number;
   description: string;

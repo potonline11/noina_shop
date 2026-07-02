@@ -47,10 +47,10 @@ export default function App() {
     const cached = localStorage.getItem('noina_products');
     if (cached) {
       const parsed = JSON.parse(cached) as Product[];
-      // Keep only products with source 'googlesheet' to ensure database products are not displayed
-      const sheetOnly = parsed.filter(p => p.source === 'googlesheet');
-      if (sheetOnly.length > 0) {
-        return sheetOnly;
+      // Keep only products with source 'googlesheet' or 'seller' to ensure correct products are displayed
+      const validProducts = parsed.filter(p => p.source === 'googlesheet' || p.source === 'seller');
+      if (validProducts.length > 0) {
+        return validProducts;
       }
     }
     return [];
@@ -520,7 +520,8 @@ export default function App() {
       slipUrl: registrationDetails?.slipUrl || ''
     };
 
-    setOrders(prev => [newOrder, ...prev]);
+    const updatedOrders = [newOrder, ...orders];
+    setOrders(updatedOrders);
 
     const clientWebhookUrl = localStorage.getItem('noina_order_webhook_url') || '';
     const clientSheetUrl = localStorage.getItem('noina_sheet_url') || '';
@@ -575,58 +576,100 @@ export default function App() {
     // Clear cart upon successful purchase
     setCart([]);
 
-    // If user is logged in, distribute BV and award commissions!
-    if (currentUser) {
-      setMembers(prevMembers => {
-        const tempMembers = [...prevMembers];
-        
-        // 1. Update buyer's personal direct BV (increasing rank potential)
-        const buyerIdx = tempMembers.findIndex(m => m.id === currentUser.id);
-        if (buyerIdx !== -1) {
-          tempMembers[buyerIdx].totalDirectBV += totalBV;
-          
-          // Auto rank upgrade check
-          const totalAccum = tempMembers[buyerIdx].totalDirectBV;
-          if (totalAccum >= 12000) tempMembers[buyerIdx].rank = 'Diamond';
-          else if (totalAccum >= 6000) tempMembers[buyerIdx].rank = 'Platinum';
-          else if (totalAccum >= 3000) tempMembers[buyerIdx].rank = 'Gold';
-          else if (totalAccum >= 1500) tempMembers[buyerIdx].rank = 'Silver';
+    // Prepare states to be updated
+    let updatedProducts = [...products];
+    let updatedMembers = [...members];
+    let updatedCommissionLogs = [...commissionLogs];
+
+    // Decrement stock for purchased products
+    items.forEach(item => {
+      updatedProducts = updatedProducts.map(p => {
+        if (p.id === item.product.id) {
+          const newStock = Math.max(0, (p.stock || 1) - item.quantity);
+          return { ...p, stock: newStock };
         }
-
-        // 2. Traversal Flow: Accumulate left/right BV to all upline parent nodes!
-        let currentId = currentUser.id;
-        let currentPosition = currentUser.position; // 'left' | 'right'
-        let currentParentId = currentUser.parentUserId;
-
-        while (currentParentId) {
-          const parentIdx = tempMembers.findIndex(m => m.id === currentParentId);
-          if (parentIdx === -1) break;
-
-          const parent = tempMembers[parentIdx];
-          if (currentPosition === 'left') {
-            parent.leftBV += totalBV;
-            parent.totalLeftBV += totalBV;
-          } else if (currentPosition === 'right') {
-            parent.rightBV += totalBV;
-            parent.totalRightBV += totalBV;
-          }
-
-          // Traverse further up the lineage tree
-          currentId = parent.id;
-          currentPosition = parent.position;
-          currentParentId = parent.parentUserId;
-        }
-
-        return tempMembers;
+        return p;
       });
+    });
+    setProducts(updatedProducts);
 
-      // 3. Award Direct Sponsor Bonus (100% of BV in Baht for demonstration)
+    // Award commissions and handle seller payouts if seller products exist
+    items.forEach((item, itemIdx) => {
+      if (item.product.source === 'seller' && item.product.sellerId) {
+        const sellerId = item.product.sellerId;
+        const totalCost = item.product.price * item.quantity;
+        const websiteFee = Math.round(totalCost * 0.05);
+        const sellerPayout = totalCost - websiteFee;
+
+        // Add seller earning log
+        const newSellerLog: CommissionLog = {
+          id: `COM-SEL-${Date.now().toString().slice(-4)}-${itemIdx}-${Math.floor(Math.random() * 100)}`,
+          memberId: sellerId,
+          type: 'seller_earning' as any,
+          amount: sellerPayout,
+          bvReference: item.product.bv * item.quantity,
+          description: `รายรับสุทธิจากการขาย ${item.product.name} จำนวน ${item.quantity} ชิ้น (หักค่าธรรมเนียมบำรุงเว็บ 5% = ${websiteFee} ฿)`,
+          date: new Date().toISOString().replace('T', ' ').slice(0, 16)
+        };
+        updatedCommissionLogs = [newSellerLog, ...updatedCommissionLogs];
+
+        // Credit seller's wallet
+        updatedMembers = updatedMembers.map(m => {
+          if (m.id === sellerId) {
+            return { ...m, walletBalance: m.walletBalance + sellerPayout };
+          }
+          return m;
+        });
+      }
+    });
+
+    // If user is logged in, distribute BV and award MLM direct sponsor bonus
+    if (currentUser) {
+      // 1. Update buyer's personal direct BV (increasing rank potential) and upline tree BV
+      const tempMembers = [...updatedMembers];
+      const buyerIdx = tempMembers.findIndex(m => m.id === currentUser.id);
+      if (buyerIdx !== -1) {
+        tempMembers[buyerIdx].totalDirectBV += totalBV;
+        
+        // Auto rank upgrade check
+        const totalAccum = tempMembers[buyerIdx].totalDirectBV;
+        if (totalAccum >= 12000) tempMembers[buyerIdx].rank = 'Diamond';
+        else if (totalAccum >= 6000) tempMembers[buyerIdx].rank = 'Platinum';
+        else if (totalAccum >= 3000) tempMembers[buyerIdx].rank = 'Gold';
+        else if (totalAccum >= 1500) tempMembers[buyerIdx].rank = 'Silver';
+      }
+
+      // 2. Traversal Flow: Accumulate left/right BV to all upline parent nodes
+      let currentId = currentUser.id;
+      let currentPosition = currentUser.position; // 'left' | 'right'
+      let currentParentId = currentUser.parentUserId;
+
+      while (currentParentId) {
+        const parentIdx = tempMembers.findIndex(m => m.id === currentParentId);
+        if (parentIdx === -1) break;
+
+        const parent = tempMembers[parentIdx];
+        if (currentPosition === 'left') {
+          parent.leftBV += totalBV;
+          parent.totalLeftBV += totalBV;
+        } else if (currentPosition === 'right') {
+          parent.rightBV += totalBV;
+          parent.totalRightBV += totalBV;
+        }
+
+        // Traverse further up the lineage tree
+        currentId = parent.id;
+        currentPosition = parent.position;
+        currentParentId = parent.parentUserId;
+      }
+      updatedMembers = tempMembers;
+
+      // 3. Award Direct Sponsor Bonus (100% of BV in Baht)
       if (currentUser.sponsorId) {
         const sponsorBonusAmount = totalBV; // 1 Baht per 1 BV
-        
         const itemsSummary = items.map(item => item.product.name).join(', ');
-        const newLog: CommissionLog = {
-          id: `COM-${Date.now().toString().slice(-4)}`,
+        const sponsorLog: CommissionLog = {
+          id: `COM-SPN-${Date.now().toString().slice(-4)}-${Math.floor(Math.random() * 100)}`,
           memberId: currentUser.sponsorId,
           type: 'sponsor_bonus',
           amount: sponsorBonusAmount,
@@ -634,20 +677,55 @@ export default function App() {
           description: `ค่าแนะนำแนะนำ ${currentUser.name} (${currentUser.id}) สั่งซื้อ ${itemsSummary.length > 30 ? itemsSummary.slice(0, 30) + '...' : itemsSummary}`,
           date: new Date().toISOString().replace('T', ' ').slice(0, 16)
         };
-
-        setCommissionLogs(prev => [newLog, ...prev]);
+        updatedCommissionLogs = [sponsorLog, ...updatedCommissionLogs];
 
         // Award money directly to sponsor's wallet
-        setMembers(prevMembers => {
-          return prevMembers.map(m => {
-            if (m.id === currentUser.sponsorId) {
-              return { ...m, walletBalance: m.walletBalance + sponsorBonusAmount };
-            }
-            return m;
-          });
+        updatedMembers = updatedMembers.map(m => {
+          if (m.id === currentUser.sponsorId) {
+            return { ...m, walletBalance: m.walletBalance + sponsorBonusAmount };
+          }
+          return m;
         });
       }
     }
+
+    // Set updated React states
+    setMembers(updatedMembers);
+    setCommissionLogs(updatedCommissionLogs);
+
+    // Update currentUser state and sessionStorage if the active member's properties (like balance or rank) changed
+    if (currentUser) {
+      const activeMemberUpdated = updatedMembers.find(m => m.id === currentUser.id);
+      if (activeMemberUpdated) {
+        setCurrentUser(activeMemberUpdated);
+        sessionStorage.setItem('noina_current_user', JSON.stringify(activeMemberUpdated));
+      }
+    }
+
+    // Save all local states to localStorage for robust fallback
+    localStorage.setItem('noina_products', JSON.stringify(updatedProducts));
+    localStorage.setItem('noina_members', JSON.stringify(updatedMembers));
+    localStorage.setItem('noina_orders', JSON.stringify(updatedOrders));
+    localStorage.setItem('noina_commissions', JSON.stringify(updatedCommissionLogs));
+
+    // Save complete updated state transaction to the database backend
+    fetch('/api/products-store', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        products: updatedProducts,
+        members: updatedMembers,
+        orders: updatedOrders,
+        commissionLogs: updatedCommissionLogs
+      })
+    })
+    .then(res => res.json())
+    .then(data => {
+      console.log('Successfully synchronized order checkout data to server store:', data);
+    })
+    .catch(err => {
+      console.error('Failed to sync checkout data to server store:', err);
+    });
   };
 
   // Admin Google Sheet sync callback (replaces entirely and saves to server)
@@ -767,7 +845,9 @@ export default function App() {
             members={members} 
             orders={orders} 
             commissionLogs={commissionLogs} 
+            products={products}
             onLogout={handleLogout}
+            onAddSellerProduct={(newProd) => setProducts(prev => [newProd, ...prev])}
           />
         )}
 

@@ -133,10 +133,11 @@ async function readStore() {
       products: parsed.products || [],
       members: parsed.members || [],
       orders: parsed.orders || [],
-      commissionLogs: parsed.commissionLogs || []
+      commissionLogs: parsed.commissionLogs || [],
+      sellerProducts: parsed.sellerProducts || []
     };
   } catch (error) {
-    return { sheetUrl: '', webhookUrl: '', logoUrl: '', products: [], members: [], orders: [], commissionLogs: [] };
+    return { sheetUrl: '', webhookUrl: '', logoUrl: '', products: [], members: [], orders: [], commissionLogs: [], sellerProducts: [] };
   }
 }
 
@@ -306,7 +307,15 @@ ${productsContext || 'ขณะนี้ไม่มีสินค้าใน�
         }
       }
       
-      res.json(store);
+      // Merge sellerProducts into the products returned to the frontend
+      const responseStore = {
+        ...store,
+        products: [
+          ...(store.sellerProducts || []),
+          ...store.products
+        ]
+      };
+      res.json(responseStore);
     } catch (error: any) {
       console.error('Failed to read products-store:', error);
       res.status(500).json({ error: error.message });
@@ -315,20 +324,76 @@ ${productsContext || 'ขณะนี้ไม่มีสินค้าใน�
 
   app.post('/api/products-store', async (req, res) => {
     try {
-      const { sheetUrl, webhookUrl, logoUrl, products, members, orders, commissionLogs } = req.body;
+      const { sheetUrl, webhookUrl, logoUrl, products, members, orders, commissionLogs, sellerProducts } = req.body;
       const store = await readStore();
       if (sheetUrl !== undefined) store.sheetUrl = sheetUrl;
       if (webhookUrl !== undefined) store.webhookUrl = sanitizeWebhookUrl(webhookUrl);
       if (logoUrl !== undefined) store.logoUrl = logoUrl;
-      if (products !== undefined) store.products = products;
+      if (products !== undefined) {
+        // Separate out seller products vs Google Sheet products if sent
+        store.products = products.filter((p: any) => p.source !== 'seller');
+        store.sellerProducts = products.filter((p: any) => p.source === 'seller');
+      }
+      if (sellerProducts !== undefined) store.sellerProducts = sellerProducts;
       if (members !== undefined) store.members = members;
       if (orders !== undefined) store.orders = orders;
       if (commissionLogs !== undefined) store.commissionLogs = commissionLogs;
       await writeStore(store);
-      res.json({ success: true, store });
+      res.json({ 
+        success: true, 
+        store: { 
+          ...store, 
+          products: [...(store.sellerProducts || []), ...store.products] 
+        } 
+      });
     } catch (error: any) {
       console.error('Failed to write products-store:', error);
       res.status(500).json({ error: error.message });
+    }
+  });
+
+  // Seller add product endpoint
+  app.post('/api/seller/add-product', async (req, res) => {
+    try {
+      const { name, description, price, bv, category, brand, condition, stock, image, sellerId, sellerName } = req.body;
+      const store = await readStore();
+
+      if (!sellerId || !sellerName || !name || price === undefined) {
+        return res.status(400).json({ success: false, message: 'ข้อมูลไม่ครบถ้วน: กรุณากรอกชื่อสินค้าและราคา' });
+      }
+
+      const newProduct = {
+        id: `seller-${Date.now()}-${Math.floor(Math.random() * 1000)}`,
+        name,
+        description: description || 'สินค้าสมาชิกมือสองลงขายผ่านหน้าร้านออนไลน์',
+        price: Number(price),
+        bv: Number(bv || Math.round(Number(price) * 0.1)), // default 10% of price as BV
+        image: image || 'https://images.unsplash.com/photo-1531297484001-80022131f5a1?auto=format&fit=crop&w=600&q=80',
+        category: category || 'accessory',
+        brand: brand || 'แบรนด์ของฉัน',
+        condition: condition || '95% สภาพดี',
+        stock: Number(stock !== undefined ? stock : 1),
+        source: 'seller',
+        sellerId,
+        sellerName,
+        feePercentage: 5
+      };
+
+      if (!store.sellerProducts) {
+        store.sellerProducts = [];
+      }
+      store.sellerProducts.push(newProduct);
+      await writeStore(store);
+
+      console.log(`[Seller Service] Seller ${sellerName} (${sellerId}) uploaded a new product: ${name} (${price} THB)`);
+      res.json({ 
+        success: true, 
+        message: '✅ ลงขายสินค้าเรียบร้อยแล้วและสินค้าของคุณพร้อมแสดงบนหน้าเว็บอัตโนมัติ!', 
+        product: newProduct 
+      });
+    } catch (error: any) {
+      console.error('Failed to add seller product:', error);
+      res.status(500).json({ success: false, message: error.message });
     }
   });
 

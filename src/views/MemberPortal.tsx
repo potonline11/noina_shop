@@ -4,8 +4,8 @@
  */
 
 import React, { useState } from 'react';
-import { Member, Order, CommissionLog } from '../types';
-import { Link, Clipboard, ShoppingBag, FolderGit2, CreditCard, Award, ArrowUpRight, LogOut, CheckCircle, Info, Mail, MessageSquare, Check } from 'lucide-react';
+import { Member, Order, CommissionLog, Product } from '../types';
+import { Link, Clipboard, ShoppingBag, FolderGit2, CreditCard, Award, ArrowUpRight, LogOut, CheckCircle, Info, Mail, MessageSquare, Check, Tag, Plus, AlertCircle, ShoppingCart } from 'lucide-react';
 import TreeChart from '../components/TreeChart';
 
 interface MemberPortalProps {
@@ -13,15 +13,31 @@ interface MemberPortalProps {
   members: Member[];
   orders: Order[];
   commissionLogs: CommissionLog[];
+  products: Product[];
   onLogout: () => void;
+  onAddSellerProduct?: (product: Product) => void;
 }
 
-type SubMenu = 'referral' | 'orders' | 'tree' | 'income';
+type SubMenu = 'referral' | 'orders' | 'tree' | 'income' | 'sell';
 
-export default function MemberPortal({ currentUser, members, orders, commissionLogs, onLogout }: MemberPortalProps) {
+export default function MemberPortal({ currentUser, members, orders, commissionLogs, products, onLogout, onAddSellerProduct }: MemberPortalProps) {
   const [activeTab, setActiveTab] = useState<SubMenu>('referral');
   const [copySuccess, setCopySuccess] = useState(false);
   const [copiedId, setCopiedId] = useState<string | null>(null);
+
+  // Seller product listing states
+  const [prodName, setProdName] = useState('');
+  const [prodDesc, setProdDesc] = useState('');
+  const [prodPrice, setProdPrice] = useState('');
+  const [prodBV, setProdBV] = useState('');
+  const [prodCategory, setProdCategory] = useState<'smartphone' | 'notebook' | 'accessory' | 'tablet'>('accessory');
+  const [prodBrand, setProdBrand] = useState('');
+  const [prodCondition, setProdCondition] = useState('95% สภาพดี');
+  const [prodStock, setProdStock] = useState('1');
+  const [prodImage, setProdImage] = useState('📱');
+  const [uploadError, setUploadError] = useState('');
+  const [uploadSuccess, setUploadSuccess] = useState('');
+  const [isUploading, setIsUploading] = useState(false);
 
   const handleCopyText = (id: string, text: string) => {
     navigator.clipboard.writeText(text);
@@ -51,6 +67,74 @@ export default function MemberPortal({ currentUser, members, orders, commissionL
     const subject = encodeURIComponent(`ใบเสร็จและการยืนยันคำสั่งซื้อ ${o.id} - Noina Shop`);
     const body = encodeURIComponent(getOrderShareText(o));
     window.open(`mailto:${o.email || ''}?subject=${subject}&body=${body}`, '_blank');
+  };
+
+  const handleSubmitSellerProduct = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setUploadError('');
+    setUploadSuccess('');
+    
+    if (!prodName.trim() || !prodPrice.trim()) {
+      setUploadError('กรุณากรอกชื่อสินค้าและราคาขาย');
+      return;
+    }
+    
+    const priceNum = Number(prodPrice);
+    if (isNaN(priceNum) || priceNum <= 0) {
+      setUploadError('กรุณากรอกราคาที่ถูกต้องมากกว่า 0 บาท');
+      return;
+    }
+
+    const bvNum = prodBV.trim() ? Number(prodBV) : Math.round(priceNum * 0.1);
+    const stockNum = prodStock.trim() ? Number(prodStock) : 1;
+
+    setIsUploading(true);
+    try {
+      const response = await fetch('/api/seller/add-product', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          name: prodName.trim(),
+          description: prodDesc.trim(),
+          price: priceNum,
+          bv: bvNum,
+          category: prodCategory,
+          brand: prodBrand.trim() || 'แบรนด์ของฉัน',
+          condition: prodCondition.trim() || '95% สภาพดี',
+          stock: stockNum,
+          image: prodImage.trim(),
+          sellerId: currentUser.id,
+          sellerName: currentUser.name
+        })
+      });
+
+      const data = await response.json();
+      if (response.ok && data.success) {
+        setUploadSuccess(data.message || 'บันทึกสำเร็จ!');
+        // Update global state in React
+        if (onAddSellerProduct && data.product) {
+          onAddSellerProduct(data.product);
+        }
+        
+        // Reset form inputs
+        setProdName('');
+        setProdDesc('');
+        setProdPrice('');
+        setProdBV('');
+        setProdBrand('');
+        setProdCondition('95% สภาพดี');
+        setProdStock('1');
+        setProdImage('📱');
+      } else {
+        setUploadError(data.message || 'เกิดข้อผิดพลาดในการลงขายสินค้า');
+      }
+    } catch (err: any) {
+      setUploadError(`ไม่สามารถส่งข้อมูลไปเซิร์ฟเวอร์ได้: ${err.message}`);
+    } finally {
+      setIsUploading(false);
+    }
   };
 
   // Filter orders for current member
@@ -144,6 +228,14 @@ export default function MemberPortal({ currentUser, members, orders, commissionL
           >
             <CreditCard className="w-4 h-4 shrink-0" />
             รายงานรายได้
+          </button>
+
+          <button
+            onClick={() => setActiveTab('sell')}
+            className={`flex items-center gap-2.5 px-3.5 py-2.5 rounded-xl text-xs font-bold text-left transition ${activeTab === 'sell' ? 'bg-indigo-600 text-white shadow-sm' : 'text-slate-600 hover:bg-slate-50'}`}
+          >
+            <Tag className="w-4 h-4 shrink-0 text-emerald-500" />
+            ลงขายสินค้าของตนเอง
           </button>
 
           <button
@@ -358,6 +450,251 @@ export default function MemberPortal({ currentUser, members, orders, commissionL
                           +{log.amount.toLocaleString()} ฿
                         </span>
                         <span className="block text-[9px] text-slate-400 font-mono font-medium">อิงจาก {log.bvReference} BV</span>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          </div>
+        )}
+
+        {/* TAB 5: ลงขายสินค้าตนเอง (Sell your own product) */}
+        {activeTab === 'sell' && (
+          <div className="space-y-6">
+            <div>
+              <h3 className="text-base font-extrabold text-slate-800">ระบบลงขายสินค้าสำหรับสมาชิก (Member Merchant)</h3>
+              <p className="text-xs text-slate-500 mt-1">คุณสามารถนำสินค้าไอทีมือสองของคุณลงขายผ่านหน้าร้านของเว็บ Noina Shop ได้โดยอัตโนมัติ โดยระบบจะหักค่าบริการบำรุงแพลตฟอร์ม 5% จากทุกยอดคำสั่งซื้อที่ขายได้</p>
+            </div>
+
+            {/* Fee information card */}
+            <div className="bg-emerald-50 border border-emerald-100 p-4 rounded-2xl text-xs text-emerald-800 space-y-2.5">
+              <h4 className="font-bold flex items-center gap-1.5 text-emerald-900">
+                <AlertCircle className="w-4 h-4 text-emerald-600" />
+                เงื่อนไขการหักค่าธรรมเนียมบำรุงเว็บ 5%
+              </h4>
+              <p className="text-slate-600 leading-relaxed">
+                เมื่อสินค้าของคุณถูกซื้อสำเร็จ ระบบจะหักค่าบำรุงแพลตฟอร์ม <strong>5% ของราคาสินค้า</strong> และโอนเงินรายได้สุทธิ <strong>95%</strong> เข้ากระเป๋าเงินคอมมิชชันของคุณทันที!
+              </p>
+              <div className="grid grid-cols-2 gap-4 text-slate-700 bg-white/70 p-3 rounded-xl border border-emerald-50 font-medium">
+                <div>
+                  <span className="block text-[10px] text-slate-400">ตัวอย่างราคาขาย:</span>
+                  <span className="text-sm font-bold text-slate-800">1,000 ฿</span>
+                </div>
+                <div>
+                  <span className="block text-[10px] text-emerald-600 font-bold">คุณจะได้รับ (95%):</span>
+                  <span className="text-sm font-bold text-emerald-700">950 ฿ (ค่าธรรมเนียมเว็บ 5% = 50 ฿)</span>
+                </div>
+              </div>
+            </div>
+
+            {/* Add product form */}
+            <form onSubmit={handleSubmitSellerProduct} className="bg-slate-50 p-5 rounded-2xl border border-slate-100 space-y-4">
+              <h4 className="text-xs font-bold text-slate-700 uppercase tracking-wide border-b border-slate-200 pb-2 flex items-center gap-1">
+                <Plus className="w-4 h-4 text-indigo-600" />
+                ข้อมูลสินค้าที่ต้องการลงขาย
+              </h4>
+
+              {uploadError && (
+                <div className="bg-rose-50 border border-rose-100 text-rose-700 text-xs px-3.5 py-2.5 rounded-xl font-medium">
+                  {uploadError}
+                </div>
+              )}
+
+              {uploadSuccess && (
+                <div className="bg-emerald-50 border border-emerald-100 text-emerald-700 text-xs px-3.5 py-2.5 rounded-xl font-medium">
+                  {uploadSuccess}
+                </div>
+              )}
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="space-y-1">
+                  <label className="text-[11px] font-bold text-slate-600 block">ชื่อสินค้า *</label>
+                  <input
+                    type="text"
+                    required
+                    placeholder="เช่น iPhone 12 Pro Max สภาพนางฟ้า"
+                    value={prodName}
+                    onChange={(e) => setProdName(e.target.value)}
+                    className="w-full px-3 py-2 text-xs rounded-xl border border-slate-300 bg-white focus:ring-1 focus:ring-indigo-500 focus:outline-none"
+                  />
+                </div>
+
+                <div className="space-y-1">
+                  <label className="text-[11px] font-bold text-slate-600 block">แบรนด์สินค้า *</label>
+                  <input
+                    type="text"
+                    required
+                    placeholder="เช่น Apple, Samsung, Asus"
+                    value={prodBrand}
+                    onChange={(e) => setProdBrand(e.target.value)}
+                    className="w-full px-3 py-2 text-xs rounded-xl border border-slate-300 bg-white focus:ring-1 focus:ring-indigo-500 focus:outline-none"
+                  />
+                </div>
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                <div className="space-y-1">
+                  <label className="text-[11px] font-bold text-slate-600 block">ราคาขายสุทธิ (บาท) *</label>
+                  <input
+                    type="number"
+                    required
+                    min="1"
+                    placeholder="เช่น 15000"
+                    value={prodPrice}
+                    onChange={(e) => {
+                      const val = e.target.value;
+                      setProdPrice(val);
+                      // Auto-calculate BV as 10%
+                      if (val) {
+                        setProdBV(String(Math.round(Number(val) * 0.1)));
+                      } else {
+                        setProdBV('');
+                      }
+                    }}
+                    className="w-full px-3 py-2 text-xs rounded-xl border border-slate-300 bg-white focus:ring-1 focus:ring-indigo-500 focus:outline-none font-bold"
+                  />
+                </div>
+
+                <div className="space-y-1">
+                  <label className="text-[11px] font-bold text-slate-600 block">คะแนน BV ที่ผู้ซื้อจะได้รับ (ระบบคิดให้อัตโนมัติ 10%)</label>
+                  <input
+                    type="number"
+                    min="0"
+                    placeholder="Auto-calculated"
+                    value={prodBV}
+                    onChange={(e) => setProdBV(e.target.value)}
+                    className="w-full px-3 py-2 text-xs rounded-xl border border-slate-300 bg-slate-100 font-mono text-indigo-600 focus:ring-1 focus:ring-indigo-500 focus:outline-none font-bold"
+                  />
+                </div>
+
+                <div className="space-y-1">
+                  <label className="text-[11px] font-bold text-slate-600 block">สภาพสินค้า *</label>
+                  <select
+                    value={prodCondition}
+                    onChange={(e) => setProdCondition(e.target.value)}
+                    className="w-full px-3 py-2 text-xs rounded-xl border border-slate-300 bg-white focus:ring-1 focus:ring-indigo-500 focus:outline-none font-semibold"
+                  >
+                    <option value="99% สภาพนางฟ้า">99% สภาพนางฟ้า</option>
+                    <option value="95% สภาพดีมาก">95% สภาพดีมาก</option>
+                    <option value="90% สภาพดี">90% สภาพดี</option>
+                    <option value="85% มีรอยตามการใช้งาน">85% มีรอยตามการใช้งาน</option>
+                    <option value="75% เน้นใช้งานราคาคุ้ม">75% เน้นใช้งานราคาคุ้ม</option>
+                  </select>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                <div className="space-y-1">
+                  <label className="text-[11px] font-bold text-slate-600 block">หมวดหมู่สินค้า *</label>
+                  <select
+                    value={prodCategory}
+                    onChange={(e) => setProdCategory(e.target.value as any)}
+                    className="w-full px-3 py-2 text-xs rounded-xl border border-slate-300 bg-white focus:ring-1 focus:ring-indigo-500 focus:outline-none font-semibold"
+                  >
+                    <option value="smartphone">📱 Smartphone</option>
+                    <option value="tablet">📁 Tablet</option>
+                    <option value="notebook">💻 Notebook</option>
+                    <option value="accessory">🔌 Accessory</option>
+                  </select>
+                </div>
+
+                <div className="space-y-1">
+                  <label className="text-[11px] font-bold text-slate-600 block">จำนวนสต็อกพร้อมส่ง *</label>
+                  <input
+                    type="number"
+                    required
+                    min="1"
+                    placeholder="1"
+                    value={prodStock}
+                    onChange={(e) => setProdStock(e.target.value)}
+                    className="w-full px-3 py-2 text-xs rounded-xl border border-slate-300 bg-white focus:ring-1 focus:ring-indigo-500 focus:outline-none"
+                  />
+                </div>
+
+                <div className="space-y-1">
+                  <label className="text-[11px] font-bold text-slate-600 block">เลือกรูปไอคอน/รูปภาพ *</label>
+                  <select
+                    value={prodImage}
+                    onChange={(e) => setProdImage(e.target.value)}
+                    className="w-full px-3 py-2 text-xs rounded-xl border border-slate-300 bg-white focus:ring-1 focus:ring-indigo-500 focus:outline-none"
+                  >
+                    <option value="📱">📱 โทรศัพท์ (Smartphone)</option>
+                    <option value="💻">💻 โน้ตบุ๊ก (Notebook)</option>
+                    <option value="🔌">🔌 อุปกรณ์เสริม (Accessory)</option>
+                    <option value="🤖">🤖 แท็บเล็ต (Tablet / Android)</option>
+                    <option value="🎧">🎧 หูฟัง (Headphones)</option>
+                    <option value="⌚">⌚ นาฬิกา (Smartwatch)</option>
+                  </select>
+                </div>
+              </div>
+
+              <div className="space-y-1">
+                <label className="text-[11px] font-bold text-slate-600 block">รายละเอียดสินค้า / สเปคเครื่อง</label>
+                <textarea
+                  rows={3}
+                  placeholder="รายละเอียดสินค้า เช่น สเปคเครื่อง, อุปกรณ์ที่จะได้รับ, สภาพตัวเครื่อง, ตนเองใช้งานมานานแค่ไหน..."
+                  value={prodDesc}
+                  onChange={(e) => setProdDesc(e.target.value)}
+                  className="w-full px-3 py-2 text-xs rounded-xl border border-slate-300 bg-white focus:ring-1 focus:ring-indigo-500 focus:outline-none leading-relaxed"
+                />
+              </div>
+
+              {/* Estimate calculation block */}
+              {prodPrice && !isNaN(Number(prodPrice)) && (
+                <div className="bg-slate-100 p-3 rounded-xl border border-slate-200/60 text-slate-600 flex justify-between items-center text-xs">
+                  <div>
+                    <span>รายรับสุทธิหลังหักค่าบำรุงเว็บ 5%:</span>
+                    <span className="font-extrabold text-indigo-600 ml-1">
+                      {(Number(prodPrice) * 0.95).toLocaleString()} ฿
+                    </span>
+                  </div>
+                  <div className="text-right text-[10px] text-slate-400 font-medium">
+                    หักค่าบำรุงเว็บ 5% = {(Number(prodPrice) * 0.05).toLocaleString()} ฿
+                  </div>
+                </div>
+              )}
+
+              <div className="flex justify-end pt-2">
+                <button
+                  type="submit"
+                  disabled={isUploading}
+                  className="bg-indigo-600 hover:bg-indigo-700 disabled:bg-slate-300 text-white font-bold text-xs px-5 py-2.5 rounded-xl transition flex items-center gap-1.5 shadow-sm shadow-indigo-100"
+                >
+                  <Plus className="w-4 h-4" />
+                  {isUploading ? 'กำลังอัปโหลด...' : 'ลงขายสินค้าทันที'}
+                </button>
+              </div>
+            </form>
+
+            {/* List of my products */}
+            <div className="space-y-4">
+              <h4 className="text-xs font-bold text-slate-800 uppercase tracking-wide border-b border-slate-100 pb-2">รายการสินค้าที่คุณลงขาย</h4>
+              
+              {products.filter(p => p.source === 'seller' && p.sellerId === currentUser.id).length === 0 ? (
+                <div className="text-center py-10 bg-slate-50 rounded-2xl border border-dashed border-slate-200">
+                  <p className="text-xs text-slate-400 font-medium">คุณยังไม่มีรายการสินค้าที่ลงขายในระบบ</p>
+                  <p className="text-[10px] text-slate-400 mt-1">คุณสามารถใช้ฟอร์มด้านบนเพื่อลงขายสินค้าตัวแรกได้เลย!</p>
+                </div>
+              ) : (
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 font-sans">
+                  {products.filter(p => p.source === 'seller' && p.sellerId === currentUser.id).map((p, idx) => (
+                    <div key={idx} className="bg-white border border-slate-150 rounded-2xl p-4 hover:shadow-sm transition flex gap-3">
+                      <div className="w-12 h-12 bg-slate-50 text-slate-700 rounded-xl flex items-center justify-center text-xl shrink-0 border border-slate-100">
+                        {p.image}
+                      </div>
+                      <div className="space-y-1 flex-grow">
+                        <div className="flex justify-between items-start">
+                          <h5 className="font-bold text-xs text-slate-800 line-clamp-1">{p.name}</h5>
+                          <span className="px-1.5 py-0.2 bg-emerald-50 text-emerald-700 rounded text-[9px] font-bold uppercase shrink-0">
+                            วางขายอยู่
+                          </span>
+                        </div>
+                        <p className="text-[10px] text-slate-400">หมวดหมู่: {p.category} | สภาพ: {p.condition} | สต็อก: {p.stock}</p>
+                        <div className="flex justify-between items-center pt-1.5 border-t border-slate-100 mt-1.5 bg-transparent">
+                          <span className="text-[9px] font-mono font-bold text-indigo-600">+{p.bv} BV</span>
+                          <span className="text-xs font-extrabold text-slate-800">{p.price.toLocaleString()} ฿</span>
+                        </div>
                       </div>
                     </div>
                   ))}

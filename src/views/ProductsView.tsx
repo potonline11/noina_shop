@@ -295,7 +295,7 @@ export default function ProductsView({
           รายการสินค้าและคะแนน BV
         </h1>
         <p className="text-xs text-slate-500 leading-relaxed">
-          เลือกซื้อสินค้าไอทีมือสองคัดเกมดีเยี่ยม พร้อมรับคะแนนสะสม BV (Business Volume) เข้ากระเป๋าส่วนตัวเพื่อใช้ปันผลโบนัสตามสายงาน NLM
+          เลือกซื้อสินค้าไอทีมือสองคัดเกรดดีเยี่ยม พร้อมรับคะแนนสะสม BV (Business Volume) เข้ากระเป๋าส่วนตัวเพื่อใช้ปันผลโบนัสตามสายงาน NLM
         </p>
       </section>
 
@@ -360,6 +360,11 @@ export default function ProductsView({
                 {product.source === 'googlesheet' && (
                   <span className="absolute top-2.5 right-2.5 bg-emerald-600 text-white font-bold text-[8px] px-1.5 py-0.5 rounded uppercase">
                     Google Sheet
+                  </span>
+                )}
+                {product.source === 'seller' && (
+                  <span className="absolute top-2.5 right-2.5 bg-indigo-600 text-white font-bold text-[8px] px-1.5 py-0.5 rounded uppercase">
+                    ผู้ขาย: {product.sellerName || 'สมาชิก'}
                   </span>
                 )}
               </div>
@@ -1022,7 +1027,7 @@ export default function ProductsView({
                           : 'bg-emerald-600 hover:bg-emerald-700 text-white shadow-emerald-100'
                       }`}
                     >
-                      {paymentMethod === 'cash' ? 'ยืนยันสั่งซื้อและส่งหลักฐานโอน' : 'ยืนยันสั่งซื้อบริการปลายทาง COD'}
+                      {paymentMethod === 'cash' ? 'ยืนยันสั่งชื้อและส่งหลักฐานโอน' : 'ยืนยันสั่งซื้อบริการปลายทาง COD'}
                     </button>
                   </div>
                 </div>
