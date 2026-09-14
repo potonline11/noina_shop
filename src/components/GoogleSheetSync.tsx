@@ -738,8 +738,9 @@ export default function GoogleSheetSync({ onSyncComplete, currentProductsCount }
             วิธีการจัดเตรียม Google Sheet เพื่อเผยแพร่สินค้า:
           </h4>
           <ol className="list-decimal pl-4 space-y-1.5 leading-relaxed text-[11px]">
-            <li>สร้าง Google Sheet และใส่แถวหัวข้อแรก (แถวที่ 1) ดังนี้: <code className="bg-slate-200 px-1 py-0.5 rounded text-indigo-700 font-mono">Title, Description, Price, BV, Image, Category, Brand, Condition, Stock</code></li>
-            <li>กรอกข้อมูลสินค้ามือสอง (Category รองรับ: <code className="font-mono bg-slate-200 px-1 py-0.5 rounded">smartphone</code>, <code className="font-mono bg-slate-200 px-1 py-0.5 rounded">notebook</code>, <code className="font-mono bg-slate-200 px-1 py-0.5 rounded">accessory</code>, <code className="font-mono bg-slate-200 px-1 py-0.5 rounded">tablet</code>)</li>
+            <li>สร้าง Google Sheet และใส่แถวหัวข้อแรก (แถวที่ 1) ดังนี้: <code className="bg-slate-200 px-1 py-0.5 rounded text-indigo-700 font-mono">Name, Description, Price, BV, Image, Category, Brand, Condition, Stock, Options</code></li>
+            <li>คอลัมน์ <strong>Category</strong>: สามารถระบุหมวดหมู่ เช่น <code className="bg-slate-200 px-1 py-0.5 rounded font-mono">เครื่องใช้ไฟฟ้า</code>, <code className="bg-slate-200 px-1 py-0.5 rounded font-mono">อุปกรณ์ส่องสว่าง</code>, <code className="bg-slate-200 px-1 py-0.5 rounded font-mono">smartphone</code> เป็นต้น</li>
+            <li>คอลัมน์ <strong>Options</strong> (ตัวเลือกเสริม): หากสินค้ามีหลายแบบ/หลายสี ให้ใส่คั่นด้วยจุลภาค เช่น <code className="bg-slate-200 px-1 py-0.5 rounded text-slate-800">แสงขาว (6500K), แสงส้ม (3000K)</code> ลูกค้าจะสามารถกดเลือกแบบก่อนใส่ตะกร้าได้ทันที</li>
             <li>ไปที่เมนู <strong>ไฟล์ (File)</strong> &gt; <strong>แชร์ (Share)</strong> &gt; <strong>เผยแพร่ทางเว็บ (Publish to web)</strong></li>
             <li>เลือกประเภทข้อมูลเป็น <strong>ค่าที่คั่นด้วยจุลภาค (.csv)</strong> จากนั้นกดปุ่ม "เผยแพร่"</li>
             <li>คัดลอกลิงก์ที่ได้ มาวางในช่องกรอกด้านล่างเพื่อทำการดึงข้อมูล</li>

@@ -81,6 +81,7 @@ export const parseHTMLTable = (htmlText: string): Product[] => {
       else if (cleanCell.includes('brand')) colMap['brand'] = idx;
       else if (cleanCell.includes('condition') || cleanCell.includes('quality')) colMap['condition'] = idx;
       else if (cleanCell.includes('stock')) colMap['stock'] = idx;
+      else if (cleanCell.includes('option') || cleanCell.includes('variant') || cell.includes('แบบ') || cell.includes('ตัวเลือก') || cell.includes('รุ่น')) colMap['options'] = idx;
     });
     headerIndex = 0;
   }
@@ -111,6 +112,9 @@ export const parseHTMLTable = (htmlText: string): Product[] => {
 
     const bvVal = cells[colMap['bv']] ? parseFloat(cells[colMap['bv']].replace(/[^0-9.]/g, '')) : Math.round(priceVal * 0.1);
 
+    const rawOpt = colMap['options'] !== undefined && cells[colMap['options']] ? cells[colMap['options']].trim() : '';
+    const parsedOptions = rawOpt ? rawOpt.split(/[,|/]/).map(s => s.trim()).filter(Boolean) : undefined;
+
     results.push({
       id: `sheet-prod-${i}`,
       name: name,
@@ -122,6 +126,7 @@ export const parseHTMLTable = (htmlText: string): Product[] => {
       brand: (cells[colMap['brand']] || 'NO BRAND').trim(),
       condition: (cells[colMap['condition']] || 'NEW').trim(),
       stock: cells[colMap['stock']] ? parseInt(cells[colMap['stock']].replace(/[^0-9]/g, '')) || 99 : 99,
+      options: parsedOptions && parsedOptions.length > 0 ? parsedOptions : undefined,
       source: 'googlesheet'
     });
   }
@@ -241,6 +246,9 @@ export const parseCSV = (text: string): Product[] => {
 
       const bvVal = row.bv ? parseFloat(row.bv.replace(/[^0-9.]/g, '')) : Math.round(priceVal * 0.1);
 
+      const rawOptions = row.options || row.option || row.variants || row.variant || row['ตัวเลือก'] || row['แบบ'] || row['รุ่น'] || '';
+      const parsedOptions = rawOptions ? rawOptions.split(/[,|/]/).map((s: string) => s.trim()).filter(Boolean) : undefined;
+
       results.push({
         id: `sheet-prod-${i}`,
         name: name,
@@ -252,6 +260,7 @@ export const parseCSV = (text: string): Product[] => {
         brand: (row.brand || 'NO BRAND').trim(),
         condition: (row.condition || row.quality || 'NEW').trim(),
         stock: row.stock ? parseInt(row.stock.replace(/[^0-9]/g, '')) || 99 : 99,
+        options: parsedOptions && parsedOptions.length > 0 ? parsedOptions : undefined,
         source: 'googlesheet'
       });
     }

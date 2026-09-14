@@ -14,6 +14,7 @@ export interface Product {
   brand: string;
   condition: string; // e.g., "95% Like New", "98% Excellent"
   stock: number;
+  options?: string[];
   source?: 'local' | 'googlesheet' | 'seller';
   sellerId?: string;
   sellerName?: string;

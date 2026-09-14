@@ -528,6 +528,8 @@ export default function AdminPortal({
                       onChange={(e) => setNewProd({...newProd, category: e.target.value as any})}
                       className="w-full px-3.5 py-2 rounded-lg border border-slate-300 bg-white"
                     >
+                      <option value="เครื่องใช้ไฟฟ้า">เครื่องใช้ไฟฟ้า</option>
+                      <option value="อุปกรณ์ส่องสว่าง">อุปกรณ์ส่องสว่าง</option>
                       <option value="smartphone">โทรศัพท์มือถือ</option>
                       <option value="notebook">โน๊ตบุ๊ค</option>
                       <option value="tablet">แท็บเล็ต</option>

@@ -1,6 +1,6 @@
 {
   "sheetUrl": "https://docs.google.com/spreadsheets/d/1UL93q_PpKGlZocvcD6ShLwbDJP-nU1emB5-hvQOLT_A/edit?usp=sharing",
-  "webhookUrl": "",
+  "webhookUrl": "https://script.google.com/macros/s/AKfycby5xANGQ2CPtgtemxlGT7Xod6Acq2mvrCiayInWDFAtkQZRDt3oKdjbitwFxtlUxlg/exec",
   "logoUrl": "",
   "products": [
     {
@@ -205,7 +205,62 @@
       "role": "member"
     }
   ],
-  "orders": [],
+  "orders": [
+    {
+      "id": "ORD-1001",
+      "memberId": "NS002",
+      "memberName": "สมชาย ใจมั่น",
+      "items": [
+        {
+          "productId": "prod-001",
+          "name": "iPhone 13 Pro 256GB (มือสอง)",
+          "price": 18900,
+          "bv": 1800,
+          "quantity": 1
+        }
+      ],
+      "totalAmount": 18900,
+      "totalBV": 1800,
+      "date": "2026-06-10 14:30",
+      "status": "completed"
+    },
+    {
+      "id": "ORD-1002",
+      "memberId": "NS003",
+      "memberName": "รุ่งเรือง ก้าวหน้า",
+      "items": [
+        {
+          "productId": "prod-002",
+          "name": "MacBook Air M1 RAM 8GB SSD 256GB (มือสอง)",
+          "price": 21900,
+          "bv": 2200,
+          "quantity": 1
+        }
+      ],
+      "totalAmount": 21900,
+      "totalBV": 2200,
+      "date": "2026-06-12 11:15",
+      "status": "completed"
+    },
+    {
+      "id": "ORD-1003",
+      "memberId": "NS004",
+      "memberName": "วิภา รักษ์ดี",
+      "items": [
+        {
+          "productId": "prod-006",
+          "name": "AirPods Pro Gen 2 (มือสอง)",
+          "price": 4900,
+          "bv": 500,
+          "quantity": 1
+        }
+      ],
+      "totalAmount": 4900,
+      "totalBV": 500,
+      "date": "2026-06-20 16:45",
+      "status": "completed"
+    }
+  ],
   "commissionLogs": [
     {
       "id": "COM-001",

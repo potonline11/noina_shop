@@ -29,7 +29,9 @@ import {
   Plus,
   Minus,
   CheckSquare,
-  MessageSquare
+  MessageSquare,
+  Zap,
+  Lightbulb
 } from 'lucide-react';
 
 interface ProductsViewProps {
@@ -70,6 +72,7 @@ export default function ProductsView({
   
   // Modals visibility
   const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
+  const [selectedOption, setSelectedOption] = useState<string>('');
   const [qtyToAdd, setQtyToAdd] = useState<number>(1);
   const [showAddSuccess, setShowAddSuccess] = useState<boolean>(false);
   
@@ -137,9 +140,22 @@ export default function ProductsView({
     }
   }, [currentUser]);
 
+  const getCategoryIcon = (cat: string) => {
+    const lower = cat.toLowerCase();
+    if (lower === 'เครื่องใช้ไฟฟ้า' || lower.includes('ไฟฟ้า') || lower.includes('appliance')) return Zap;
+    if (lower === 'อุปกรณ์ส่องสว่าง' || lower.includes('สว่าง') || lower.includes('ไฟ') || lower.includes('light')) return Lightbulb;
+    if (lower === 'smartphone' || lower.includes('มือถือ') || lower.includes('phone')) return Smartphone;
+    if (lower === 'notebook' || lower.includes('โน๊ตบุ๊ค') || lower.includes('laptop')) return Laptop;
+    if (lower === 'tablet' || lower.includes('แท็บเล็ต')) return Tablet;
+    if (lower === 'accessory' || lower.includes('อุปกรณ์เสริม')) return Info;
+    return Layers;
+  };
+
   // Category labels with icons (including dynamic categories from Google Sheet)
   const defaultCategories = [
     { id: 'all', label: 'ทั้งหมด', icon: Layers },
+    { id: 'เครื่องใช้ไฟฟ้า', label: 'เครื่องใช้ไฟฟ้า', icon: Zap },
+    { id: 'อุปกรณ์ส่องสว่าง', label: 'อุปกรณ์ส่องสว่าง', icon: Lightbulb },
     { id: 'smartphone', label: 'โทรศัพท์มือถือ', icon: Smartphone },
     { id: 'notebook', label: 'โน๊ตบุ๊ค', icon: Laptop },
     { id: 'tablet', label: 'แท็บเล็ต', icon: Tablet },
@@ -157,7 +173,7 @@ export default function ProductsView({
         list.push({
           id: cat,
           label: cat,
-          icon: Layers
+          icon: getCategoryIcon(cat)
         });
       }
     });
@@ -168,7 +184,10 @@ export default function ProductsView({
   const filteredProducts = products.filter(p => {
     const pCat = (p.category || '').trim().toLowerCase();
     const activeCat = activeCategory.trim().toLowerCase();
-    const matchesCategory = activeCat === 'all' || pCat === activeCat;
+    const matchesCategory = 
+      activeCat === 'all' || 
+      pCat === activeCat ||
+      (activeCat === 'เครื่องใช้ไฟฟ้า' && (pCat === 'เครื่องใช้ไฟฟ้า' || pCat.includes('ไฟฟ้า') || pCat.includes('appliance')));
     const matchesSearch = p.name.toLowerCase().includes(searchQuery.toLowerCase()) || 
                           p.brand.toLowerCase().includes(searchQuery.toLowerCase());
     return matchesCategory && matchesSearch;
@@ -183,13 +202,21 @@ export default function ProductsView({
 
   const handleOpenAddModal = (product: Product) => {
     setSelectedProduct(product);
+    setSelectedOption(product.options && product.options.length > 0 ? product.options[0] : '');
     setQtyToAdd(1);
     setShowAddSuccess(false);
   };
 
   const handleConfirmAddToCart = () => {
     if (!selectedProduct) return;
-    onAddToCart(selectedProduct, qtyToAdd);
+    const finalProduct = selectedOption
+      ? {
+          ...selectedProduct,
+          id: `${selectedProduct.id}-${encodeURIComponent(selectedOption)}`,
+          name: `${selectedProduct.name} [${selectedOption}]`
+        }
+      : selectedProduct;
+    onAddToCart(finalProduct, qtyToAdd);
     setShowAddSuccess(true);
   };
 
@@ -394,6 +421,13 @@ export default function ProductsView({
                 <div className="space-y-1">
                   <span className="text-[10px] uppercase font-bold text-indigo-600 tracking-wider block">{product.brand}</span>
                   <h3 className="text-xs md:text-sm font-bold text-slate-800 line-clamp-1 group-hover:text-indigo-600 transition">{product.name}</h3>
+                  {product.options && product.options.length > 0 && (
+                    <div className="flex flex-wrap gap-1 my-1">
+                      <span className="text-[10px] text-indigo-700 bg-indigo-50 font-medium px-2 py-0.5 rounded border border-indigo-100">
+                        มี {product.options.length} ตัวเลือก ({product.options.slice(0, 2).join(', ')}{product.options.length > 2 ? '...' : ''})
+                      </span>
+                    </div>
+                  )}
                   <div className="html-description text-xs text-slate-500 leading-relaxed font-sans break-words" dangerouslySetInnerHTML={{ __html: formatDescriptionHtml(product.description) }} />
                 </div>
 
@@ -478,6 +512,31 @@ export default function ProductsView({
                       <span className="font-extrabold text-indigo-600 font-mono">+{selectedProduct.bv} BV / ชิ้น</span>
                     </div>
                   </div>
+
+                  {/* Product Variants / Options */}
+                  {selectedProduct.options && selectedProduct.options.length > 0 && (
+                    <div className="space-y-1.5 pt-1">
+                      <label className="text-xs font-semibold text-slate-700 block">
+                        เลือกแบบ / ตัวเลือกสินค้า:
+                      </label>
+                      <div className="flex flex-wrap gap-2">
+                        {selectedProduct.options.map((opt, i) => (
+                          <button
+                            key={i}
+                            type="button"
+                            onClick={() => setSelectedOption(opt)}
+                            className={`px-3 py-1.5 rounded-lg text-xs font-medium border transition ${
+                              selectedOption === opt
+                                ? 'bg-indigo-600 text-white border-indigo-600 shadow-xs'
+                                : 'bg-slate-50 text-slate-700 border-slate-200 hover:bg-slate-100'
+                            }`}
+                          >
+                            {opt}
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+                  )}
 
                   <div className="space-y-3 pt-2">
                     <div className="flex items-center justify-between">

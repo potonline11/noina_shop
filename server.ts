@@ -88,6 +88,7 @@ function parseCSV(text: string): any[] {
     else if (clean.includes('brand')) colMap['brand'] = idx;
     else if (clean.includes('condition') || clean.includes('quality')) colMap['condition'] = idx;
     else if (clean.includes('stock') || clean.includes('qty')) colMap['stock'] = idx;
+    else if (clean.includes('option') || clean.includes('variant') || cell.includes('แบบ') || cell.includes('ตัวเลือก') || cell.includes('รุ่น')) colMap['options'] = idx;
   });
 
   if (colMap['name'] === undefined) colMap['name'] = 0;
@@ -125,6 +126,14 @@ function parseCSV(text: string): any[] {
     const image = (cells[colMap['image']] || '').replace(/^["']|["']$/g, '').trim() || 'https://images.unsplash.com/photo-1531297484001-80022131f5a1?auto=format&fit=crop&w=600&q=80';
     const description = (cells[colMap['description']] || '').replace(/^["']|["']$/g, '').trim() || 'สินค้าคุณภาพพร้อมจัดส่ง';
 
+    let options: string[] | undefined = undefined;
+    if (colMap['options'] !== undefined && cells[colMap['options']]) {
+      const rawOpt = cells[colMap['options']].replace(/^["']|["']$/g, '').trim();
+      if (rawOpt) {
+        options = rawOpt.split(/[,|/]/).map(s => s.trim()).filter(Boolean);
+      }
+    }
+
     results.push({
       id: `sheet-prod-${i}`,
       name: rawName,
@@ -136,6 +145,7 @@ function parseCSV(text: string): any[] {
       brand,
       condition,
       stock: isNaN(stockVal) ? 99 : stockVal,
+      options: options && options.length > 0 ? options : undefined,
       source: 'googlesheet'
     });
   }
@@ -384,7 +394,7 @@ ${productsContext || 'ขณะนี้ไม่มีสินค้าใน�
     try {
       const store = await readStore();
       const prods = store.products || [];
-      const headers = ['Name', 'Description', 'Price', 'BV', 'Image', 'Category', 'Brand', 'Condition', 'Stock'];
+      const headers = ['Name', 'Description', 'Price', 'BV', 'Image', 'Category', 'Brand', 'Condition', 'Stock', 'Options'];
       
       const escapeCSV = (val: any) => {
         if (val === undefined || val === null) return '';
@@ -406,7 +416,8 @@ ${productsContext || 'ขณะนี้ไม่มีสินค้าใน�
           escapeCSV(p.category),
           escapeCSV(p.brand),
           escapeCSV(p.condition),
-          escapeCSV(p.stock)
+          escapeCSV(p.stock),
+          escapeCSV(p.options ? p.options.join(', ') : '')
         ].join(','));
       }
 
