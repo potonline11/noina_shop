@@ -134,22 +134,63 @@ function parseCSV(text: string): any[] {
       }
     }
 
+    // Split multiple image URLs if provided (separated by newline, comma, pipe or space)
+    const imgUrls = image.split(/[\n,\|\s]+/).map(s => s.trim()).filter(s => s.startsWith('http'));
+    const primaryImg = imgUrls[0] || image;
+    const allImgs = imgUrls.length > 0 ? imgUrls : [image];
+
     results.push({
       id: `sheet-prod-${i}`,
       name: rawName,
       description,
       price: priceVal,
       bv: isNaN(bvVal) ? 0 : bvVal,
-      image,
+      image: primaryImg,
+      images: allImgs,
       category,
       brand,
       condition,
       stock: isNaN(stockVal) ? 99 : stockVal,
       options: options && options.length > 0 ? options : undefined,
+      sku: `SKU-${3070000 + i}`,
       source: 'googlesheet'
     });
   }
-  return results;
+
+  // Automatic Consolidation: If products share the exact same name, merge into 1 single product!
+  const consolidated: any[] = [];
+  const nameLookup = new Map<string, any>();
+
+  for (const item of results) {
+    const key = item.name.trim().toLowerCase();
+    if (nameLookup.has(key)) {
+      const existing = nameLookup.get(key);
+      // Merge options (unique)
+      const optSet = new Set<string>(existing.options || []);
+      if (item.options) {
+        for (const opt of item.options) {
+          optSet.add(opt);
+        }
+      }
+      existing.options = optSet.size > 0 ? Array.from(optSet) : undefined;
+
+      // Merge images (unique)
+      const existingImgs = existing.images || (existing.image ? [existing.image] : []);
+      const itemImgs = item.images || (item.image ? [item.image] : []);
+      for (const img of itemImgs) {
+        if (!existingImgs.includes(img)) {
+          existingImgs.push(img);
+        }
+      }
+      existing.images = existingImgs;
+      existing.image = existingImgs[0] || existing.image;
+    } else {
+      nameLookup.set(key, item);
+      consolidated.push(item);
+    }
+  }
+
+  return consolidated;
 }
 
 async function readStore() {

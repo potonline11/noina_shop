@@ -10,10 +10,13 @@ export interface Product {
   price: number;
   bv: number; // Business Volume / BV Points
   image: string;
+  images?: string[]; // Multiple gallery images
   category: string;
   brand: string;
-  condition: string; // e.g., "95% Like New", "98% Excellent"
+  condition: string; // e.g., "95% Like New", "98% Excellent", "NEW"
   stock: number;
+  sku?: string;
+  weight?: string;
   options?: string[];
   source?: 'local' | 'googlesheet' | 'seller';
   sellerId?: string;

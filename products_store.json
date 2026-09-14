@@ -1,6 +1,6 @@
 {
   "sheetUrl": "https://docs.google.com/spreadsheets/d/1UL93q_PpKGlZocvcD6ShLwbDJP-nU1emB5-hvQOLT_A/edit?usp=sharing",
-  "webhookUrl": "https://script.google.com/macros/s/AKfycby5xANGQ2CPtgtemxlGT7Xod6Acq2mvrCiayInWDFAtkQZRDt3oKdjbitwFxtlUxlg/exec",
+  "webhookUrl": "",
   "logoUrl": "",
   "products": [
     {
@@ -10,7 +10,7 @@
       "price": 99,
       "bv": 10,
       "image": "https://wbruny6z1studoa4.public.blob.vercel-storage.com/TANARATH/ee0604a2-1cc2-4a7b-82f8-bb5c4ea2cf84.jpg",
-      "category": "อุปกรณ์ส่องสว่าง",
+      "category": "เครื่องใช้ไฟฟ้า",
       "brand": "NO BRAND",
       "condition": "NEW",
       "stock": 99,
@@ -23,7 +23,7 @@
       "price": 200,
       "bv": 20,
       "image": "https://wbruny6z1studoa4.public.blob.vercel-storage.com/TANARATH/e34bf1ba-9695-4c91-8b56-8fc7c5141255.jpg",
-      "category": "อุปกรณ์ส่องสว่าง",
+      "category": "เครื่องใช้ไฟฟ้า",
       "brand": "NO BRAND",
       "condition": "NEW",
       "stock": 99,
@@ -36,7 +36,7 @@
       "price": 170000,
       "bv": 17000,
       "image": "https://wbruny6z1studoa4.public.blob.vercel-storage.com/TANARATH/%E0%B9%80%E0%B8%AA%E0%B8%B2_High_Mast_%E0%B8%AA%E0%B8%B9%E0%B8%87_30_%E0%B9%80%E0%B8%A1%E0%B8%95%E0%B8%A3.png",
-      "category": "อุปกรณ์ส่องสว่าง",
+      "category": "เครื่องใช้ไฟฟ้า",
       "brand": "NO BRAND",
       "condition": "NEW",
       "stock": 99,
@@ -49,10 +49,32 @@
       "price": 1625,
       "bv": 162.5,
       "image": "https://wbruny6z1studoa4.public.blob.vercel-storage.com/TANARATH/4e2765d0-6435-47c2-bb3b-886b98d40237.jpg",
-      "category": "อุปกรณ์ส่องสว่าง",
+      "category": "เครื่องใช้ไฟฟ้า",
       "brand": "NO BRAND",
       "condition": "NEW",
       "stock": 99,
+      "source": "googlesheet"
+    },
+    {
+      "id": "sheet-prod-5",
+      "name": "บล็อกยาง 2x4 , 4x4 พร้อมเต้ารับกราวด์คู่ ได้มาตรฐาน มอก. ยี่ห้อ LeKise (เลคิเซ่)",
+      "description": "บล็อกยาง 2x4 , 4x4 พร้อมเต้ารับกราวด์คู่ ได้มาตรฐาน มอก. ยี่ห้อ LeKise (เลคิเซ่)\n\n\n\nคุณสมบัติ\n\n• โครงสร้างแข็งแรง ทนทาน คุณภาพสูง สามารถใช้งานได้ทุกสภาพพื้นที่และไม่เป็นสนิม\n\n• เต้ารับมีคุณภาพภายใต้มาตรฐาน IEC60884-1\n\n• มีแคลมพ์รัดสายไฟ ทนต่อแรงกระชาก\n\n• เต้าเสียบได้มาตรฐาน มอก.166-2549\n\n• Robust Designed\n\n• High Quality and Safety\n\n• Cable Clamp\n\n• Standard plug by TIS 166-2549",
+      "price": 189,
+      "bv": 18.9,
+      "image": "https://wbruny6z1studoa4.public.blob.vercel-storage.com/TANARATH/3ef32740-4e03-4a54-9ce7-7719d52703b8.jpg",
+      "images": [
+        "https://wbruny6z1studoa4.public.blob.vercel-storage.com/TANARATH/3ef32740-4e03-4a54-9ce7-7719d52703b8.jpg"
+      ],
+      "category": "เครื่องใช้ไฟฟ้า",
+      "brand": "LeKise (เลคิเซ่)",
+      "condition": "NEW",
+      "stock": 99,
+      "sku": "3070035",
+      "weight": "0.80 กิโลกรัม",
+      "options": [
+        "2 x 4",
+        "4 x 4"
+      ],
       "source": "googlesheet"
     }
   ],
@@ -205,62 +227,7 @@
       "role": "member"
     }
   ],
-  "orders": [
-    {
-      "id": "ORD-1001",
-      "memberId": "NS002",
-      "memberName": "สมชาย ใจมั่น",
-      "items": [
-        {
-          "productId": "prod-001",
-          "name": "iPhone 13 Pro 256GB (มือสอง)",
-          "price": 18900,
-          "bv": 1800,
-          "quantity": 1
-        }
-      ],
-      "totalAmount": 18900,
-      "totalBV": 1800,
-      "date": "2026-06-10 14:30",
-      "status": "completed"
-    },
-    {
-      "id": "ORD-1002",
-      "memberId": "NS003",
-      "memberName": "รุ่งเรือง ก้าวหน้า",
-      "items": [
-        {
-          "productId": "prod-002",
-          "name": "MacBook Air M1 RAM 8GB SSD 256GB (มือสอง)",
-          "price": 21900,
-          "bv": 2200,
-          "quantity": 1
-        }
-      ],
-      "totalAmount": 21900,
-      "totalBV": 2200,
-      "date": "2026-06-12 11:15",
-      "status": "completed"
-    },
-    {
-      "id": "ORD-1003",
-      "memberId": "NS004",
-      "memberName": "วิภา รักษ์ดี",
-      "items": [
-        {
-          "productId": "prod-006",
-          "name": "AirPods Pro Gen 2 (มือสอง)",
-          "price": 4900,
-          "bv": 500,
-          "quantity": 1
-        }
-      ],
-      "totalAmount": 4900,
-      "totalBV": 500,
-      "date": "2026-06-20 16:45",
-      "status": "completed"
-    }
-  ],
+  "orders": [],
   "commissionLogs": [
     {
       "id": "COM-001",

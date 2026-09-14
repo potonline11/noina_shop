@@ -249,21 +249,62 @@ export const parseCSV = (text: string): Product[] => {
       const rawOptions = row.options || row.option || row.variants || row.variant || row['ตัวเลือก'] || row['แบบ'] || row['รุ่น'] || '';
       const parsedOptions = rawOptions ? rawOptions.split(/[,|/]/).map((s: string) => s.trim()).filter(Boolean) : undefined;
 
+      const rawImg = row.image || row.img || 'https://images.unsplash.com/photo-1531297484001-80022131f5a1?auto=format&fit=crop&w=600&q=80';
+      const imgUrls = rawImg.split(/[\n,\|\s]+/).map((s: string) => s.trim()).filter((s: string) => s.startsWith('http'));
+      const primaryImg = imgUrls[0] || rawImg;
+      const allImgs = imgUrls.length > 0 ? imgUrls : [rawImg];
+
       results.push({
         id: `sheet-prod-${i}`,
         name: name,
         description: row.description || row.desc || 'สินค้าคุณภาพพร้อมจัดส่ง',
         price: priceVal,
         bv: isNaN(bvVal) ? 0 : bvVal,
-        image: row.image || row.img || 'https://images.unsplash.com/photo-1531297484001-80022131f5a1?auto=format&fit=crop&w=600&q=80',
+        image: primaryImg,
+        images: allImgs,
         category: (row.category || 'อุปกรณ์ส่องสว่าง').trim(),
         brand: (row.brand || 'NO BRAND').trim(),
         condition: (row.condition || row.quality || 'NEW').trim(),
         stock: row.stock ? parseInt(row.stock.replace(/[^0-9]/g, '')) || 99 : 99,
         options: parsedOptions && parsedOptions.length > 0 ? parsedOptions : undefined,
+        sku: `SKU-${3070000 + i}`,
         source: 'googlesheet'
       });
     }
   }
-  return results;
+
+  // Automatic Consolidation: If products share the exact same name, merge into 1 single product!
+  const consolidated: Product[] = [];
+  const nameLookup = new Map<string, Product>();
+
+  for (const item of results) {
+    const key = item.name.trim().toLowerCase();
+    if (nameLookup.has(key)) {
+      const existing = nameLookup.get(key)!;
+      // Merge options
+      const optSet = new Set<string>(existing.options || []);
+      if (item.options) {
+        for (const opt of item.options) {
+          optSet.add(opt);
+        }
+      }
+      existing.options = optSet.size > 0 ? Array.from(optSet) : undefined;
+
+      // Merge images
+      const existingImgs = existing.images || (existing.image ? [existing.image] : []);
+      const itemImgs = item.images || (item.image ? [item.image] : []);
+      for (const img of itemImgs) {
+        if (!existingImgs.includes(img)) {
+          existingImgs.push(img);
+        }
+      }
+      existing.images = existingImgs;
+      existing.image = existingImgs[0] || existing.image;
+    } else {
+      nameLookup.set(key, item);
+      consolidated.push(item);
+    }
+  }
+
+  return consolidated;
 };

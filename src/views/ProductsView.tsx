@@ -31,7 +31,10 @@ import {
   CheckSquare,
   MessageSquare,
   Zap,
-  Lightbulb
+  Lightbulb,
+  Share2,
+  ExternalLink,
+  ShieldCheck
 } from 'lucide-react';
 
 interface ProductsViewProps {
@@ -73,6 +76,8 @@ export default function ProductsView({
   // Modals visibility
   const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
   const [selectedOption, setSelectedOption] = useState<string>('');
+  const [activePreviewImage, setActivePreviewImage] = useState<string>('');
+  const [copiedProductShare, setCopiedProductShare] = useState<boolean>(false);
   const [qtyToAdd, setQtyToAdd] = useState<number>(1);
   const [showAddSuccess, setShowAddSuccess] = useState<boolean>(false);
   
@@ -200,24 +205,69 @@ export default function ProductsView({
   const codFee = paymentMethod === 'cod' ? Math.round(subtotal * 0.03) : 0; // 3% COD fee
   const totalAmount = subtotal + shippingFee + codFee;
 
-  const handleOpenAddModal = (product: Product) => {
+  const getCleanOption = (opt: string) => {
+    if (!opt) return '';
+    return opt.split(':')[0].trim();
+  };
+
+  const getOptionPrice = (prod: Product, opt: string) => {
+    if (!opt) return prod.price;
+    if (opt.includes(':')) {
+      const p = parseFloat(opt.split(':')[1]);
+      if (!isNaN(p) && p > 0) return p;
+    }
+    return prod.price;
+  };
+
+  const handleOpenAddModal = (product: Product, preselectedOption?: string) => {
     setSelectedProduct(product);
-    setSelectedOption(product.options && product.options.length > 0 ? product.options[0] : '');
+    if (preselectedOption) {
+      setSelectedOption(preselectedOption);
+    } else {
+      setSelectedOption(product.options && product.options.length > 0 ? product.options[0] : '');
+    }
+    setActivePreviewImage(product.images && product.images.length > 0 ? product.images[0] : product.image);
     setQtyToAdd(1);
     setShowAddSuccess(false);
   };
 
   const handleConfirmAddToCart = () => {
     if (!selectedProduct) return;
-    const finalProduct = selectedOption
+    const cleanOpt = getCleanOption(selectedOption);
+    const unitPrice = getOptionPrice(selectedProduct, selectedOption);
+    const finalProduct: Product = cleanOpt
       ? {
           ...selectedProduct,
-          id: `${selectedProduct.id}-${encodeURIComponent(selectedOption)}`,
-          name: `${selectedProduct.name} [${selectedOption}]`
+          price: unitPrice,
+          id: `${selectedProduct.id}-${encodeURIComponent(cleanOpt)}`,
+          name: `${selectedProduct.name} [${cleanOpt}]`
         }
-      : selectedProduct;
+      : {
+          ...selectedProduct,
+          price: unitPrice
+        };
     onAddToCart(finalProduct, qtyToAdd);
     setShowAddSuccess(true);
+  };
+
+  const handleBuyNow = () => {
+    if (!selectedProduct) return;
+    const cleanOpt = getCleanOption(selectedOption);
+    const unitPrice = getOptionPrice(selectedProduct, selectedOption);
+    const finalProduct: Product = cleanOpt
+      ? {
+          ...selectedProduct,
+          price: unitPrice,
+          id: `${selectedProduct.id}-${encodeURIComponent(cleanOpt)}`,
+          name: `${selectedProduct.name} [${cleanOpt}]`
+        }
+      : {
+          ...selectedProduct,
+          price: unitPrice
+        };
+    onAddToCart(finalProduct, qtyToAdd);
+    setSelectedProduct(null);
+    handleOpenCheckout();
   };
 
   const handleOpenCheckout = () => {
@@ -391,7 +441,10 @@ export default function ProductsView({
               className="bg-white border border-slate-100 rounded-2xl shadow-sm hover:shadow-md transition-all overflow-hidden flex flex-col justify-between group"
             >
               {/* Product Top Image Section */}
-              <div className="relative aspect-video bg-slate-100 overflow-hidden">
+              <div 
+                onClick={() => handleOpenAddModal(product)}
+                className="relative aspect-video bg-slate-100 overflow-hidden cursor-pointer"
+              >
                 <img 
                   referrerPolicy="no-referrer"
                   src={product.image} 
@@ -417,33 +470,65 @@ export default function ProductsView({
               </div>
 
               {/* Product Body */}
-              <div className="p-4 flex-grow flex flex-col justify-between space-y-4 bg-white">
-                <div className="space-y-1">
-                  <span className="text-[10px] uppercase font-bold text-indigo-600 tracking-wider block">{product.brand}</span>
-                  <h3 className="text-xs md:text-sm font-bold text-slate-800 line-clamp-1 group-hover:text-indigo-600 transition">{product.name}</h3>
+              <div className="p-4 flex-grow flex flex-col justify-between space-y-3.5 bg-white">
+                <div className="space-y-1.5">
+                  <span className="text-[10px] uppercase font-bold text-amber-700 bg-amber-50 px-2 py-0.5 rounded border border-amber-200 inline-block tracking-wider">
+                    {product.brand}
+                  </span>
+                  <h3 
+                    onClick={() => handleOpenAddModal(product)}
+                    className="text-xs md:text-sm font-bold text-slate-800 line-clamp-1 group-hover:text-amber-700 transition cursor-pointer"
+                  >
+                    {product.name}
+                  </h3>
+                  
+                  {/* Selectable Options on Card directly */}
                   {product.options && product.options.length > 0 && (
-                    <div className="flex flex-wrap gap-1 my-1">
-                      <span className="text-[10px] text-indigo-700 bg-indigo-50 font-medium px-2 py-0.5 rounded border border-indigo-100">
-                        มี {product.options.length} ตัวเลือก ({product.options.slice(0, 2).join(', ')}{product.options.length > 2 ? '...' : ''})
-                      </span>
+                    <div className="pt-1">
+                      <div className="flex items-center justify-between mb-1.5">
+                        <span className="text-[11px] font-bold text-slate-700">ขนาด / ตัวเลือก:</span>
+                        <span className="text-[10px] text-amber-600 font-semibold">{product.options.length} ตัวเลือก</span>
+                      </div>
+                      <div className="flex flex-wrap gap-1.5">
+                        {product.options.map((opt, optIdx) => {
+                          const clean = getCleanOption(opt);
+                          return (
+                            <button
+                              key={optIdx}
+                              type="button"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                handleOpenAddModal(product, opt);
+                              }}
+                              className="px-2.5 py-1 text-xs font-bold rounded-lg border border-amber-300 bg-amber-50/80 hover:bg-amber-500 hover:text-white text-amber-900 transition flex items-center gap-1 shadow-xs"
+                              title={`คลิกเลือกขนาด ${clean}`}
+                            >
+                              <span>{clean}</span>
+                            </button>
+                          );
+                        })}
+                      </div>
                     </div>
                   )}
-                  <div className="html-description text-xs text-slate-500 leading-relaxed font-sans break-words" dangerouslySetInnerHTML={{ __html: formatDescriptionHtml(product.description) }} />
+
+                  <div className="html-description text-xs text-slate-500 leading-relaxed font-sans break-words line-clamp-2" dangerouslySetInnerHTML={{ __html: formatDescriptionHtml(product.description) }} />
                 </div>
 
                 {/* Buy Section */}
                 <div className="pt-3 border-t border-slate-100 flex justify-between items-center bg-white">
                   <div>
-                    <span className="text-[9px] text-slate-400 block leading-none">ราคามือสอง</span>
-                    <span className="text-sm font-extrabold text-slate-800">{product.price.toLocaleString()} ฿</span>
+                    <span className="text-[9px] text-slate-400 block leading-none">
+                      {product.condition === 'NEW' ? 'ราคาจำหน่าย' : 'ราคามือสอง'}
+                    </span>
+                    <span className="text-sm md:text-base font-extrabold text-slate-900">{product.price.toLocaleString()} ฿</span>
                   </div>
                   
                   <button
                     onClick={() => handleOpenAddModal(product)}
-                    className="bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-xs px-3.5 py-2 rounded-xl transition flex items-center gap-1 shadow-sm"
+                    className="bg-amber-600 hover:bg-amber-700 text-white font-bold text-xs px-3.5 py-2 rounded-xl transition flex items-center gap-1.5 shadow-sm"
                   >
                     <ShoppingCart className="w-3.5 h-3.5" />
-                    สั่งซื้อสินค้า
+                    ดูรายละเอียด & สั่งซื้อ
                   </button>
                 </div>
               </div>
@@ -476,146 +561,295 @@ export default function ProductsView({
         </div>
       )}
 
-      {/* MODAL 1: ADD TO CART CONFIRMATION */}
+      {/* MODAL 1: PRODUCT DETAIL & BUY MODAL (EXACT TANARATH / LEKISE E-COMMERCE LAYOUT) */}
       {selectedProduct && (
-        <div className="fixed inset-0 z-50 overflow-y-auto bg-slate-950/40 backdrop-blur-sm flex items-center justify-center p-4">
-          <div className="bg-white rounded-3xl max-w-md w-full overflow-hidden shadow-2xl border border-slate-100 relative">
+        <div className="fixed inset-0 z-50 overflow-y-auto bg-slate-950/60 backdrop-blur-sm flex items-center justify-center p-3 sm:p-4 md:p-6">
+          <div className="bg-white rounded-2xl md:rounded-3xl max-w-4xl w-full overflow-hidden shadow-2xl border border-slate-100 relative max-h-[92vh] flex flex-col animate-fade-in">
             
-            <div className="relative aspect-video bg-slate-100">
-              <img referrerPolicy="no-referrer" src={selectedProduct.image} alt={selectedProduct.name} className="w-full h-full object-cover" />
-              <button 
-                onClick={() => setSelectedProduct(null)}
-                className="absolute top-3 right-3 w-8 h-8 rounded-full bg-slate-950/50 hover:bg-slate-950/70 text-white flex items-center justify-center text-sm font-bold transition"
-              >
-                ✕
-              </button>
-            </div>
+            {/* Close Button */}
+            <button 
+              onClick={() => setSelectedProduct(null)}
+              className="absolute top-4 right-4 z-30 w-9 h-9 rounded-full bg-slate-100 hover:bg-slate-200 text-slate-600 flex items-center justify-center text-sm font-bold transition shadow-xs"
+              title="ปิดหน้าต่าง"
+            >
+              ✕
+            </button>
 
-            <div className="p-6 space-y-4 bg-white">
-              {!showAddSuccess ? (
-                <div className="space-y-4">
-                  <div>
-                    <span className="inline-block px-2 py-0.5 bg-indigo-50 text-indigo-700 border border-indigo-100 rounded text-[9px] uppercase font-bold tracking-wider mb-1">
-                      {selectedProduct.brand} | {selectedProduct.category}
+            {/* Scrollable Container */}
+            <div className="overflow-y-auto p-5 sm:p-6 md:p-8">
+              <div className="grid grid-cols-1 md:grid-cols-12 gap-6 md:gap-8 items-start">
+                
+                {/* Left Column: Product Gallery */}
+                <div className="md:col-span-6 space-y-4">
+                  <div className="bg-slate-50 border border-slate-200 rounded-2xl overflow-hidden aspect-square flex items-center justify-center p-4 relative group">
+                    <img 
+                      referrerPolicy="no-referrer" 
+                      src={activePreviewImage || (selectedProduct.images && selectedProduct.images.length > 0 ? selectedProduct.images[0] : selectedProduct.image)} 
+                      alt={selectedProduct.name} 
+                      className="w-full h-full object-contain group-hover:scale-105 transition duration-300" 
+                    />
+                    <span className="absolute top-3 left-3 bg-slate-900/85 text-white font-bold text-[10px] px-2.5 py-1 rounded-full shadow-xs">
+                      {selectedProduct.condition === 'NEW' ? 'สินค้าใหม่' : selectedProduct.condition}
                     </span>
-                    <h3 className="text-sm md:text-base font-extrabold text-slate-800">{selectedProduct.name}</h3>
-                    <div className="html-description text-xs text-slate-500 mt-1.5 leading-relaxed font-sans break-words" dangerouslySetInnerHTML={{ __html: formatDescriptionHtml(selectedProduct.description) }} />
+                    <span className="absolute top-3 right-12 bg-indigo-600 text-white font-mono font-extrabold text-[11px] px-2.5 py-1 rounded-lg shadow-sm">
+                      +{selectedProduct.bv} BV
+                    </span>
                   </div>
 
-                  <div className="grid grid-cols-2 gap-3 bg-slate-50 p-3 rounded-xl border border-slate-100 text-xs">
+                  {/* Multi-Image Thumbnails Carousel / Strip */}
+                  {(() => {
+                    const gallery = selectedProduct.images && selectedProduct.images.length > 0 
+                      ? selectedProduct.images 
+                      : [selectedProduct.image];
+                    if (gallery.length <= 1) return null;
+                    return (
+                      <div className="space-y-1.5">
+                        <span className="text-[10px] font-semibold text-slate-400">รูปภาพสินค้าเพิ่มเติม:</span>
+                        <div className="flex flex-wrap gap-2">
+                          {gallery.map((img, idx) => {
+                            const isCur = (activePreviewImage || gallery[0]) === img;
+                            return (
+                              <button
+                                key={idx}
+                                type="button"
+                                onClick={() => setActivePreviewImage(img)}
+                                className={`w-14 h-14 rounded-xl border-2 overflow-hidden bg-white p-1 transition ${
+                                  isCur
+                                    ? 'border-amber-500 ring-2 ring-amber-200'
+                                    : 'border-slate-200 hover:border-slate-400 opacity-70 hover:opacity-100'
+                                }`}
+                              >
+                                <img referrerPolicy="no-referrer" src={img} alt="" className="w-full h-full object-contain" />
+                              </button>
+                            );
+                          })}
+                        </div>
+                      </div>
+                    );
+                  })()}
+
+                  {/* Trust Guarantee Box */}
+                  <div className="bg-amber-50/60 border border-amber-200/70 rounded-xl p-3 text-xs text-amber-950 space-y-1">
+                    <div className="flex items-center gap-2 font-bold text-amber-900">
+                      <ShieldCheck className="w-4 h-4 text-amber-600 shrink-0" />
+                      <span>มาตรฐานคุณภาพและการันตี</span>
+                    </div>
+                    <p className="text-[11px] text-slate-600 leading-relaxed">
+                      • สินค้ามาตรฐาน มอก. ตรวจสอบคุณภาพความปลอดภัยก่อนจัดส่ง<br />
+                      • รองรับบริการเก็บเงินปลายทาง (COD) และจัดส่งพัสดุด่วนทั่วประเทศ
+                    </p>
+                  </div>
+                </div>
+
+                {/* Right Column: Product Detail & Actions */}
+                <div className="md:col-span-6 space-y-4">
+                  {/* Category & Brand */}
+                  <div>
+                    <div className="flex items-center gap-2 mb-1.5">
+                      <span className="text-[11px] uppercase font-bold text-amber-800 bg-amber-100 px-2.5 py-0.5 rounded border border-amber-300 tracking-wider">
+                        {selectedProduct.brand}
+                      </span>
+                      <span className="text-[11px] font-medium text-slate-500">
+                        หมวดหมู่: {selectedProduct.category}
+                      </span>
+                    </div>
+                    <h2 className="text-lg md:text-xl font-black text-slate-900 leading-snug">
+                      {selectedProduct.name}
+                    </h2>
+                  </div>
+
+                  {/* Description / Features */}
+                  <div 
+                    className="html-description text-xs md:text-sm text-slate-600 leading-relaxed font-sans break-words bg-slate-50/70 p-3 rounded-xl border border-slate-100 max-h-48 overflow-y-auto" 
+                    dangerouslySetInnerHTML={{ __html: formatDescriptionHtml(selectedProduct.description) }} 
+                  />
+
+                  {/* Specs & Attributes Meta */}
+                  <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 bg-slate-50 p-3 rounded-xl border border-slate-200 text-xs">
                     <div>
-                      <span className="text-slate-400 block text-[9px]">สภาพมือสอง:</span>
-                      <span className="font-bold text-slate-700">{selectedProduct.condition}</span>
+                      <span className="text-slate-400 block text-[10px]">SKU / รหัสสินค้า:</span>
+                      <span className="font-mono font-bold text-slate-800">{selectedProduct.sku || '3070035'}</span>
                     </div>
                     <div>
-                      <span className="text-slate-400 block text-[9px]">ยอดคะแนนธุรกิจ:</span>
+                      <span className="text-slate-400 block text-[10px]">น้ำหนัก:</span>
+                      <span className="font-bold text-slate-800">{selectedProduct.weight || (selectedProduct.condition === 'NEW' ? '0.80 กิโลกรัม' : selectedProduct.condition)}</span>
+                    </div>
+                    <div className="col-span-2 sm:col-span-1">
+                      <span className="text-slate-400 block text-[10px]">ยอดคะแนนธุรกิจ:</span>
                       <span className="font-extrabold text-indigo-600 font-mono">+{selectedProduct.bv} BV / ชิ้น</span>
                     </div>
                   </div>
 
-                  {/* Product Variants / Options */}
+                  {/* Price Row */}
+                  <div className="py-2 border-y border-slate-100 flex items-baseline justify-between">
+                    <div className="flex items-baseline gap-2">
+                      <span className="text-xs font-bold text-slate-500">ราคา:</span>
+                      <span className="text-2xl md:text-3xl font-black text-amber-600 font-mono">
+                        {(getOptionPrice(selectedProduct, selectedOption) * qtyToAdd).toLocaleString()}.00
+                      </span>
+                      <span className="text-sm font-semibold text-slate-600">บาท</span>
+                    </div>
+                    <span className="text-xs font-semibold text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded border border-emerald-200">
+                      พร้อมจัดส่ง ({selectedProduct.stock} ชิ้น)
+                    </span>
+                  </div>
+
+                  {/* Selectable Product Options / Sizes */}
                   {selectedProduct.options && selectedProduct.options.length > 0 && (
-                    <div className="space-y-1.5 pt-1">
-                      <label className="text-xs font-semibold text-slate-700 block">
-                        เลือกแบบ / ตัวเลือกสินค้า:
-                      </label>
-                      <div className="flex flex-wrap gap-2">
-                        {selectedProduct.options.map((opt, i) => (
-                          <button
-                            key={i}
-                            type="button"
-                            onClick={() => setSelectedOption(opt)}
-                            className={`px-3 py-1.5 rounded-lg text-xs font-medium border transition ${
-                              selectedOption === opt
-                                ? 'bg-indigo-600 text-white border-indigo-600 shadow-xs'
-                                : 'bg-slate-50 text-slate-700 border-slate-200 hover:bg-slate-100'
-                            }`}
-                          >
-                            {opt}
-                          </button>
-                        ))}
+                    <div className="space-y-2 pt-1">
+                      <div className="flex items-center justify-between">
+                        <label className="text-xs md:text-sm font-bold text-slate-800 flex items-center gap-1.5">
+                          <span>ขนาด:</span>
+                          <span className="text-amber-600 font-extrabold">{getCleanOption(selectedOption)}</span>
+                        </label>
+                        <span className="text-[11px] text-slate-400 font-medium">คลิกเพื่อเลือกขนาดที่ต้องการ</span>
+                      </div>
+                      <div className="flex flex-wrap gap-2.5">
+                        {selectedProduct.options.map((opt, i) => {
+                          const clean = getCleanOption(opt);
+                          const isSelected = selectedOption === opt || getCleanOption(selectedOption) === clean;
+                          return (
+                            <button
+                              key={i}
+                              type="button"
+                              onClick={() => setSelectedOption(opt)}
+                              className={`px-4 py-2 rounded-lg text-xs md:text-sm font-bold transition shadow-xs flex items-center gap-1.5 ${
+                                isSelected
+                                  ? 'bg-amber-500 text-white border-2 border-amber-500 ring-2 ring-amber-200'
+                                  : 'bg-white text-slate-700 border border-slate-300 hover:border-slate-400 hover:bg-slate-50'
+                              }`}
+                            >
+                              {isSelected && <Check className="w-3.5 h-3.5 stroke-[3]" />}
+                              <span>{clean}</span>
+                            </button>
+                          );
+                        })}
                       </div>
                     </div>
                   )}
 
-                  <div className="space-y-3 pt-2">
-                    <div className="flex items-center justify-between">
-                      <span className="text-xs font-semibold text-slate-700">ระบุจำนวนสินค้า:</span>
+                  {/* Quantity Counter */}
+                  <div className="space-y-1.5 pt-1">
+                    <label className="text-xs font-bold text-slate-800 block">จำนวน</label>
+                    <div className="inline-flex items-center border border-slate-300 rounded-lg overflow-hidden bg-white shadow-xs">
+                      <button 
+                        type="button"
+                        onClick={() => setQtyToAdd(prev => Math.max(1, prev - 1))}
+                        className="w-10 h-10 flex items-center justify-center text-slate-600 hover:bg-slate-100 font-bold text-base transition"
+                      >
+                        -
+                      </button>
+                      <span className="w-14 text-center font-bold font-mono text-xs md:text-sm text-slate-900 border-x border-slate-200 py-2">
+                        {qtyToAdd}
+                      </span>
+                      <button 
+                        type="button"
+                        onClick={() => setQtyToAdd(prev => Math.min(selectedProduct.stock, prev + 1))}
+                        className="w-10 h-10 flex items-center justify-center text-slate-600 hover:bg-slate-100 font-bold text-base transition"
+                      >
+                        +
+                      </button>
+                    </div>
+                  </div>
+
+                  {/* Add Success Toast Notification */}
+                  {showAddSuccess && (
+                    <div className="bg-emerald-50 border border-emerald-200 text-emerald-800 p-3 rounded-xl flex items-center justify-between animate-fade-in text-xs">
                       <div className="flex items-center gap-2">
-                        <button 
-                          onClick={() => setQtyToAdd(prev => Math.max(1, prev - 1))}
-                          className="w-8 h-8 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-700 flex items-center justify-center text-sm font-bold transition"
-                        >
-                          -
-                        </button>
-                        <span className="w-8 text-center text-xs font-bold font-mono text-slate-800">{qtyToAdd}</span>
-                        <button 
-                          onClick={() => setQtyToAdd(prev => Math.min(selectedProduct.stock, prev + 1))}
-                          className="w-8 h-8 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-700 flex items-center justify-center text-sm font-bold transition"
-                        >
-                          +
-                        </button>
+                        <Check className="w-4 h-4 text-emerald-600 shrink-0 stroke-[3]" />
+                        <span>เพิ่ม <strong>{selectedProduct.name} {getCleanOption(selectedOption) ? `[${getCleanOption(selectedOption)}]` : ''}</strong> ลงตะกร้าแล้ว!</span>
                       </div>
-                    </div>
-
-                    <div className="border-t border-slate-100 pt-3 flex justify-between items-end">
-                      <div>
-                        <span className="text-[10px] text-slate-400 block">ยอดคะแนนสะสม</span>
-                        <span className="text-xs font-bold text-indigo-600 font-mono">{(selectedProduct.bv * qtyToAdd).toLocaleString()} BV</span>
-                      </div>
-                      <div className="text-right">
-                        <span className="text-[10px] text-slate-400 block font-bold text-indigo-600">ราคาสินค้า</span>
-                        <span className="text-base font-extrabold text-slate-800">{(selectedProduct.price * qtyToAdd).toLocaleString()} ฿</span>
-                      </div>
-                    </div>
-
-                    {/* Buttons */}
-                    <div className="flex gap-3 pt-2">
                       <button
+                        onClick={handleOpenCheckout}
+                        className="font-bold text-emerald-700 underline hover:text-emerald-900 ml-2"
+                      >
+                        ไปที่ตะกร้า →
+                      </button>
+                    </div>
+                  )}
+
+                  {/* Two Main Action Buttons: Add to Cart & Buy Now */}
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-2">
+                    <button
+                      type="button"
+                      onClick={handleConfirmAddToCart}
+                      className="bg-[#c26219] hover:bg-[#b05614] text-white font-bold text-xs md:text-sm py-3 px-4 rounded-xl shadow-sm transition flex items-center justify-center gap-2 text-center"
+                    >
+                      <ShoppingCart className="w-4 h-4" />
+                      <span>เพิ่มลงตะกร้า</span>
+                    </button>
+
+                    <button
+                      type="button"
+                      onClick={handleBuyNow}
+                      className="bg-[#f97316] hover:bg-[#ea580c] text-white font-bold text-xs md:text-sm py-3 px-4 rounded-xl shadow-sm transition flex items-center justify-center gap-2 text-center"
+                    >
+                      <Zap className="w-4 h-4 fill-current" />
+                      <span>ซื้อเลย</span>
+                    </button>
+                  </div>
+
+                  {/* Inquiry Section */}
+                  <div className="pt-4 border-t border-slate-200 space-y-3">
+                    <div className="text-[11px] font-bold text-slate-400 text-center uppercase tracking-wider">
+                      สอบถามข้อมูลเพิ่มเติม
+                    </div>
+                    <div className="grid grid-cols-3 gap-2">
+                      <a
+                        href={`mailto:pnmall4u@gmail.com?subject=${encodeURIComponent('สอบถามข้อมูลสินค้า: ' + selectedProduct.name)}`}
+                        className="flex items-center justify-center gap-1.5 py-2 px-2 border border-slate-200 hover:border-slate-300 rounded-lg text-xs font-semibold text-slate-700 bg-white hover:bg-slate-50 transition text-center"
+                      >
+                        <Mail className="w-3.5 h-3.5 text-slate-500" />
+                        <span>ส่งอีเมล</span>
+                      </a>
+                      <a
+                        href="https://line.me/ti/p/~noinashop"
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="flex items-center justify-center gap-1.5 py-2 px-2 border border-emerald-300 hover:border-emerald-400 rounded-lg text-xs font-bold text-emerald-700 bg-emerald-50/60 hover:bg-emerald-50 transition text-center"
+                      >
+                        <MessageSquare className="w-3.5 h-3.5 text-emerald-600" />
+                        <span>Line</span>
+                      </a>
+                      <a
+                        href="https://m.me/noinashop"
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="flex items-center justify-center gap-1.5 py-2 px-2 border border-blue-300 hover:border-blue-400 rounded-lg text-xs font-bold text-blue-700 bg-blue-50/60 hover:bg-blue-50 transition text-center"
+                      >
+                        <MessageSquare className="w-3.5 h-3.5 text-blue-600" />
+                        <span>Messenger</span>
+                      </a>
+                    </div>
+
+                    {/* Navigation and Social Share */}
+                    <div className="flex items-center justify-between text-xs text-slate-400 pt-1">
+                      <button
+                        type="button"
                         onClick={() => setSelectedProduct(null)}
-                        className="flex-grow bg-slate-100 hover:bg-slate-200 text-slate-700 font-semibold text-xs py-2.5 rounded-xl transition text-center"
+                        className="text-slate-500 hover:text-slate-800 font-medium"
                       >
-                        ยกเลิก
+                        ← เลือกสินค้าอื่นต่อ
                       </button>
                       <button
-                        onClick={handleConfirmAddToCart}
-                        className="flex-grow bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-xs py-2.5 rounded-xl transition text-center shadow-md shadow-indigo-100 flex items-center justify-center gap-1.5"
+                        type="button"
+                        onClick={() => {
+                          if (navigator.clipboard) {
+                            navigator.clipboard.writeText(window.location.href);
+                            setCopiedProductShare(true);
+                            setTimeout(() => setCopiedProductShare(false), 2000);
+                          }
+                        }}
+                        className="hover:text-slate-700 transition flex items-center gap-1 text-slate-500 font-medium"
                       >
-                        <ShoppingCart className="w-3.5 h-3.5" />
-                        เพิ่มเข้าตะกร้าสินค้า
+                        <Share2 className="w-3.5 h-3.5" />
+                        <span>{copiedProductShare ? 'คัดลอกลิงก์แล้ว!' : 'แชร์สินค้านี้'}</span>
                       </button>
                     </div>
                   </div>
+
                 </div>
-              ) : (
-                <div className="text-center py-6 space-y-4 animate-fade-in">
-                  <div className="w-12 h-12 bg-emerald-100 text-emerald-600 rounded-full flex items-center justify-center mx-auto shadow-sm">
-                    <Check className="w-6 h-6 stroke-[3]" />
-                  </div>
-                  <div className="space-y-1">
-                    <h3 className="text-sm font-bold text-slate-800">เพิ่มสินค้าลงตะกร้าเรียบร้อย!</h3>
-                    <p className="text-xs text-slate-500">
-                      ระบบได้อัปเดตยอดสินค้า <strong>{selectedProduct.name}</strong> เข้าตะกร้าของคุณเรียบร้อยแล้ว
-                    </p>
-                  </div>
-                  
-                  {/* Option Choice to either Shop More or Go to Checkout */}
-                  <div className="flex flex-col gap-2 pt-2">
-                    <button
-                      onClick={handleOpenCheckout}
-                      className="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-xs py-2.5 rounded-xl transition text-center shadow-md flex items-center justify-center gap-1.5"
-                    >
-                      <span>ดำเนินการชำระเงิน (ไปที่ตะกร้า)</span>
-                    </button>
-                    <button
-                      onClick={() => setSelectedProduct(null)}
-                      className="w-full bg-slate-100 hover:bg-slate-200 text-indigo-700 font-bold text-xs py-2.5 rounded-xl transition text-center border border-indigo-100"
-                    >
-                      🛍️ เลือกสินค้าเพิ่ม
-                    </button>
-                  </div>
-                </div>
-              )}
+              </div>
             </div>
 
           </div>
