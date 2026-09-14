@@ -3,6 +3,15 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+export interface ProductVariant {
+  name: string;
+  price: number;
+  bv?: number;
+  stock?: number;
+  sku?: string;
+  image?: string;
+}
+
 export interface Product {
   id: string;
   name: string;
@@ -18,6 +27,7 @@ export interface Product {
   sku?: string;
   weight?: string;
   options?: string[];
+  variantOptions?: ProductVariant[];
   source?: 'local' | 'googlesheet' | 'seller';
   sellerId?: string;
   sellerName?: string;

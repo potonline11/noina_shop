@@ -210,8 +210,21 @@ export default function ProductsView({
     return opt.split(':')[0].trim();
   };
 
-  const getOptionPrice = (prod: Product, opt: string) => {
+  const getOptionVariant = (prod?: Product | null, opt?: string) => {
+    if (!prod || !opt) return null;
+    const clean = getCleanOption(opt).toLowerCase();
+    if (prod.variantOptions && prod.variantOptions.length > 0) {
+      const found = prod.variantOptions.find(v => v.name.toLowerCase() === clean);
+      if (found) return found;
+    }
+    return null;
+  };
+
+  const getOptionPrice = (prod?: Product | null, opt?: string) => {
+    if (!prod) return 0;
     if (!opt) return prod.price;
+    const v = getOptionVariant(prod, opt);
+    if (v && typeof v.price === 'number' && v.price > 0) return v.price;
     if (opt.includes(':')) {
       const p = parseFloat(opt.split(':')[1]);
       if (!isNaN(p) && p > 0) return p;
@@ -219,14 +232,44 @@ export default function ProductsView({
     return prod.price;
   };
 
+  const getOptionBv = (prod?: Product | null, opt?: string) => {
+    if (!prod) return 0;
+    if (!opt) return prod.bv;
+    const v = getOptionVariant(prod, opt);
+    if (v && typeof v.bv === 'number' && !isNaN(v.bv)) return v.bv;
+    if (opt.includes(':')) {
+      const parts = opt.split(':');
+      if (parts.length >= 3) {
+        const b = parseFloat(parts[2]);
+        if (!isNaN(b)) return b;
+      }
+    }
+    return prod.bv;
+  };
+
+  const getOptionSku = (prod?: Product | null, opt?: string) => {
+    if (!prod) return '';
+    if (!opt) return prod.sku || '';
+    const v = getOptionVariant(prod, opt);
+    if (v && v.sku) return v.sku;
+    return prod.sku || '';
+  };
+
   const handleOpenAddModal = (product: Product, preselectedOption?: string) => {
     setSelectedProduct(product);
+    let chosenOpt = '';
     if (preselectedOption) {
-      setSelectedOption(preselectedOption);
-    } else {
-      setSelectedOption(product.options && product.options.length > 0 ? product.options[0] : '');
+      chosenOpt = preselectedOption;
+    } else if (product.options && product.options.length > 0) {
+      chosenOpt = product.options[0];
     }
-    setActivePreviewImage(product.images && product.images.length > 0 ? product.images[0] : product.image);
+    setSelectedOption(chosenOpt);
+    const variant = getOptionVariant(product, chosenOpt);
+    if (variant && variant.image) {
+      setActivePreviewImage(variant.image);
+    } else {
+      setActivePreviewImage(product.images && product.images.length > 0 ? product.images[0] : product.image);
+    }
     setQtyToAdd(1);
     setShowAddSuccess(false);
   };
@@ -235,16 +278,22 @@ export default function ProductsView({
     if (!selectedProduct) return;
     const cleanOpt = getCleanOption(selectedOption);
     const unitPrice = getOptionPrice(selectedProduct, selectedOption);
+    const unitBv = getOptionBv(selectedProduct, selectedOption);
+    const unitSku = getOptionSku(selectedProduct, selectedOption);
     const finalProduct: Product = cleanOpt
       ? {
           ...selectedProduct,
           price: unitPrice,
+          bv: unitBv,
+          sku: unitSku || selectedProduct.sku,
           id: `${selectedProduct.id}-${encodeURIComponent(cleanOpt)}`,
           name: `${selectedProduct.name} [${cleanOpt}]`
         }
       : {
           ...selectedProduct,
-          price: unitPrice
+          price: unitPrice,
+          bv: unitBv,
+          sku: unitSku || selectedProduct.sku
         };
     onAddToCart(finalProduct, qtyToAdd);
     setShowAddSuccess(true);
@@ -254,16 +303,22 @@ export default function ProductsView({
     if (!selectedProduct) return;
     const cleanOpt = getCleanOption(selectedOption);
     const unitPrice = getOptionPrice(selectedProduct, selectedOption);
+    const unitBv = getOptionBv(selectedProduct, selectedOption);
+    const unitSku = getOptionSku(selectedProduct, selectedOption);
     const finalProduct: Product = cleanOpt
       ? {
           ...selectedProduct,
           price: unitPrice,
+          bv: unitBv,
+          sku: unitSku || selectedProduct.sku,
           id: `${selectedProduct.id}-${encodeURIComponent(cleanOpt)}`,
           name: `${selectedProduct.name} [${cleanOpt}]`
         }
       : {
           ...selectedProduct,
-          price: unitPrice
+          price: unitPrice,
+          bv: unitBv,
+          sku: unitSku || selectedProduct.sku
         };
     onAddToCart(finalProduct, qtyToAdd);
     setSelectedProduct(null);
@@ -492,6 +547,7 @@ export default function ProductsView({
                       <div className="flex flex-wrap gap-1.5">
                         {product.options.map((opt, optIdx) => {
                           const clean = getCleanOption(opt);
+                          const optP = getOptionPrice(product, opt);
                           return (
                             <button
                               key={optIdx}
@@ -504,6 +560,9 @@ export default function ProductsView({
                               title={`คลิกเลือกขนาด ${clean}`}
                             >
                               <span>{clean}</span>
+                              {product.variantOptions && product.variantOptions.length > 1 && optP > 0 && (
+                                <span className="text-[10px] font-normal opacity-80">({optP.toLocaleString()}฿)</span>
+                              )}
                             </button>
                           );
                         })}
@@ -520,7 +579,19 @@ export default function ProductsView({
                     <span className="text-[9px] text-slate-400 block leading-none">
                       {product.condition === 'NEW' ? 'ราคาจำหน่าย' : 'ราคามือสอง'}
                     </span>
-                    <span className="text-sm md:text-base font-extrabold text-slate-900">{product.price.toLocaleString()} ฿</span>
+                    <span className="text-sm md:text-base font-extrabold text-slate-900">
+                      {(() => {
+                        if (product.variantOptions && product.variantOptions.length > 1) {
+                          const prices = product.variantOptions.map(v => v.price).filter(p => p > 0);
+                          const minP = Math.min(...prices);
+                          const maxP = Math.max(...prices);
+                          if (minP !== maxP && minP > 0 && maxP > 0) {
+                            return `${minP.toLocaleString()} - ${maxP.toLocaleString()} ฿`;
+                          }
+                        }
+                        return `${product.price.toLocaleString()} ฿`;
+                      })()}
+                    </span>
                   </div>
                   
                   <button
@@ -592,7 +663,7 @@ export default function ProductsView({
                       {selectedProduct.condition === 'NEW' ? 'สินค้าใหม่' : selectedProduct.condition}
                     </span>
                     <span className="absolute top-3 right-12 bg-indigo-600 text-white font-mono font-extrabold text-[11px] px-2.5 py-1 rounded-lg shadow-sm">
-                      +{selectedProduct.bv} BV
+                      +{getOptionBv(selectedProduct, selectedOption)} BV
                     </span>
                   </div>
 
@@ -668,7 +739,7 @@ export default function ProductsView({
                   <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 bg-slate-50 p-3 rounded-xl border border-slate-200 text-xs">
                     <div>
                       <span className="text-slate-400 block text-[10px]">SKU / รหัสสินค้า:</span>
-                      <span className="font-mono font-bold text-slate-800">{selectedProduct.sku || '3070035'}</span>
+                      <span className="font-mono font-bold text-slate-800">{getOptionSku(selectedProduct, selectedOption) || selectedProduct.sku || '3070035'}</span>
                     </div>
                     <div>
                       <span className="text-slate-400 block text-[10px]">น้ำหนัก:</span>
@@ -676,7 +747,7 @@ export default function ProductsView({
                     </div>
                     <div className="col-span-2 sm:col-span-1">
                       <span className="text-slate-400 block text-[10px]">ยอดคะแนนธุรกิจ:</span>
-                      <span className="font-extrabold text-indigo-600 font-mono">+{selectedProduct.bv} BV / ชิ้น</span>
+                      <span className="font-extrabold text-indigo-600 font-mono">+{getOptionBv(selectedProduct, selectedOption)} BV / ชิ้น</span>
                     </div>
                   </div>
 
@@ -708,12 +779,19 @@ export default function ProductsView({
                         {selectedProduct.options.map((opt, i) => {
                           const clean = getCleanOption(opt);
                           const isSelected = selectedOption === opt || getCleanOption(selectedOption) === clean;
+                          const optPrice = getOptionPrice(selectedProduct, opt);
                           return (
                             <button
                               key={i}
                               type="button"
-                              onClick={() => setSelectedOption(opt)}
-                              className={`px-4 py-2 rounded-lg text-xs md:text-sm font-bold transition shadow-xs flex items-center gap-1.5 ${
+                              onClick={() => {
+                                setSelectedOption(opt);
+                                const v = getOptionVariant(selectedProduct, opt);
+                                if (v && v.image) {
+                                  setActivePreviewImage(v.image);
+                                }
+                              }}
+                              className={`px-4 py-2 rounded-lg text-xs md:text-sm font-bold transition shadow-xs flex items-center gap-2 ${
                                 isSelected
                                   ? 'bg-amber-500 text-white border-2 border-amber-500 ring-2 ring-amber-200'
                                   : 'bg-white text-slate-700 border border-slate-300 hover:border-slate-400 hover:bg-slate-50'
@@ -721,6 +799,11 @@ export default function ProductsView({
                             >
                               {isSelected && <Check className="w-3.5 h-3.5 stroke-[3]" />}
                               <span>{clean}</span>
+                              {optPrice > 0 && (
+                                <span className={`text-[11px] font-semibold ${isSelected ? 'text-amber-100' : 'text-amber-600'}`}>
+                                  ({optPrice.toLocaleString()} ฿)
+                                </span>
+                              )}
                             </button>
                           );
                         })}

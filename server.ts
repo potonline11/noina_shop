@@ -163,16 +163,82 @@ function parseCSV(text: string): any[] {
 
   for (const item of results) {
     const key = item.name.trim().toLowerCase();
+
+    // Prepare item's variantOptions if options exist
+    if (item.options && item.options.length > 0) {
+      item.variantOptions = item.options.map((opt: string) => {
+        let optName = opt.trim();
+        let optPrice = item.price;
+        let optBv = item.bv;
+        if (optName.includes(':')) {
+          const parts = optName.split(':');
+          optName = parts[0].trim();
+          const p = parseFloat(parts[1]);
+          if (!isNaN(p) && p > 0) optPrice = p;
+          if (parts[2]) {
+            const b = parseFloat(parts[2]);
+            if (!isNaN(b)) optBv = b;
+          }
+        }
+        return {
+          name: optName,
+          price: optPrice,
+          bv: optBv,
+          stock: item.stock,
+          sku: item.sku,
+          image: item.image
+        };
+      });
+      item.options = item.variantOptions.map((v: any) => v.name);
+    } else {
+      item.variantOptions = [];
+    }
+
     if (nameLookup.has(key)) {
       const existing = nameLookup.get(key);
-      // Merge options (unique)
-      const optSet = new Set<string>(existing.options || []);
-      if (item.options) {
-        for (const opt of item.options) {
-          optSet.add(opt);
+
+      // Ensure existing has variantOptions
+      if (!existing.variantOptions || existing.variantOptions.length === 0) {
+        if (existing.options && existing.options.length > 0) {
+          existing.variantOptions = existing.options.map((opt: string) => ({
+            name: opt,
+            price: existing.price,
+            bv: existing.bv,
+            stock: existing.stock,
+            sku: existing.sku,
+            image: existing.image
+          }));
+        } else {
+          existing.variantOptions = [];
         }
       }
-      existing.options = optSet.size > 0 ? Array.from(optSet) : undefined;
+
+      // Merge item's variantOptions into existing
+      if (item.variantOptions && item.variantOptions.length > 0) {
+        for (const v of item.variantOptions) {
+          const existingIdx = existing.variantOptions.findIndex(
+            (ev: any) => ev.name.toLowerCase() === v.name.toLowerCase()
+          );
+          if (existingIdx === -1) {
+            existing.variantOptions.push(v);
+          } else {
+            // Update with this row's price/bv
+            existing.variantOptions[existingIdx].price = v.price;
+            existing.variantOptions[existingIdx].bv = v.bv;
+            existing.variantOptions[existingIdx].stock = v.stock;
+            if (v.sku) existing.variantOptions[existingIdx].sku = v.sku;
+            if (v.image) existing.variantOptions[existingIdx].image = v.image;
+          }
+        }
+      }
+
+      // Sort variants by price ascending so lowest price displays first
+      if (existing.variantOptions.length > 0) {
+        existing.variantOptions.sort((a: any, b: any) => a.price - b.price);
+        existing.options = existing.variantOptions.map((v: any) => v.name);
+        existing.price = existing.variantOptions[0].price;
+        existing.bv = existing.variantOptions[0].bv;
+      }
 
       // Merge images (unique)
       const existingImgs = existing.images || (existing.image ? [existing.image] : []);
