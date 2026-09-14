@@ -31,39 +31,50 @@ function getCleanSheetUrl(url: string): string {
   return trimmed;
 }
 
-function parseCSVLine(line: string, separator: string): string[] {
-  const cells = [];
-  let currentCell = '';
-  let inQuotes = false;
-  for (let i = 0; i < line.length; i++) {
-    const char = line[i];
-    if (char === '"') {
-      inQuotes = !inQuotes;
-    } else if (char === separator && !inQuotes) {
-      cells.push(currentCell.trim().replace(/^["']|["']$/g, ''));
-      currentCell = '';
-    } else {
-      currentCell += char;
-    }
-  }
-  cells.push(currentCell.trim().replace(/^["']|["']$/g, ''));
-  return cells;
-}
-
 function parseCSV(text: string): any[] {
   if (!text) return [];
   
   // Normalize line endings
   const normalized = text.replace(/\r\n/g, '\n').replace(/\r/g, '\n');
-  const lines = normalized.split('\n');
-  if (lines.length === 0) return [];
-
-  // Determine separator from first line
-  const firstLine = lines[0] || '';
+  const firstLine = normalized.split('\n')[0] || '';
   const separator = firstLine.includes('\t') ? '\t' : ',';
 
-  // Find headers
-  const headerCells = parseCSVLine(firstLine, separator);
+  const rows: string[][] = [];
+  let currentRow: string[] = [];
+  let currentCell = '';
+  let inQuotes = false;
+
+  for (let i = 0; i < normalized.length; i++) {
+    const char = normalized[i];
+    const nextChar = normalized[i + 1];
+
+    if (char === '"') {
+      if (inQuotes && nextChar === '"') {
+        currentCell += '"';
+        i++;
+      } else {
+        inQuotes = !inQuotes;
+      }
+    } else if (char === separator && !inQuotes) {
+      currentRow.push(currentCell.trim());
+      currentCell = '';
+    } else if (char === '\n' && !inQuotes) {
+      currentRow.push(currentCell.trim());
+      rows.push(currentRow);
+      currentRow = [];
+      currentCell = '';
+    } else {
+      currentCell += char;
+    }
+  }
+  if (currentCell || currentRow.length > 0) {
+    currentRow.push(currentCell.trim());
+    rows.push(currentRow);
+  }
+
+  if (rows.length < 2) return [];
+
+  const headerCells = rows[0];
   const colMap: { [key: string]: number } = {};
   
   headerCells.forEach((cell, idx) => {
@@ -71,15 +82,14 @@ function parseCSV(text: string): any[] {
     if (clean.includes('title') || clean.includes('name')) colMap['name'] = idx;
     else if (clean.includes('description') || clean.includes('desc')) colMap['description'] = idx;
     else if (clean.includes('price')) colMap['price'] = idx;
-    else if (clean.includes('bv')) colMap['bv'] = idx;
-    else if (clean.includes('image') || clean.includes('img')) colMap['image'] = idx;
-    else if (clean.includes('category')) colMap['category'] = idx;
+    else if (clean.includes('bv') || clean.includes('point')) colMap['bv'] = idx;
+    else if (clean.includes('image') || clean.includes('img') || clean.includes('photo') || clean.includes('picture')) colMap['image'] = idx;
+    else if (clean.includes('category') || clean.includes('cat')) colMap['category'] = idx;
     else if (clean.includes('brand')) colMap['brand'] = idx;
     else if (clean.includes('condition') || clean.includes('quality')) colMap['condition'] = idx;
-    else if (clean.includes('stock')) colMap['stock'] = idx;
+    else if (clean.includes('stock') || clean.includes('qty')) colMap['stock'] = idx;
   });
 
-  // Fallback defaults
   if (colMap['name'] === undefined) colMap['name'] = 0;
   if (colMap['description'] === undefined) colMap['description'] = 1;
   if (colMap['price'] === undefined) colMap['price'] = 2;
@@ -91,31 +101,41 @@ function parseCSV(text: string): any[] {
   if (colMap['stock'] === undefined) colMap['stock'] = 8;
 
   const results = [];
-  for (let i = 1; i < lines.length; i++) {
-    const line = lines[i].trim();
-    if (!line) continue;
-    
-    const cells = parseCSVLine(line, separator);
-    if (cells.length === 0) continue;
-    if (cells.every(c => !c)) continue;
+  for (let i = 1; i < rows.length; i++) {
+    const cells = rows[i];
+    if (cells.length === 0 || cells.every(c => !c)) continue;
 
-    const name = cells[colMap['name']] || '';
-    if (!name || name.toLowerCase() === 'title' || name.toLowerCase() === 'name') continue;
+    const rawName = (cells[colMap['name']] || '').replace(/^["']|["']$/g, '').trim();
+    if (!rawName || rawName.toLowerCase() === 'title' || rawName.toLowerCase() === 'name') continue;
+    if (rawName.startsWith('<!DOCTYPE') || rawName.startsWith('<html') || rawName.startsWith('<head') || rawName.startsWith('<body')) continue;
 
-    const priceVal = cells[colMap['price']] ? parseFloat(cells[colMap['price']].replace(/[^0-9.]/g, '')) : 0;
-    const bvVal = cells[colMap['bv']] ? parseFloat(cells[colMap['bv']].replace(/[^0-9.]/g, '')) : Math.round(priceVal * 0.1);
+    const priceRaw = (cells[colMap['price']] || '').replace(/[^0-9.]/g, '');
+    const priceVal = parseFloat(priceRaw);
+    if (isNaN(priceVal) || priceVal <= 0) continue; // Require valid positive price
+
+    const bvRaw = (cells[colMap['bv']] || '').replace(/[^0-9.]/g, '');
+    const bvVal = bvRaw ? parseFloat(bvRaw) : Math.round(priceVal * 0.1);
+
+    const stockRaw = (cells[colMap['stock']] || '').replace(/[^0-9]/g, '');
+    const stockVal = stockRaw ? parseInt(stockRaw, 10) : 99;
+
+    const category = (cells[colMap['category']] || 'อุปกรณ์ส่องสว่าง').replace(/^["']|["']$/g, '').trim() || 'อุปกรณ์ส่องสว่าง';
+    const brand = (cells[colMap['brand']] || 'NO BRAND').replace(/^["']|["']$/g, '').trim() || 'NO BRAND';
+    const condition = (cells[colMap['condition']] || 'NEW').replace(/^["']|["']$/g, '').trim() || 'NEW';
+    const image = (cells[colMap['image']] || '').replace(/^["']|["']$/g, '').trim() || 'https://images.unsplash.com/photo-1531297484001-80022131f5a1?auto=format&fit=crop&w=600&q=80';
+    const description = (cells[colMap['description']] || '').replace(/^["']|["']$/g, '').trim() || 'สินค้าคุณภาพพร้อมจัดส่ง';
 
     results.push({
-      id: `sheet-${Date.now()}-${i}-${Math.floor(Math.random() * 100)}`,
-      name: name,
-      description: cells[colMap['description']] || 'สินค้าดึงข้อมูลจาก Google Sheet สำเร็จ',
-      price: isNaN(priceVal) ? 0 : priceVal,
+      id: `sheet-prod-${i}`,
+      name: rawName,
+      description,
+      price: priceVal,
       bv: isNaN(bvVal) ? 0 : bvVal,
-      image: cells[colMap['image']] || 'https://images.unsplash.com/photo-1531297484001-80022131f5a1?auto=format&fit=crop&w=600&q=80',
-      category: (cells[colMap['category']] || 'accessory').toLowerCase(),
-      brand: cells[colMap['brand']] || 'แบรนด์มือสอง',
-      condition: cells[colMap['condition']] || '95% สภาพดี',
-      stock: cells[colMap['stock']] ? parseInt(cells[colMap['stock']].replace(/[^0-9]/g, '')) || 5 : 5,
+      image,
+      category,
+      brand,
+      condition,
+      stock: isNaN(stockVal) ? 99 : stockVal,
       source: 'googlesheet'
     });
   }
@@ -319,6 +339,83 @@ ${productsContext || 'ขณะนี้ไม่มีสินค้าใน�
     } catch (error: any) {
       console.error('Failed to read products-store:', error);
       res.status(500).json({ error: error.message });
+    }
+  });
+
+  // Explicit sync endpoint to force an immediate refresh from Google Sheets
+  app.post('/api/sync-sheet', async (req, res) => {
+    try {
+      const store = await readStore();
+      const targetUrl = req.body?.sheetUrl || store.sheetUrl || 'https://docs.google.com/spreadsheets/d/1UL93q_PpKGlZocvcD6ShLwbDJP-nU1emB5-hvQOLT_A/edit?usp=sharing';
+      const cleanUrl = getCleanSheetUrl(targetUrl);
+
+      const fetchRes = await fetch(cleanUrl);
+      if (!fetchRes.ok) {
+        return res.status(400).json({ success: false, message: `ไม่สามารถดึงข้อมูลได้ (Status: ${fetchRes.status})` });
+      }
+
+      const text = await fetchRes.text();
+      const freshProducts = parseCSV(text);
+
+      if (freshProducts.length === 0) {
+        return res.status(400).json({ success: false, message: 'ไม่พบข้อมูลสินค้าที่ถูกต้องใน Google Sheet' });
+      }
+
+      cachedSheetProducts = freshProducts;
+      lastFetchTime = Date.now();
+      store.sheetUrl = targetUrl;
+      store.products = freshProducts;
+      await writeStore(store);
+
+      console.log(`[Manual Sync] Freshly synced ${freshProducts.length} products from Google Sheet`);
+      res.json({
+        success: true,
+        count: freshProducts.length,
+        products: freshProducts
+      });
+    } catch (error: any) {
+      console.error('Manual sheet sync failed:', error);
+      res.status(500).json({ success: false, message: error.message });
+    }
+  });
+
+  // Download clean CSV endpoint (with UTF-8 BOM for perfect Thai font rendering in Excel/Google Sheets)
+  app.get('/api/export-clean-csv', async (req, res) => {
+    try {
+      const store = await readStore();
+      const prods = store.products || [];
+      const headers = ['Name', 'Description', 'Price', 'BV', 'Image', 'Category', 'Brand', 'Condition', 'Stock'];
+      
+      const escapeCSV = (val: any) => {
+        if (val === undefined || val === null) return '';
+        const str = String(val).replace(/\r\n/g, '\n').replace(/\r/g, '\n');
+        if (str.includes(',') || str.includes('"') || str.includes('\n')) {
+          return '"' + str.replace(/"/g, '""') + '"';
+        }
+        return str;
+      };
+
+      const rows = [headers.join(',')];
+      for (const p of prods) {
+        rows.push([
+          escapeCSV(p.name),
+          escapeCSV(p.description),
+          escapeCSV(p.price),
+          escapeCSV(p.bv),
+          escapeCSV(p.image),
+          escapeCSV(p.category),
+          escapeCSV(p.brand),
+          escapeCSV(p.condition),
+          escapeCSV(p.stock)
+        ].join(','));
+      }
+
+      const csvContent = '\uFEFF' + rows.join('\r\n');
+      res.setHeader('Content-Type', 'text/csv; charset=utf-8');
+      res.setHeader('Content-Disposition', 'attachment; filename="google_sheet_products_clean.csv"');
+      res.send(csvContent);
+    } catch (e: any) {
+      res.status(500).send('Error generating CSV');
     }
   });
 

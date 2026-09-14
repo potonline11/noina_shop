@@ -10,7 +10,7 @@ export interface Product {
   price: number;
   bv: number; // Business Volume / BV Points
   image: string;
-  category: 'smartphone' | 'notebook' | 'accessory' | 'tablet';
+  category: string;
   brand: string;
   condition: string; // e.g., "95% Like New", "98% Excellent"
   stock: number;

@@ -1,31 +1,58 @@
 {
   "sheetUrl": "https://docs.google.com/spreadsheets/d/1UL93q_PpKGlZocvcD6ShLwbDJP-nU1emB5-hvQOLT_A/edit?usp=sharing",
-  "webhookUrl": "https://script.google.com/macros/s/AKfycby5xANGQ2CPtgtemxlGT7Xod6Acq2mvrCiayInWDFAtkQZRDt3oKdjbitwFxtlUxlg/exec",
+  "webhookUrl": "",
+  "logoUrl": "",
   "products": [
     {
-      "id": "sheet-1782700817773-1-37",
-      "name": "TAB 10.1 ANDROID7.1",
-      "description": "<!-- ==========================================\n     ULTRA COMPACT TEMPLATE: Tab 10.1 (Android 7)\n     * บังคับบีบช่องว่างให้ชิดกันทั้งหมด *\n=========================================== -->\n<div style=\"font-family: 'Sarabun', sans-serif; max-width: 550px; margin: 0 auto; background: #0f172a; border-radius: 12px; border: 2px solid #6366f1; box-shadow: 0 10px 25px rgba(99, 102, 241, 0.2); overflow: hidden; color: #f8fafc; line-height: 1.2;\">\n  \n  <!-- Header Section -->\n  <div style=\"background: linear-gradient(135deg, #4f46e5 0%, #312e81 100%); padding: 15px 10px; text-align: center;\">\n    <span style=\"background: #e0e7ff; color: #4338ca; padding: 4px 12px; border-radius: 20px; font-weight: 800; font-size: 11px; margin: 0 0 8px 0; display: inline-block;\">\n      🔥 จอใหญ่สุดคุ้ม!\n    </span>\n    <h2 style=\"margin: 0; padding: 0; font-size: 24px; font-weight: 900; text-transform: uppercase; line-height: 1;\">\n      SAMSUNG TAB 10.1\n    </h2>\n    <div style=\"color: #a5b4fc; font-size: 18px; font-weight: 900; margin: 2px 0 0 0; padding: 0; line-height: 1;\">\n      (ANDROID 7)\n    </div>\n  </div>\n\n  <!-- Key Features Section -->\n  <div style=\"padding: 15px;\">\n    <div style=\"text-align: center; font-size: 16px; font-weight: bold; color: #818cf8; margin: 0 0 10px 0; padding: 0 0 8px 0; border-bottom: 1px solid #1e293b;\">\n      จ่ายหลักร้อย... ได้จอเบิ้มสะใจ!\n    </div>\n    \n    <div style=\"background: #1e293b; padding: 10px; border-radius: 8px; margin: 0 0 8px 0; border-left: 4px solid #6366f1;\">\n      <h4 style=\"margin: 0 0 2px 0; padding: 0; font-size: 14px; color: #c7d2fe; font-weight: bold; line-height: 1.2;\">📺 จอ 10.1 นิ้ว เต็มตาจุใจ</h4>\n      <p style=\"margin: 0; padding: 0; font-size: 12px; color: #cbd5e1; line-height: 1.3;\">ดู YouTube, เรียนออนไลน์ หรือใช้ตั้งเป็นจอ POS หน้าร้านก็คุ้ม</p>\n    </div>\n\n    <div style=\"background: #1e293b; padding: 10px; border-radius: 8px; margin: 0 0 8px 0; border-left: 4px solid #6366f1;\">\n      <h4 style=\"margin: 0 0 2px 0; padding: 0; font-size: 14px; color: #c7d2fe; font-weight: bold; line-height: 1.2;\">🔀 ฟีเจอร์แบ่ง 2 หน้าจอ</h4>\n      <p style=\"margin: 0; padding: 0; font-size: 12px; color: #cbd5e1; line-height: 1.3;\">ความลับของระบบ Android 7 เล่นโซเชียลพร้อมดูคลิปได้ชิลๆ</p>\n    </div>\n\n    <div style=\"background: #1e293b; padding: 10px; border-radius: 8px; margin: 0; border-left: 4px solid #6366f1;\">\n      <h4 style=\"margin: 0 0 2px 0; padding: 0; font-size: 14px; color: #c7d2fe; font-weight: bold; line-height: 1.2;\">💰 โคตรเซฟเงินในกระเป๋า</h4>\n      <p style=\"margin: 0; padding: 0; font-size: 12px; color: #cbd5e1; line-height: 1.3;\">ให้ลูกหลานใช้เล่น ไม่ต้องกลัวพังพ่ายเงินหมื่น ซื้อใช้งานยังไงก็คุ้ม</p>\n    </div>\n  </div>\n\n  <!-- Call to Action Section -->\n  <div style=\"background: #020617; padding: 15px 10px; text-align: center; border-top: 1px solid #1e293b;\">\n    <span style=\"display: inline-block; background: #ef4444; color: #ffffff; padding: 8px 20px; border-radius: 20px; font-size: 18px; font-weight: 900; box-shadow: 0 4px 10px rgba(239, 68, 68, 0.4); margin: 0 0 8px 0; line-height: 1;\">\n      จัดด่วนเพียง xxx บาท!\n    </span>\n    <p style=\"margin: 0; padding: 0; font-size: 12px; color: #94a3b8; line-height: 1.4;\">\n      สภาพสวย คุ้มกว่านี้ไม่มีอีกแล้ว!<br>\n      ส่งตรงจาก <strong>Noina Shop</strong> ทักแชทด่วน\n    </p>\n  </div>\n\n</div>",
-      "price": 759,
-      "bv": 76,
-      "image": "📱",
-      "category": "tablet",
-      "brand": "Samsung",
-      "condition": "75%",
-      "stock": 9,
+      "id": "sheet-prod-1",
+      "name": "DAI_ICHI หลอดไฟ LED A95 Bulb 25W DAI-ICHI ขั้ว E27 แสงDaylight",
+      "description": "DAI_ICHI หลอดไฟ LED A95 Bulb 25W DAI-ICHI ขั้ว E27 แสงDaylight  \n\nรุ่น : LED BULB A95 25W DAYLIGHT\n\nขนาด : 95 x 95 x 163\n\nวิธีใช้\n\n- ใช้ร่วมกับขั้วรับหลอดเกลียว E27 โดยหมุนเกลียวให้สุดแต่พอดี\n\n- ใช้กับแรงดันไฟกระแส 220-240 โวลต์ 50/60 เฮิร์ตซ์\n\n- ควรคำนึงถึงขนาดวัตต์ของหลอดไฟให้เหมาะสมกับโคมและแสงสว่างที่ได้\n\n- ปิดสวิตซ์ทุกครั้งที่ติดตั้ง เปลี่ยน เลิกใช้\n\nข้อแนะนำ\n\n- ควรอ่านคำเตือนและศึกษาวิธีใช้ก่อนใช้งาน\n\nคำเตือน\n\n- ห้ามใช้กับอุปกรณ์หรี่แสงและสวิตซ์เรืิิองแสง\n\n- หลอดไฟไม่มีคุณสมบัติกันน้ำ ห้ามใช้ภายนอกอาคารโดยตรง\n\n- ห้ามใช้กับโคมฝังผ้าที่ปิดทึบ ไม่มีช่องระบายความร้อน",
+      "price": 99,
+      "bv": 10,
+      "image": "https://wbruny6z1studoa4.public.blob.vercel-storage.com/TANARATH/ee0604a2-1cc2-4a7b-82f8-bb5c4ea2cf84.jpg",
+      "category": "อุปกรณ์ส่องสว่าง",
+      "brand": "NO BRAND",
+      "condition": "NEW",
+      "stock": 99,
       "source": "googlesheet"
     },
     {
-      "id": "sheet-1782700817773-2-66",
-      "name": "Galaxy TAB Note8.0 android13",
-      "description": "<!-- ==========================================\n     ULTRA COMPACT TEMPLATE: Note 8.0\n     * แก้ปัญหาระยะห่าง บังคับบีบช่องว่างให้ชิดกัน *\n=========================================== -->\n<div style=\"font-family: 'Sarabun', sans-serif; max-width: 550px; margin: 0 auto; background: #0f172a; border-radius: 12px; border: 2px solid #38bdf8; box-shadow: 0 10px 25px rgba(56, 189, 248, 0.2); overflow: hidden; color: #f8fafc; line-height: 1.2;\">\n  \n  <!-- Header Section -->\n  <div style=\"background: linear-gradient(135deg, #0284c7 0%, #082f49 100%); padding: 15px 10px; text-align: center;\">\n    <span style=\"background: #e0f2fe; color: #0369a1; padding: 4px 12px; border-radius: 20px; font-weight: 800; font-size: 11px; margin: 0 0 8px 0; display: inline-block;\">\n      🔥 RARE ITEM อัปเกรดใหม่!\n    </span>\n    <h2 style=\"margin: 0; padding: 0; font-size: 24px; font-weight: 900; text-transform: uppercase; line-height: 1;\">\n      SAMSUNG NOTE 8.0\n    </h2>\n    <div style=\"color: #7dd3fc; font-size: 18px; font-weight: 900; margin: 2px 0 0 0; padding: 0; line-height: 1;\">\n      (ANDROID 13)\n    </div>\n  </div>\n\n  <!-- Key Features Section -->\n  <div style=\"padding: 15px;\">\n    <div style=\"text-align: center; font-size: 16px; font-weight: bold; color: #38bdf8; margin: 0 0 10px 0; padding: 0 0 8px 0; border-bottom: 1px solid #1e293b;\">\n      งบหลักร้อย... ได้สเปคยุคใหม่!\n    </div>\n    \n    <div style=\"background: #1e293b; padding: 10px; border-radius: 8px; margin: 0 0 8px 0; border-left: 4px solid #38bdf8;\">\n      <h4 style=\"margin: 0 0 2px 0; padding: 0; font-size: 14px; color: #bae6fd; font-weight: bold; line-height: 1.2;\">🤖 คืนชีพด้วย Android 13</h4>\n      <p style=\"margin: 0; padding: 0; font-size: 12px; color: #cbd5e1; line-height: 1.3;\">รันลื่นไหล โหลดแอปยุคใหม่ได้ครบถ้วน</p>\n    </div>\n\n    <div style=\"background: #1e293b; padding: 10px; border-radius: 8px; margin: 0 0 8px 0; border-left: 4px solid #38bdf8;\">\n      <h4 style=\"margin: 0 0 2px 0; padding: 0; font-size: 14px; color: #bae6fd; font-weight: bold; line-height: 1.2;\">✍️ ตำนาน S-Pen</h4>\n      <p style=\"margin: 0; padding: 0; font-size: 12px; color: #cbd5e1; line-height: 1.3;\">จดโน้ต วาดรูป เซ็นเอกสารออนไลน์ แม่นยำ</p>\n    </div>\n\n    <div style=\"background: #1e293b; padding: 10px; border-radius: 8px; margin: 0; border-left: 4px solid #38bdf8;\">\n      <h4 style=\"margin: 0 0 2px 0; padding: 0; font-size: 14px; color: #bae6fd; font-weight: bold; line-height: 1.2;\">📱 ไซส์ 8 นิ้ว ขนาดทองคำ</h4>\n      <p style=\"margin: 0; padding: 0; font-size: 12px; color: #cbd5e1; line-height: 1.3;\">จับถนัดมือเดียว พกพาหรืออ่าน E-book สะดวก</p>\n    </div>\n  </div>\n\n  <!-- Call to Action Section -->\n  <div style=\"background: #020617; padding: 15px 10px; text-align: center; border-top: 1px solid #1e293b;\">\n    <span style=\"display: inline-block; background: #ef4444; color: #ffffff; padding: 8px 20px; border-radius: 20px; font-size: 18px; font-weight: 900; box-shadow: 0 4px 10px rgba(239, 68, 68, 0.4); margin: 0 0 8px 0; line-height: 1;\">\n      จัดด่วนเพียง xxx บาท!\n    </span>\n    <p style=\"margin: 0; padding: 0; font-size: 12px; color: #94a3b8; line-height: 1.4;\">\n      สภาพสวย คุ้มกว่านี้ไม่มีอีกแล้ว!<br>\n      ส่งตรงจาก <strong>Noina Shop</strong> ทักแชทด่วน\n    </p>\n  </div>\n\n</div>",
-      "price": 1149,
-      "bv": 115,
-      "image": "🤖",
-      "category": "tablet",
-      "brand": "Samsung",
-      "condition": "75%",
-      "stock": 9,
+      "id": "sheet-prod-2",
+      "name": "[ แพ็ค10คู่ ] ANB ขั้วแบบบิดล็อค สำหรับหลอดT8 ขั้วรับหลอด G13",
+      "description": "[ แพ็ค10คู่ ]  ANB ขั้วแบบบิดล็อค สำหรับหลอดT8 ขั้วรับหลอด G13\n\n** 10คู่ 20 ชิ้น **\n\n• ANB หัวท้ายนีออน ผลิตจากอลูมิเนียมที่มีคุณภาพดี\n\n• ผ่านกระบวนการผลิตด้วยเครื่องจักรที่ได้มาตรฐานและทันสมัย\n\n• หัวท้ายนีออนรางนีออนใช้งานร่วมกับหลอดไฟ บัสลาสต์และสตาร์ทเตอร์\n\n• สามารถใช้งานได้ง่ายสะดวกต่อการติดตั้ง\n\n• มีความแข็งแรงทนทาน สามารถใช้งานได้ยาวนาน\n\n• มาตราฐาน มอก.TIS 344-2549\n\n----------------------------------------------",
+      "price": 200,
+      "bv": 20,
+      "image": "https://wbruny6z1studoa4.public.blob.vercel-storage.com/TANARATH/e34bf1ba-9695-4c91-8b56-8fc7c5141255.jpg",
+      "category": "อุปกรณ์ส่องสว่าง",
+      "brand": "NO BRAND",
+      "condition": "NEW",
+      "stock": 99,
+      "source": "googlesheet"
+    },
+    {
+      "id": "sheet-prod-3",
+      "name": "เสาไฟถนนสูง (เสา High Mast, เสาไฟไฮแมส) สูง 15 เมตร",
+      "description": "เสาไฟถนนสูง (เสา High Mast, เสาไฟไฮแมส) สูง 15 เมตร\n\n โดยส่วนใหญ่นิยมใช้ติดตั้งบริเวณ\nถนนตามแบบกรมทางหลวง \nกรมโยธาธิการและผังเมือง\nทางแยกต่างระดับ สนามบิน สนามกีฬา \nโรงงานอุตสาหกรรม, เทศบาลและหน่วยงานต่าง ๆ\n สวนสาธารณะ ลานเก็บสินค้า คลังสินค้า ท่าเรือ และลาดจอดรถ หรือสถานที่ตามที่ลูกค้าต้องการ",
+      "price": 170000,
+      "bv": 17000,
+      "image": "https://wbruny6z1studoa4.public.blob.vercel-storage.com/TANARATH/%E0%B9%80%E0%B8%AA%E0%B8%B2_High_Mast_%E0%B8%AA%E0%B8%B9%E0%B8%87_30_%E0%B9%80%E0%B8%A1%E0%B8%95%E0%B8%A3.png",
+      "category": "อุปกรณ์ส่องสว่าง",
+      "brand": "NO BRAND",
+      "condition": "NEW",
+      "stock": 99,
+      "source": "googlesheet"
+    },
+    {
+      "id": "sheet-prod-4",
+      "name": "[ซื้อ 1 แถม 1 ] โคมไฟถนนโซล่าเซลล์ 50W LED SOLAR STREET LIGHT เซ็นเซอร์แสงอาทิตย์และความเคลื่อนไหว ยี่ห้อ LeKise",
+      "description": "[ซื้อ 1 แถม 1 ] โคมไฟถนนโซล่าเซลล์ 50W LED SOLAR STREET LIGHT\n\nเซ็นเซอร์แสงอาทิตย์และความเคลื่อนไหว ยี่ห้อ LeKise (เลคิเซ่)\n\n\n\n* สินค้ามีจำนวนจำกัด * ซื้อ 1 ชุด แถมฟรี 1 ชุด\n\nและฟรี : เสายึดโคม, พุกเหล็ก x 4, ประแจหกเหลี่ยม, รีโมทควบคุมการใช้งาน พร้อมแบตเตอรี่ AAA x 2 ก้อน\n\n\n\nคุณสมบัติ\n\n✅ควบคุมทำงานด้วยรีโมท พร้อมฟังก์ชันเซ็นเซอร์ตรวจจับความสว่างและความเคลื่อนไหว \n\n✅เมื่อถึงเวลากลางคืน โคมไฟจะเปิดไฟระดับความสว่าง  20% อัตโนมัติ และเมื่อตรวจพบความเคลื่อนไหวในระยะ 6-8 เมตร โคมไฟจะปรับระดับความสว่างเป็น 100% อัตโนมัติ และหากไม่พบความเคลื่อนไหว ประมาณ 30 วินาที โคมไฟจะปรับระดับความสว่างกลับมาที่  20% อัตโนมัติเพื่อประหยัดพลังงาน ✅ระยะเวลาการส่องสว่างนานกว่า 12 ชม.*  (หากในระหว่างวันแสงแดดน้อย หมอกปกคลุมหรือฝนตกบ่อย มีสิ่งสกปรกบนแผง อาจจะทำแผงสามารถเก็บพลังงานได้น้อยลง)\n\n\n\nวิธีการใช้งานรีโมท \n\n- ปิด ด้วยปุ่ม OFF\n\n- เปิด ด้วยปุ่ม Auto\n\n-Dim (ระดับความสว่าง 20 % อัตโนมัติ) \n\n- เปิดไฟสว่าง 100% 2 ชั่วโมง ด้วยปุ่ม 2H หลังจากนั้นกลับสู่โหมด Auto-Dim\n\n- เปิดไฟสว่าง 100% 4 ชั่วโมง ด้วยปุ่ม 4H หลังจากนั้นกลับสู่โหมด Auto-Dim\n\n- เปิดไฟสว่าง 100% 6 ชั่วโมง ด้วยปุ่ม 6H หลังจากนั้นกลับสู่โหมด Auto-Dim\n\n- เปิดโหมดไฟสว่าง 100% โดยโคมไฟจะสว่างตอนกลางคืนจนแบตเตอรี่หมด ด้วย ปุ่ม Full Bright \n\n\n\n⚠️คำแนะนำในการใช้งาน⚠️\n\n- โคมไฟถนนพลังงานแสงอาทิตย์ควรติดตั้งบริเวณที่ได้รับแสงแดดตลอดเวลา เพื่อสามารถใช้งานได้อย่างน้อย 12 ชั่วโมง \n\n- ห้ามดัดแปลงหรือใช้ร่วมกับอุปกรณ์ที่ไม่ได้รับมาตรฐาน หรือใช้งานเกินกว่าที่ระบุไว้ในคู่มือผลิตภัณฑ์ - หลีกเลี่ยงบริเวณที่มีความร้อนสูงหรือการกระทบกระเทือนอย่างรุนแรง\n\n- ระมัดระวังไม่ให้แผงโซลาร์เซลล์แตกหรือได้รับความเสียหาย\n\n- ทำความสะอาดแผงโซลาร์เซลล์เมื่อมีคราบฝุ่น เพื่อการทำงานที่มีประสิทธิภาพของแผงโซลาร์เซลล์ \n\n\n\n🔧วิธีการติดตั้ง \n\n1.  ทำการยึดเสาด้วยพุกเหล็กทั้ง 4 จุด บนตำแหน่งที่ต้องการติดตั้ง โดยเลือก ติดตั้งในบริเวณที่แสงอาทิตย์ส่องถึง \n\n2.  หมุนน็อตทั้ง 4 จุดเพื่อถอด ที่ล็อคเสาออกจากตัวสินค้า \n\n3.  นำโคมไฟยึดกับเสากับที่ล็อคเสา ด้วยน็อตทั้ง 4 จุด \n\n4.  ทดสอบการทำงานของโคม การเก็บแบตเตอรี่",
+      "price": 1625,
+      "bv": 162.5,
+      "image": "https://wbruny6z1studoa4.public.blob.vercel-storage.com/TANARATH/4e2765d0-6435-47c2-bb3b-886b98d40237.jpg",
+      "category": "อุปกรณ์ส่องสว่าง",
+      "brand": "NO BRAND",
+      "condition": "NEW",
+      "stock": 99,
       "source": "googlesheet"
     }
   ],
@@ -177,5 +204,36 @@
       "status": "active",
       "role": "member"
     }
-  ]
+  ],
+  "orders": [],
+  "commissionLogs": [
+    {
+      "id": "COM-001",
+      "memberId": "NS001",
+      "type": "sponsor_bonus",
+      "amount": 1800,
+      "bvReference": 1800,
+      "description": "ค่าแนะนำ สมชาย ใจมั่น ซื้อ iPhone 13 Pro",
+      "date": "2026-06-10 14:30"
+    },
+    {
+      "id": "COM-002",
+      "memberId": "NS001",
+      "type": "matching_bonus",
+      "amount": 3600,
+      "bvReference": 4500,
+      "description": "โบนัสจับคู่บาลานซ์ซ้าย-ขวา ประจำรอบสัปดาห์",
+      "date": "2026-06-15 00:00"
+    },
+    {
+      "id": "COM-003",
+      "memberId": "NS002",
+      "type": "sponsor_bonus",
+      "amount": 500,
+      "bvReference": 500,
+      "description": "ค่าแนะนำ วิภา รักษ์ดี ซื้อ AirPods Pro Gen 2",
+      "date": "2026-06-20 16:45"
+    }
+  ],
+  "sellerProducts": []
 }

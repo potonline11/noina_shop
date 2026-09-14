@@ -137,8 +137,8 @@ export default function ProductsView({
     }
   }, [currentUser]);
 
-  // Category labels with icons
-  const categories = [
+  // Category labels with icons (including dynamic categories from Google Sheet)
+  const defaultCategories = [
     { id: 'all', label: 'ทั้งหมด', icon: Layers },
     { id: 'smartphone', label: 'โทรศัพท์มือถือ', icon: Smartphone },
     { id: 'notebook', label: 'โน๊ตบุ๊ค', icon: Laptop },
@@ -146,9 +146,29 @@ export default function ProductsView({
     { id: 'accessory', label: 'อุปกรณ์เสริม', icon: Info },
   ];
 
+  const categories = React.useMemo(() => {
+    const list = [...defaultCategories];
+    const existingIds = new Set(list.map(c => c.id.toLowerCase()));
+    
+    products.forEach(p => {
+      const cat = (p.category || '').trim();
+      if (cat && !existingIds.has(cat.toLowerCase()) && cat.toLowerCase() !== 'all') {
+        existingIds.add(cat.toLowerCase());
+        list.push({
+          id: cat,
+          label: cat,
+          icon: Layers
+        });
+      }
+    });
+    return list;
+  }, [products]);
+
   // Filtering products
   const filteredProducts = products.filter(p => {
-    const matchesCategory = activeCategory === 'all' || p.category === activeCategory;
+    const pCat = (p.category || '').trim().toLowerCase();
+    const activeCat = activeCategory.trim().toLowerCase();
+    const matchesCategory = activeCat === 'all' || pCat === activeCat;
     const matchesSearch = p.name.toLowerCase().includes(searchQuery.toLowerCase()) || 
                           p.brand.toLowerCase().includes(searchQuery.toLowerCase());
     return matchesCategory && matchesSearch;

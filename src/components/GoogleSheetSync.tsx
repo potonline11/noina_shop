@@ -5,7 +5,7 @@
 
 import React, { useState, useRef, useEffect } from 'react';
 import { Product } from '../types';
-import { Database, Link, RefreshCw, CheckCircle, AlertTriangle, FileSpreadsheet, Eye, Code, Save, Mail, Copy, Check, Sparkles } from 'lucide-react';
+import { Database, Link, RefreshCw, CheckCircle, AlertTriangle, FileSpreadsheet, Eye, Code, Save, Mail, Copy, Check, Sparkles, Download } from 'lucide-react';
 import { parseCSV, DEMO_SPREADSHEET_DATA, DEFAULT_SHEET_URL, getCleanSheetUrl, parseSheetData, stripHtml } from '../utils/sheetParser';
 
 interface GoogleSheetSyncProps {
@@ -32,6 +32,41 @@ export default function GoogleSheetSync({ onSyncComplete, currentProductsCount }
     return localStorage.getItem('noina_logo_url') || '';
   });
   const [logoSaveStatus, setLogoSaveStatus] = useState<string>('');
+  const [copiedCleanCsv, setCopiedCleanCsv] = useState(false);
+  const [downloadingCsv, setDownloadingCsv] = useState(false);
+
+  const handleCopyCleanCsv = async () => {
+    try {
+      const res = await fetch('/api/export-clean-csv');
+      const csvText = await res.text();
+      await navigator.clipboard.writeText(csvText.replace(/^\uFEFF/, ''));
+      setCopiedCleanCsv(true);
+      setTimeout(() => setCopiedCleanCsv(false), 3000);
+    } catch (e) {
+      console.error('Failed to copy clean CSV:', e);
+    }
+  };
+
+  const handleDownloadCleanCsv = async () => {
+    try {
+      setDownloadingCsv(true);
+      const res = await fetch('/api/export-clean-csv');
+      const csvText = await res.text();
+      const blob = new Blob([csvText], { type: 'text/csv;charset=utf-8;' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = 'google_sheet_products_clean.csv';
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      setTimeout(() => URL.revokeObjectURL(url), 1000);
+    } catch (e) {
+      console.error('Failed to download clean CSV:', e);
+    } finally {
+      setDownloadingCsv(false);
+    }
+  };
 
   // Fetch configuration on mount to ensure server configuration is in sync
   useEffect(() => {
@@ -275,14 +310,36 @@ export default function GoogleSheetSync({ onSyncComplete, currentProductsCount }
     setPreviewProducts([]);
 
     try {
-      const cleanUrl = getCleanSheetUrl(sheetUrl);
-      const response = await fetch(cleanUrl);
-      if (!response.ok) {
-        throw new Error('ไม่สามารถเข้าถึงลิงก์ Google Sheet นี้ได้ โปรดตรวจสอบความถูกต้องและการเผยแพร่');
+      let products: Product[] = [];
+
+      // 1. Try server-side sync first (bypasses browser CORS restrictions completely)
+      try {
+        const srvRes = await fetch('/api/sync-sheet', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ sheetUrl })
+        });
+        if (srvRes.ok) {
+          const srvData = await srvRes.json();
+          if (srvData.success && srvData.products && srvData.products.length > 0) {
+            products = srvData.products;
+          }
+        }
+      } catch (srvErr) {
+        console.warn('Server-side sync failed, trying client-side fetch...', srvErr);
       }
 
-      const text = await response.text();
-      const products = parseSheetData(text);
+      // 2. Fallback to client-side fetch if needed
+      if (products.length === 0) {
+        const cleanUrl = getCleanSheetUrl(sheetUrl);
+        const response = await fetch(cleanUrl);
+        if (!response.ok) {
+          throw new Error('ไม่สามารถเข้าถึงลิงก์ Google Sheet นี้ได้ โปรดตรวจสอบความถูกต้องและการเผยแพร่');
+        }
+
+        const text = await response.text();
+        products = parseSheetData(text);
+      }
 
       if (products.length === 0) {
         throw new Error('ไม่พบข้อมูลสินค้าที่ถูกต้องในไฟล์ โปรดตรวจสอบว่ามีแถวหัวข้อ (Header) เช่น Title, Description, Price, BV');
@@ -731,6 +788,38 @@ export default function GoogleSheetSync({ onSyncComplete, currentProductsCount }
             </div>
           )}
         </form>
+
+        {/* Clean CSV Download / Quick Copy */}
+        <div className="mt-5 p-4 bg-indigo-50/70 border border-indigo-100 rounded-xl flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+          <div className="flex items-center gap-2.5">
+            <div className="p-2 bg-indigo-100 text-indigo-700 rounded-lg shrink-0">
+              <FileSpreadsheet className="w-5 h-5" />
+            </div>
+            <div>
+              <p className="text-xs font-bold text-indigo-900">Google Sheet / CSV ฉบับแก้ไขเรียบร้อย (4 รายการคลีน)</p>
+              <p className="text-[11px] text-indigo-700">ตัดแถวว่างและจัดระเบียบฟิลด์ข้อความให้เรียบร้อย สามารถดาวน์โหลดไปอัปโหลดทับได้ทันที</p>
+            </div>
+          </div>
+          <div className="flex items-center gap-2 shrink-0">
+            <button
+              type="button"
+              onClick={handleCopyCleanCsv}
+              className="px-3 py-1.5 bg-white hover:bg-slate-50 text-slate-700 border border-slate-200 rounded-lg text-xs font-semibold flex items-center gap-1.5 transition shadow-xs"
+            >
+              {copiedCleanCsv ? <Check className="w-3.5 h-3.5 text-emerald-600" /> : <Copy className="w-3.5 h-3.5" />}
+              {copiedCleanCsv ? 'คัดลอกแล้ว!' : 'คัดลอกข้อมูล'}
+            </button>
+            <button
+              type="button"
+              onClick={handleDownloadCleanCsv}
+              disabled={downloadingCsv}
+              className="px-3.5 py-1.5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg text-xs font-semibold flex items-center gap-1.5 transition shadow-xs disabled:opacity-50"
+            >
+              {downloadingCsv ? <RefreshCw className="w-3.5 h-3.5 animate-spin" /> : <Download className="w-3.5 h-3.5" />}
+              ดาวน์โหลด CSV
+            </button>
+          </div>
+        </div>
 
         {/* Sync Preview Panel */}
         {previewProducts.length > 0 && (

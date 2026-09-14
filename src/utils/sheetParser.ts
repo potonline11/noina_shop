@@ -101,28 +101,27 @@ export const parseHTMLTable = (htmlText: string): Product[] => {
   for (let i = headerIndex + 1; i < rows.length; i++) {
     const cells = Array.from(rows[i].querySelectorAll('td')).map(c => (c.textContent || '').trim());
     if (cells.length === 0) continue;
-    
-    // Skip if row is completely empty
     if (cells.every(c => !c)) continue;
     
     const name = cells[colMap['name']] || '';
-    // Skip header text repeating in data
     if (!name || name.toLowerCase() === 'title' || name.toLowerCase() === 'name') continue;
     
     const priceVal = cells[colMap['price']] ? parseFloat(cells[colMap['price']].replace(/[^0-9.]/g, '')) : 0;
+    if (isNaN(priceVal) || priceVal <= 0) continue;
+
     const bvVal = cells[colMap['bv']] ? parseFloat(cells[colMap['bv']].replace(/[^0-9.]/g, '')) : Math.round(priceVal * 0.1);
 
     results.push({
-      id: `sheet-${Date.now()}-${i}-${Math.floor(Math.random() * 100)}`,
+      id: `sheet-prod-${i}`,
       name: name,
-      description: cells[colMap['description']] || 'สินค้าดึงข้อมูลจาก Google Sheet สำเร็จ',
-      price: isNaN(priceVal) ? 0 : priceVal,
+      description: cells[colMap['description']] || 'สินค้าคุณภาพพร้อมจัดส่ง',
+      price: priceVal,
       bv: isNaN(bvVal) ? 0 : bvVal,
       image: cells[colMap['image']] || 'https://images.unsplash.com/photo-1531297484001-80022131f5a1?auto=format&fit=crop&w=600&q=80',
-      category: (cells[colMap['category']] || 'accessory').toLowerCase() as any,
-      brand: cells[colMap['brand']] || 'แบรนด์มือสอง',
-      condition: cells[colMap['condition']] || '95% สภาพดี',
-      stock: cells[colMap['stock']] ? parseInt(cells[colMap['stock']].replace(/[^0-9]/g, '')) || 5 : 5,
+      category: (cells[colMap['category']] || 'อุปกรณ์ส่องสว่าง').trim(),
+      brand: (cells[colMap['brand']] || 'NO BRAND').trim(),
+      condition: (cells[colMap['condition']] || 'NEW').trim(),
+      stock: cells[colMap['stock']] ? parseInt(cells[colMap['stock']].replace(/[^0-9]/g, '')) || 99 : 99,
       source: 'googlesheet'
     });
   }
@@ -238,19 +237,21 @@ export const parseCSV = (text: string): Product[] => {
         !name.startsWith('<style')) {
       
       const priceVal = row.price ? parseFloat(row.price.replace(/[^0-9.]/g, '')) : 0;
+      if (isNaN(priceVal) || priceVal <= 0) continue;
+
       const bvVal = row.bv ? parseFloat(row.bv.replace(/[^0-9.]/g, '')) : Math.round(priceVal * 0.1);
 
       results.push({
-        id: `sheet-${Date.now()}-${i}-${Math.floor(Math.random() * 100)}`,
+        id: `sheet-prod-${i}`,
         name: name,
-        description: row.description || row.desc || 'สินค้าดึงข้อมูลจาก Google Sheet สำเร็จ',
-        price: isNaN(priceVal) ? 0 : priceVal,
+        description: row.description || row.desc || 'สินค้าคุณภาพพร้อมจัดส่ง',
+        price: priceVal,
         bv: isNaN(bvVal) ? 0 : bvVal,
         image: row.image || row.img || 'https://images.unsplash.com/photo-1531297484001-80022131f5a1?auto=format&fit=crop&w=600&q=80',
-        category: (row.category || 'accessory').toLowerCase() as any,
-        brand: row.brand || 'แบรนด์มือสอง',
-        condition: row.condition || row.quality || '95% สภาพดี',
-        stock: row.stock ? parseInt(row.stock.replace(/[^0-9]/g, '')) || 5 : 5,
+        category: (row.category || 'อุปกรณ์ส่องสว่าง').trim(),
+        brand: (row.brand || 'NO BRAND').trim(),
+        condition: (row.condition || row.quality || 'NEW').trim(),
+        stock: row.stock ? parseInt(row.stock.replace(/[^0-9]/g, '')) || 99 : 99,
         source: 'googlesheet'
       });
     }
