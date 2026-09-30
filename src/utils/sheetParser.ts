@@ -23,12 +23,28 @@ export const getCleanSheetUrl = (url: string): string => {
 };
 
 
-export const DEMO_SPREADSHEET_DATA = `Title,Description,Price,BV,Image,Category,Brand,Condition,Stock
-"iPhone 12 Pro Max 128GB (มือสอง)","สภาพ 94% สุขภาพแบตเตอรี่ 85% กล้องซูมชัด จอแท้เดิม อุปกรณ์เสริมครบชุด",14900,1500,"https://images.unsplash.com/photo-1510557880182-3d4d3cba35a5?auto=format&fit=crop&w=600&q=80",smartphone,Apple,"94% สภาพดีเยี่ยม",6
-"Dell Latitude 7490 Core i5 (มือสอง)","โน๊ตบุ๊คทำงาน น้ำหนักเบา คีย์บอร์ดมีไฟ RAM 16GB SSD 256GB แบตเตอรี่เก็บไฟได้ดีเยี่ยม",8500,900,"https://images.unsplash.com/photo-1588872657578-7efd1f1555ed?auto=format&fit=crop&w=600&q=80",notebook,Dell,"92% แข็งแรงทนทาน",4
-"Apple Watch Series 6 44mm (มือสอง)","สภาพ 95% อลูมิเนียมสีดำ สายยางสปอร์ต แบต 84% เซ็นเซอร์วัดออกซิเจนปกติ ไร้รอยขีดข่วนลึก",5900,600,"https://images.unsplash.com/photo-1434494878577-86c23bcb06b9?auto=format&fit=crop&w=600&q=80",accessory,Apple,"95% สวยงาม",8
-"iPad Air 4 Wi-Fi 64GB (มือสอง)","สภาพสวย 97% สี Sky Blue มีกล่องเดิมแถมเคสแม่เหล็กอย่างดี หน้าจอปุ่มทัชสแกนนิ้วปกติ",12500,1300,"https://images.unsplash.com/photo-1544244015-0df4b3ffc6b0?auto=format&fit=crop&w=600&q=80",tablet,Apple,"97% สภาพสมบูรณ์",3
-"Lenovo ThinkPad X1 Carbon Gen 6 (มือสอง)","โน๊ตบุ๊คเกรดพรีเมียม สภาพสวย 96% จอ IPS คมชัด RAM 8GB SSD 256GB เบาและหรูหรามาก",11900,1200,"https://images.unsplash.com/photo-1593642632823-8f785ba67e45?auto=format&fit=crop&w=600&q=80",notebook,Lenovo,"96% ระดับพรีเมียม",2`;
+export const FACEBOOK_CATALOG_HEADER = 'id,title,description,availability,condition,price,link,image_link,brand,item_group_id,additional_image_link,sale_price,inventory,size,color,product_type,google_product_category,custom_label_0';
+
+export const DEMO_FACEBOOK_SPREADSHEET_DATA = `id,title,description,availability,condition,price,link,image_link,brand,item_group_id,additional_image_link,sale_price,inventory,size,color,product_type,google_product_category,custom_label_0
+"DAI-A95-20W","DAI_ICHI หลอดไฟ LED A95 Bulb DAI-ICHI ขั้ว E27 แสง Daylight","หลอดไฟ LED A95 ขั้ว E27 แสง Daylight ประหยัดพลังงาน มาตรฐาน มอก.","in stock","new","139.00 THB","https://www.noinashop.business","https://wbruny6z1studoa4.public.blob.vercel-storage.com/TANARATH/ee0604a2-1cc2-4a7b-82f8-bb5c4ea2cf84.jpg","DAI_ICHI","GRP-DAI-A95","","","99","20W","Daylight แสงขาว","เครื่องใช้ไฟฟ้า > อุปกรณ์ส่องสว่าง","Hardware > Electrical Supplies","14 BV"
+"DAI-A95-25W","DAI_ICHI หลอดไฟ LED A95 Bulb DAI-ICHI ขั้ว E27 แสง Daylight","หลอดไฟ LED A95 ขั้ว E27 แสง Daylight ประหยัดพลังงาน มาตรฐาน มอก.","in stock","new","259.00 THB","https://www.noinashop.business","https://wbruny6z1studoa4.public.blob.vercel-storage.com/TANARATH/ee0604a2-1cc2-4a7b-82f8-bb5c4ea2cf84.jpg","DAI_ICHI","GRP-DAI-A95","","","99","25W","Daylight แสงขาว","เครื่องใช้ไฟฟ้า > อุปกรณ์ส่องสว่าง","Hardware > Electrical Supplies","26 BV"
+"LEK-BLK-2X4","บล็อกยาง 2x4 และ 4x4 พร้อมเต้ารับกราวด์คู่ LeKise","บล็อกยางคุณภาพสูง ทนต่อแรงกระแทก เต้ารับได้มาตรฐาน มอก.166-2549 ทนทาน ปลอดภัย","in stock","new","189.00 THB","https://www.noinashop.business","https://wbruny6z1studoa4.public.blob.vercel-storage.com/TANARATH/3ef32740-4e03-4a54-9ce7-7719d52703b8.jpg","LeKise","GRP-LEK-BLK","","","99","2 x 4","ดำ","เครื่องใช้ไฟฟ้า > ปลั๊กและบล็อกยาง","Hardware > Electrical Supplies","18.9 BV"
+"LEK-BLK-4X4","บล็อกยาง 2x4 และ 4x4 พร้อมเต้ารับกราวด์คู่ LeKise","บล็อกยางคุณภาพสูง ทนต่อแรงกระแทก เต้ารับได้มาตรฐาน มอก.166-2549 ทนทาน ปลอดภัย","in stock","new","239.00 THB","https://www.noinashop.business","https://wbruny6z1studoa4.public.blob.vercel-storage.com/TANARATH/3ef32740-4e03-4a54-9ce7-7719d52703b8.jpg","LeKise","GRP-LEK-BLK","","","99","4 x 4","ดำ","เครื่องใช้ไฟฟ้า > ปลั๊กและบล็อกยาง","Hardware > Electrical Supplies","23.9 BV"
+"LEK-SOLAR-50W","[ซื้อ 1 แถม 1] โคมไฟถนนโซล่าเซลล์ 50W LED SOLAR STREET LIGHT ยี่ห้อ LeKise","โคมไฟถนนโซล่าเซลล์ 50W เซ็นเซอร์แสงและความเคลื่อนไหว เปิดสว่างตลอดคืน แถมเสาและรีโมท","in stock","new","1625.00 THB","https://www.noinashop.business","https://wbruny6z1studoa4.public.blob.vercel-storage.com/TANARATH/4e2765d0-6435-47c2-bb3b-886b98d40237.jpg","LeKise","","","","99","50W","Daylight แสงขาว","เครื่องใช้ไฟฟ้า > อุปกรณ์โซล่าเซลล์","Hardware > Electrical Supplies","162.5 BV"`;
+
+export const DEMO_SPREADSHEET_DATA = DEMO_FACEBOOK_SPREADSHEET_DATA;
+
+export const parseNumericPrice = (val: any): number => {
+  if (typeof val === 'number') return val;
+  if (!val) return 0;
+  const str = String(val).replace(/,/g, '').trim();
+  const match = str.match(/([0-9]+(?:\.[0-9]+)?)/);
+  if (match) {
+    const num = parseFloat(match[1]);
+    return isNaN(num) ? 0 : num;
+  }
+  return 0;
+};
 
 export const parseHTMLTable = (htmlText: string): Product[] => {
   const parser = new DOMParser();
@@ -42,96 +58,280 @@ export const parseHTMLTable = (htmlText: string): Product[] => {
   let headerIndex = -1;
   let colMap: { [key: string]: number } = {};
   
-  const targetHeaders = ['title', 'name', 'productname', 'description', 'desc', 'price', 'bv', 'image', 'img', 'category', 'brand', 'condition', 'quality', 'stock'];
+  const targetHeaders = ['title', 'name', 'description', 'desc', 'price', 'bv', 'image', 'category', 'brand', 'condition', 'stock', 'size', 'item_group_id', 'custom_label'];
   
   for (let r = 0; r < Math.min(rows.length, 15); r++) {
-    const cells = Array.from(rows[r].querySelectorAll('td, th')).map(c => (c.textContent || '').trim().toLowerCase());
-    // Check if this looks like a header row
-    const matchCount = cells.filter(cell => targetHeaders.some(th => cell.includes(th))).length;
+    const cells = Array.from(rows[r].querySelectorAll('td, th')).map(c => (c.textContent || '').trim());
+    const matchCount = cells.filter(cell => {
+      const lower = cell.toLowerCase().replace(/[^a-z0-9_]/g, '');
+      return targetHeaders.some(th => lower.includes(th));
+    }).length;
+
     if (matchCount >= 2) {
       headerIndex = r;
       cells.forEach((cell, idx) => {
-        // Clean cell text (remove spaces, quotes, non-alphabetic chars)
-        const cleanCell = cell.replace(/[^a-z]/g, '');
-        if (cleanCell.includes('title') || cleanCell.includes('name')) colMap['name'] = idx;
-        else if (cleanCell.includes('description') || cleanCell.includes('desc')) colMap['description'] = idx;
-        else if (cleanCell.includes('price')) colMap['price'] = idx;
-        else if (cleanCell.includes('bv')) colMap['bv'] = idx;
-        else if (cleanCell.includes('image') || cleanCell.includes('img')) colMap['image'] = idx;
-        else if (cleanCell.includes('category')) colMap['category'] = idx;
-        else if (cleanCell.includes('brand')) colMap['brand'] = idx;
-        else if (cleanCell.includes('condition') || cleanCell.includes('quality')) colMap['condition'] = idx;
-        else if (cleanCell.includes('stock')) colMap['stock'] = idx;
+        const raw = cell.trim();
+        const norm = raw.toLowerCase().replace(/[\s\-]+/g, '_').replace(/[^a-z0-9_]/g, '');
+
+        if (norm === 'id' || norm === 'sku' || norm === 'item_id' || norm === 'retailer_id' || raw.includes('รหัสสินค้า')) {
+          if (colMap['id'] === undefined) colMap['id'] = idx;
+        } else if (norm === 'item_group_id' || norm === 'group_id' || norm === 'parent_id' || norm === 'parent_sku' || raw.includes('รหัสกลุ่ม')) {
+          colMap['item_group_id'] = idx;
+        } else if (norm === 'title' || norm === 'name' || norm === 'product_name' || raw.includes('ชื่อสินค้า') || raw.includes('ชื่อ')) {
+          if (colMap['name'] === undefined) colMap['name'] = idx;
+        } else if (norm === 'description' || norm === 'desc' || raw.includes('รายละเอียด')) {
+          if (colMap['description'] === undefined) colMap['description'] = idx;
+        } else if (norm === 'availability' || norm === 'status' || raw.includes('สถานะ')) {
+          colMap['availability'] = idx;
+        } else if (norm === 'condition' || norm === 'quality' || raw.includes('สภาพ')) {
+          colMap['condition'] = idx;
+        } else if (norm === 'sale_price' || norm === 'discount_price' || raw.includes('ราคาโปร') || raw.includes('ราคาลด')) {
+          colMap['sale_price'] = idx;
+        } else if (norm === 'price' || norm === 'regular_price' || raw.includes('ราคา')) {
+          colMap['price'] = idx;
+        } else if (norm === 'additional_image_link' || norm === 'additional_images' || norm === 'extra_images' || norm === 'gallery' || raw.includes('ภาพเพิ่มเติม')) {
+          colMap['additional_image_link'] = idx;
+        } else if (norm === 'image_link' || norm === 'image' || norm === 'img' || norm === 'photo' || raw.includes('รูปภาพ') || raw.includes('ภาพหลัก')) {
+          if (colMap['image'] === undefined) colMap['image'] = idx;
+        } else if (norm === 'link' || norm === 'url' || norm === 'product_link' || raw.includes('ลิงก์')) {
+          colMap['link'] = idx;
+        } else if (norm === 'brand' || raw.includes('แบรนด์') || raw.includes('ยี่ห้อ')) {
+          colMap['brand'] = idx;
+        } else if (norm === 'inventory' || norm === 'quantity_to_sell_on_facebook' || norm === 'stock' || norm === 'qty' || raw.includes('สต็อก') || raw.includes('จำนวน')) {
+          colMap['stock'] = idx;
+        } else if (norm === 'size' || raw.includes('ขนาด')) {
+          colMap['size'] = idx;
+        } else if (norm === 'color' || norm === 'colour' || raw.includes('สี')) {
+          colMap['color'] = idx;
+        } else if (norm === 'custom_label_0' || norm === 'custom_label0' || norm === 'bv' || norm === 'point' || norm === 'points' || raw.includes('คะแนน') || raw.includes('บีวี')) {
+          colMap['bv'] = idx;
+        } else if (norm.startsWith('custom_label')) {
+          if (colMap['bv'] === undefined) colMap['bv'] = idx;
+        } else if (norm === 'product_type' || norm === 'category' || norm === 'cat' || raw.includes('หมวดหมู่')) {
+          colMap['category'] = idx;
+        } else if (norm === 'google_product_category' || norm === 'fb_product_category') {
+          if (colMap['category'] === undefined) colMap['category'] = idx;
+        } else if (norm === 'option' || norm === 'options' || norm === 'variant' || norm === 'variants' || raw.includes('แบบ') || raw.includes('ตัวเลือก') || raw.includes('รุ่น')) {
+          colMap['options'] = idx;
+        }
       });
       break;
     }
   }
   
-  // If we couldn't find a clear header row with keywords, try the first row anyway
   if (headerIndex === -1) {
-    const firstRowCells = Array.from(rows[0].querySelectorAll('td, th')).map(c => (c.textContent || '').trim().toLowerCase());
-    firstRowCells.forEach((cell, idx) => {
-      const cleanCell = cell.replace(/[^a-z]/g, '');
-      if (cleanCell.includes('title') || cleanCell.includes('name')) colMap['name'] = idx;
-      else if (cleanCell.includes('description') || cleanCell.includes('desc')) colMap['description'] = idx;
-      else if (cleanCell.includes('price')) colMap['price'] = idx;
-      else if (cleanCell.includes('bv')) colMap['bv'] = idx;
-      else if (cleanCell.includes('image') || cleanCell.includes('img')) colMap['image'] = idx;
-      else if (cleanCell.includes('category')) colMap['category'] = idx;
-      else if (cleanCell.includes('brand')) colMap['brand'] = idx;
-      else if (cleanCell.includes('condition') || cleanCell.includes('quality')) colMap['condition'] = idx;
-      else if (cleanCell.includes('stock')) colMap['stock'] = idx;
-      else if (cleanCell.includes('option') || cleanCell.includes('variant') || cell.includes('แบบ') || cell.includes('ตัวเลือก') || cell.includes('รุ่น')) colMap['options'] = idx;
-    });
     headerIndex = 0;
+    const firstRowCells = Array.from(rows[0].querySelectorAll('td, th')).map(c => (c.textContent || '').trim());
+    firstRowCells.forEach((cell, idx) => {
+      const raw = cell.trim();
+      const norm = raw.toLowerCase().replace(/[\s\-]+/g, '_').replace(/[^a-z0-9_]/g, '');
+      if (norm.includes('title') || norm.includes('name')) colMap['name'] = idx;
+      else if (norm.includes('desc')) colMap['description'] = idx;
+      else if (norm.includes('price')) colMap['price'] = idx;
+      else if (norm.includes('bv') || norm.includes('point') || norm.includes('label')) colMap['bv'] = idx;
+      else if (norm.includes('img') || norm.includes('image')) colMap['image'] = idx;
+      else if (norm.includes('cat')) colMap['category'] = idx;
+      else if (norm.includes('brand')) colMap['brand'] = idx;
+      else if (norm.includes('stock') || norm.includes('inv')) colMap['stock'] = idx;
+      else if (norm.includes('size')) colMap['size'] = idx;
+    });
   }
   
-  // Defaults if columns still not mapped
   if (colMap['name'] === undefined) colMap['name'] = 0;
-  if (colMap['description'] === undefined) colMap['description'] = 1;
-  if (colMap['price'] === undefined) colMap['price'] = 2;
-  if (colMap['bv'] === undefined) colMap['bv'] = 3;
-  if (colMap['image'] === undefined) colMap['image'] = 4;
-  if (colMap['category'] === undefined) colMap['category'] = 5;
-  if (colMap['brand'] === undefined) colMap['brand'] = 6;
-  if (colMap['condition'] === undefined) colMap['condition'] = 7;
-  if (colMap['stock'] === undefined) colMap['stock'] = 8;
+  if (colMap['description'] === undefined && rows[headerIndex].children.length > 1) colMap['description'] = 1;
+  if (colMap['price'] === undefined && rows[headerIndex].children.length > 2) colMap['price'] = 2;
+  if (colMap['image'] === undefined && rows[headerIndex].children.length > 4) colMap['image'] = 4;
 
-  const results: Product[] = [];
+  const rawRows: any[] = [];
   
   for (let i = headerIndex + 1; i < rows.length; i++) {
     const cells = Array.from(rows[i].querySelectorAll('td')).map(c => (c.textContent || '').trim());
-    if (cells.length === 0) continue;
-    if (cells.every(c => !c)) continue;
+    if (cells.length === 0 || cells.every(c => !c)) continue;
     
     const name = cells[colMap['name']] || '';
     if (!name || name.toLowerCase() === 'title' || name.toLowerCase() === 'name') continue;
     
-    const priceVal = cells[colMap['price']] ? parseFloat(cells[colMap['price']].replace(/[^0-9.]/g, '')) : 0;
-    if (isNaN(priceVal) || priceVal <= 0) continue;
+    const priceVal = colMap['price'] !== undefined ? parseNumericPrice(cells[colMap['price']]) : 0;
+    if (priceVal <= 0) continue;
 
-    const bvVal = cells[colMap['bv']] ? parseFloat(cells[colMap['bv']].replace(/[^0-9.]/g, '')) : Math.round(priceVal * 0.1);
+    const salePriceVal = colMap['sale_price'] !== undefined ? parseNumericPrice(cells[colMap['sale_price']]) : 0;
 
-    const rawOpt = colMap['options'] !== undefined && cells[colMap['options']] ? cells[colMap['options']].trim() : '';
-    const parsedOptions = rawOpt ? rawOpt.split(/[,|/]/).map(s => s.trim()).filter(Boolean) : undefined;
+    let bvVal = 0;
+    if (colMap['bv'] !== undefined && cells[colMap['bv']]) {
+      bvVal = parseNumericPrice(cells[colMap['bv']]);
+    }
+    if (bvVal <= 0 && priceVal > 0) {
+      bvVal = Math.round(priceVal * 0.1);
+    }
 
-    results.push({
-      id: `sheet-prod-${i}`,
-      name: name,
-      description: cells[colMap['description']] || 'สินค้าคุณภาพพร้อมจัดส่ง',
+    let stockVal = 99;
+    if (colMap['stock'] !== undefined && cells[colMap['stock']]) {
+      const parsedStock = parseInt(cells[colMap['stock']].replace(/[^0-9]/g, ''), 10);
+      if (!isNaN(parsedStock)) stockVal = parsedStock;
+    }
+    if (colMap['availability'] !== undefined && cells[colMap['availability']]) {
+      const avail = cells[colMap['availability']].toLowerCase().trim();
+      if (avail === 'out of stock' || avail === 'outofstock' || avail === 'หมด') {
+        stockVal = 0;
+      }
+    }
+
+    const primaryImg = (colMap['image'] !== undefined && cells[colMap['image']])
+      ? cells[colMap['image']].trim()
+      : 'https://images.unsplash.com/photo-1531297484001-80022131f5a1?auto=format&fit=crop&w=600&q=80';
+
+    const additionalImgsRaw = (colMap['additional_image_link'] !== undefined && cells[colMap['additional_image_link']])
+      ? cells[colMap['additional_image_link']].trim()
+      : '';
+
+    const allImgs: string[] = [];
+    if (primaryImg && primaryImg.startsWith('http')) {
+      const splitPrimary = primaryImg.split(/[\n,\|\s]+/).map(s => s.trim()).filter(s => s.startsWith('http'));
+      splitPrimary.forEach(u => { if (!allImgs.includes(u)) allImgs.push(u); });
+    }
+    if (additionalImgsRaw) {
+      const splitAdditional = additionalImgsRaw.split(/[\n,\|\s]+/).map(s => s.trim()).filter(s => s.startsWith('http'));
+      splitAdditional.forEach(u => { if (!allImgs.includes(u)) allImgs.push(u); });
+    }
+    if (allImgs.length === 0) allImgs.push(primaryImg);
+
+    const rowId = (colMap['id'] !== undefined && cells[colMap['id']]) ? cells[colMap['id']].trim() : '';
+    const itemGroupId = (colMap['item_group_id'] !== undefined && cells[colMap['item_group_id']]) ? cells[colMap['item_group_id']].trim() : '';
+    const sizeVal = (colMap['size'] !== undefined && cells[colMap['size']]) ? cells[colMap['size']].trim() : '';
+    const colorVal = (colMap['color'] !== undefined && cells[colMap['color']]) ? cells[colMap['color']].trim() : '';
+
+    let singleRowOptions: string[] | undefined = undefined;
+    if (colMap['options'] !== undefined && cells[colMap['options']]) {
+      const rawOpt = cells[colMap['options']].trim();
+      if (rawOpt) {
+        singleRowOptions = rawOpt.split(/[,|/]/).map(s => s.trim()).filter(Boolean);
+      }
+    }
+
+    let variantLabel = '';
+    if (sizeVal && colorVal) variantLabel = `${sizeVal} / ${colorVal}`;
+    else if (sizeVal) variantLabel = sizeVal;
+    else if (colorVal) variantLabel = colorVal;
+
+    rawRows.push({
+      id: rowId || `sheet-prod-${i}`,
+      itemGroupId,
+      name,
+      description: (colMap['description'] !== undefined && cells[colMap['description']]) ? cells[colMap['description']].trim() : 'สินค้าคุณภาพพร้อมจัดส่ง',
       price: priceVal,
-      bv: isNaN(bvVal) ? 0 : bvVal,
-      image: cells[colMap['image']] || 'https://images.unsplash.com/photo-1531297484001-80022131f5a1?auto=format&fit=crop&w=600&q=80',
-      category: (cells[colMap['category']] || 'อุปกรณ์ส่องสว่าง').trim(),
-      brand: (cells[colMap['brand']] || 'NO BRAND').trim(),
-      condition: (cells[colMap['condition']] || 'NEW').trim(),
-      stock: cells[colMap['stock']] ? parseInt(cells[colMap['stock']].replace(/[^0-9]/g, '')) || 99 : 99,
-      options: parsedOptions && parsedOptions.length > 0 ? parsedOptions : undefined,
+      salePrice: salePriceVal > 0 ? salePriceVal : undefined,
+      bv: bvVal,
+      image: allImgs[0] || primaryImg,
+      images: allImgs,
+      category: (colMap['category'] !== undefined && cells[colMap['category']]) ? cells[colMap['category']].trim() : 'อุปกรณ์ส่องสว่าง',
+      brand: (colMap['brand'] !== undefined && cells[colMap['brand']]) ? cells[colMap['brand']].trim() : 'NO BRAND',
+      condition: (colMap['condition'] !== undefined && cells[colMap['condition']]) ? cells[colMap['condition']].trim() : 'NEW',
+      stock: stockVal,
+      sku: rowId || `SKU-${3070000 + i}`,
+      variantLabel,
+      singleRowOptions,
       source: 'googlesheet'
     });
   }
-  
-  return results;
+
+  // Consolidate variants
+  const consolidated: Product[] = [];
+  const groupLookup = new Map<string, Product>();
+
+  for (const item of rawRows) {
+    const groupKey = item.itemGroupId ? `grp_${item.itemGroupId.toLowerCase()}` : `name_${item.name.toLowerCase()}`;
+
+    let initialVariantOptions: any[] = [];
+    if (item.singleRowOptions && item.singleRowOptions.length > 0) {
+      initialVariantOptions = item.singleRowOptions.map((opt: string) => {
+        let optName = opt.trim();
+        let optPrice = item.price;
+        let optBv = item.bv;
+        if (optName.includes(':')) {
+          const parts = optName.split(':');
+          optName = parts[0].trim();
+          const p = parseNumericPrice(parts[1]);
+          if (p > 0) optPrice = p;
+          if (parts[2]) {
+            const b = parseNumericPrice(parts[2]);
+            if (b > 0) optBv = b;
+          }
+        }
+        return {
+          name: optName,
+          price: optPrice,
+          bv: optBv,
+          stock: item.stock,
+          sku: item.sku,
+          image: item.image
+        };
+      });
+    }
+
+    if (groupLookup.has(groupKey)) {
+      const existing = groupLookup.get(groupKey)!;
+      if (!existing.variantOptions || existing.variantOptions.length === 0) {
+        existing.variantOptions = [{
+          name: (existing as any).firstRowVariantLabel || 'รุ่นมาตรฐาน',
+          price: existing.price,
+          bv: existing.bv,
+          stock: existing.stock,
+          sku: existing.sku,
+          image: existing.image
+        }];
+      }
+
+      const thisVarName = item.variantLabel || `ตัวเลือก ${existing.variantOptions.length + 1}`;
+      const existingIdx = existing.variantOptions.findIndex(ev => ev.name.toLowerCase() === thisVarName.toLowerCase());
+      const newVarObj = {
+        name: thisVarName,
+        price: item.price,
+        bv: item.bv,
+        stock: item.stock,
+        sku: item.sku,
+        image: item.image
+      };
+
+      if (existingIdx === -1) existing.variantOptions.push(newVarObj);
+      else existing.variantOptions[existingIdx] = newVarObj;
+
+      existing.variantOptions.sort((a, b) => a.price - b.price);
+      existing.options = existing.variantOptions.map(v => v.name);
+      existing.price = existing.variantOptions[0].price;
+      existing.bv = existing.variantOptions[0].bv;
+    } else {
+      const newProduct: any = {
+        id: item.id,
+        name: item.name,
+        description: item.description,
+        price: item.price,
+        bv: item.bv,
+        image: item.image,
+        images: item.images,
+        category: item.category,
+        brand: item.brand,
+        condition: item.condition,
+        stock: item.stock,
+        sku: item.sku,
+        firstRowVariantLabel: item.variantLabel,
+        options: item.singleRowOptions && item.singleRowOptions.length > 0 ? item.singleRowOptions : undefined,
+        variantOptions: initialVariantOptions,
+        source: 'googlesheet'
+      };
+
+      if (initialVariantOptions.length > 0) {
+        newProduct.options = initialVariantOptions.map(v => v.name);
+        initialVariantOptions.sort((a, b) => a.price - b.price);
+        newProduct.price = initialVariantOptions[0].price;
+        newProduct.bv = initialVariantOptions[0].bv;
+      }
+
+      groupLookup.set(groupKey, newProduct);
+      consolidated.push(newProduct);
+    }
+  }
+
+  return consolidated;
 };
 
 export const parseSheetData = (text: string): Product[] => {
@@ -212,73 +412,175 @@ export const parseCSV = (text: string): Product[] => {
 
   if (rows.length < 2) return [];
 
-  const headerRow = rows[0];
-  const headers = headerRow.map(h => h.trim().replace(/^"|"$/g, '').toLowerCase());
+  const headerCells = rows[0];
+  const colMap: { [key: string]: number } = {};
+  
+  headerCells.forEach((cell, idx) => {
+    const raw = cell.trim();
+    const norm = raw.toLowerCase().replace(/[\s\-]+/g, '_').replace(/[^a-z0-9_]/g, '');
 
-  const results: Product[] = [];
+    if (norm === 'id' || norm === 'sku' || norm === 'item_id' || norm === 'retailer_id' || raw.includes('รหัสสินค้า')) {
+      if (colMap['id'] === undefined) colMap['id'] = idx;
+    } else if (norm === 'item_group_id' || norm === 'group_id' || norm === 'parent_id' || norm === 'parent_sku' || raw.includes('รหัสกลุ่ม')) {
+      colMap['item_group_id'] = idx;
+    } else if (norm === 'title' || norm === 'name' || norm === 'product_name' || norm === 'productname' || raw.includes('ชื่อสินค้า') || raw.includes('ชื่อ')) {
+      if (colMap['name'] === undefined) colMap['name'] = idx;
+    } else if (norm === 'description' || norm === 'desc' || raw.includes('รายละเอียด')) {
+      if (colMap['description'] === undefined) colMap['description'] = idx;
+    } else if (norm === 'availability' || norm === 'status' || raw.includes('สถานะ')) {
+      colMap['availability'] = idx;
+    } else if (norm === 'condition' || norm === 'quality' || raw.includes('สภาพ')) {
+      colMap['condition'] = idx;
+    } else if (norm === 'sale_price' || norm === 'discount_price' || raw.includes('ราคาโปร') || raw.includes('ราคาลด')) {
+      colMap['sale_price'] = idx;
+    } else if (norm === 'price' || norm === 'regular_price' || raw.includes('ราคา')) {
+      colMap['price'] = idx;
+    } else if (norm === 'additional_image_link' || norm === 'additional_images' || norm === 'extra_images' || norm === 'gallery' || raw.includes('ภาพเพิ่มเติม')) {
+      colMap['additional_image_link'] = idx;
+    } else if (norm === 'image_link' || norm === 'image' || norm === 'img' || norm === 'photo' || raw.includes('รูปภาพ') || raw.includes('ภาพหลัก')) {
+      if (colMap['image'] === undefined) colMap['image'] = idx;
+    } else if (norm === 'link' || norm === 'url' || norm === 'product_link' || raw.includes('ลิงก์')) {
+      colMap['link'] = idx;
+    } else if (norm === 'brand' || raw.includes('แบรนด์') || raw.includes('ยี่ห้อ')) {
+      colMap['brand'] = idx;
+    } else if (norm === 'inventory' || norm === 'quantity_to_sell_on_facebook' || norm === 'stock' || norm === 'qty' || raw.includes('สต็อก') || raw.includes('จำนวน')) {
+      colMap['stock'] = idx;
+    } else if (norm === 'size' || raw.includes('ขนาด')) {
+      colMap['size'] = idx;
+    } else if (norm === 'color' || norm === 'colour' || raw.includes('สี')) {
+      colMap['color'] = idx;
+    } else if (norm === 'custom_label_0' || norm === 'custom_label0' || norm === 'bv' || norm === 'point' || norm === 'points' || raw.includes('คะแนน') || raw.includes('บีวี')) {
+      colMap['bv'] = idx;
+    } else if (norm.startsWith('custom_label')) {
+      if (colMap['bv'] === undefined) colMap['bv'] = idx;
+    } else if (norm === 'product_type' || norm === 'category' || norm === 'cat' || raw.includes('หมวดหมู่')) {
+      colMap['category'] = idx;
+    } else if (norm === 'google_product_category' || norm === 'fb_product_category') {
+      if (colMap['category'] === undefined) colMap['category'] = idx;
+    } else if (norm === 'option' || norm === 'options' || norm === 'variant' || norm === 'variants' || raw.includes('แบบ') || raw.includes('ตัวเลือก') || raw.includes('รุ่น')) {
+      colMap['options'] = idx;
+    }
+  });
+
+  if (colMap['name'] === undefined) colMap['name'] = 0;
+  if (colMap['description'] === undefined && headerCells.length > 1) colMap['description'] = 1;
+  if (colMap['price'] === undefined && headerCells.length > 2) colMap['price'] = 2;
+  if (colMap['image'] === undefined && headerCells.length > 4) colMap['image'] = 4;
+
+  const results: any[] = [];
   
   for (let i = 1; i < rows.length; i++) {
     const cells = rows[i];
     if (cells.length === 0 || cells.every(c => !c)) continue;
 
-    const row: any = {};
-    headers.forEach((header, index) => {
-      let val = cells[index] || '';
-      val = val.replace(/^"|"$/g, '');
-      row[header] = val;
-    });
+    const rawName = (cells[colMap['name']] || '').replace(/^["']|["']$/g, '').trim();
+    if (!rawName || rawName.toLowerCase() === 'title' || rawName.toLowerCase() === 'name') continue;
+    if (rawName.startsWith('<!DOCTYPE') || rawName.startsWith('<html') || rawName.startsWith('<head') || rawName.startsWith('<body') || rawName.startsWith('<style')) continue;
 
-    // Map to Product object
-    const name = row.name || row.title || row.productname || '';
-    
-    // Ignore rows that appear to be parsed from some random HTML webpage wrapper
-    if (name && 
-        name.toLowerCase() !== 'title' && 
-        name.toLowerCase() !== 'name' && 
-        !name.startsWith('<!DOCTYPE') && 
-        !name.startsWith('<html') && 
-        !name.startsWith('<head') && 
-        !name.startsWith('<body') && 
-        !name.startsWith('<style')) {
-      
-      const priceVal = row.price ? parseFloat(row.price.replace(/[^0-9.]/g, '')) : 0;
-      if (isNaN(priceVal) || priceVal <= 0) continue;
+    const priceVal = colMap['price'] !== undefined ? parseNumericPrice(cells[colMap['price']]) : 0;
+    if (priceVal <= 0) continue;
 
-      const bvVal = row.bv ? parseFloat(row.bv.replace(/[^0-9.]/g, '')) : Math.round(priceVal * 0.1);
+    const salePriceVal = colMap['sale_price'] !== undefined ? parseNumericPrice(cells[colMap['sale_price']]) : 0;
 
-      const rawOptions = row.options || row.option || row.variants || row.variant || row['ตัวเลือก'] || row['แบบ'] || row['รุ่น'] || '';
-      const parsedOptions = rawOptions ? rawOptions.split(/[,|/]/).map((s: string) => s.trim()).filter(Boolean) : undefined;
-
-      const rawImg = row.image || row.img || 'https://images.unsplash.com/photo-1531297484001-80022131f5a1?auto=format&fit=crop&w=600&q=80';
-      const imgUrls = rawImg.split(/[\n,\|\s]+/).map((s: string) => s.trim()).filter((s: string) => s.startsWith('http'));
-      const primaryImg = imgUrls[0] || rawImg;
-      const allImgs = imgUrls.length > 0 ? imgUrls : [rawImg];
-
-      results.push({
-        id: `sheet-prod-${i}`,
-        name: name,
-        description: row.description || row.desc || 'สินค้าคุณภาพพร้อมจัดส่ง',
-        price: priceVal,
-        bv: isNaN(bvVal) ? 0 : bvVal,
-        image: primaryImg,
-        images: allImgs,
-        category: (row.category || 'อุปกรณ์ส่องสว่าง').trim(),
-        brand: (row.brand || 'NO BRAND').trim(),
-        condition: (row.condition || row.quality || 'NEW').trim(),
-        stock: row.stock ? parseInt(row.stock.replace(/[^0-9]/g, '')) || 99 : 99,
-        options: parsedOptions && parsedOptions.length > 0 ? parsedOptions : undefined,
-        sku: `SKU-${3070000 + i}`,
-        source: 'googlesheet'
-      });
+    let bvVal = 0;
+    if (colMap['bv'] !== undefined && cells[colMap['bv']]) {
+      bvVal = parseNumericPrice(cells[colMap['bv']]);
     }
+    if (bvVal <= 0 && priceVal > 0) {
+      bvVal = Math.round(priceVal * 0.1);
+    }
+
+    let stockVal = 99;
+    if (colMap['stock'] !== undefined && cells[colMap['stock']]) {
+      const parsedStock = parseInt(String(cells[colMap['stock']]).replace(/[^0-9]/g, ''), 10);
+      if (!isNaN(parsedStock)) stockVal = parsedStock;
+    }
+    if (colMap['availability'] !== undefined && cells[colMap['availability']]) {
+      const avail = cells[colMap['availability']].toLowerCase().trim();
+      if (avail === 'out of stock' || avail === 'outofstock' || avail === 'หมด') {
+        stockVal = 0;
+      }
+    }
+
+    let conditionVal = 'NEW';
+    if (colMap['condition'] !== undefined && cells[colMap['condition']]) {
+      const rawCond = cells[colMap['condition']].replace(/^["']|["']$/g, '').trim();
+      const lowerCond = rawCond.toLowerCase();
+      if (lowerCond === 'new') conditionVal = 'NEW';
+      else if (lowerCond === 'refurbished') conditionVal = 'Refurbished (มือสองสภาพดีเยี่ยม)';
+      else if (lowerCond === 'used' || lowerCond === 'used_good') conditionVal = 'Used (มือสองสภาพดี)';
+      else if (lowerCond === 'used_like_new') conditionVal = 'Used Like New (มือสองสภาพเหมือนใหม่)';
+      else if (lowerCond === 'used_fair') conditionVal = 'Used Fair (มือสองสภาพพอใช้)';
+      else if (rawCond) conditionVal = rawCond;
+    }
+
+    const primaryImg = (colMap['image'] !== undefined && cells[colMap['image']])
+      ? cells[colMap['image']].replace(/^["']|["']$/g, '').trim()
+      : 'https://images.unsplash.com/photo-1531297484001-80022131f5a1?auto=format&fit=crop&w=600&q=80';
+
+    const additionalImgsRaw = (colMap['additional_image_link'] !== undefined && cells[colMap['additional_image_link']])
+      ? cells[colMap['additional_image_link']].replace(/^["']|["']$/g, '').trim()
+      : '';
+
+    const allImgs: string[] = [];
+    if (primaryImg && primaryImg.startsWith('http')) {
+      const splitPrimary = primaryImg.split(/[\n,\|\s]+/).map(s => s.trim()).filter(s => s.startsWith('http'));
+      splitPrimary.forEach(u => { if (!allImgs.includes(u)) allImgs.push(u); });
+    }
+    if (additionalImgsRaw) {
+      const splitAdditional = additionalImgsRaw.split(/[\n,\|\s]+/).map(s => s.trim()).filter(s => s.startsWith('http'));
+      splitAdditional.forEach(u => { if (!allImgs.includes(u)) allImgs.push(u); });
+    }
+    if (allImgs.length === 0) allImgs.push(primaryImg);
+
+    const rowId = (colMap['id'] !== undefined && cells[colMap['id']]) ? cells[colMap['id']].replace(/^["']|["']$/g, '').trim() : '';
+    const itemGroupId = (colMap['item_group_id'] !== undefined && cells[colMap['item_group_id']]) ? cells[colMap['item_group_id']].replace(/^["']|["']$/g, '').trim() : '';
+    const sizeVal = (colMap['size'] !== undefined && cells[colMap['size']]) ? cells[colMap['size']].replace(/^["']|["']$/g, '').trim() : '';
+    const colorVal = (colMap['color'] !== undefined && cells[colMap['color']]) ? cells[colMap['color']].replace(/^["']|["']$/g, '').trim() : '';
+
+    let singleRowOptions: string[] | undefined = undefined;
+    if (colMap['options'] !== undefined && cells[colMap['options']]) {
+      const rawOpt = cells[colMap['options']].replace(/^["']|["']$/g, '').trim();
+      if (rawOpt) {
+        singleRowOptions = rawOpt.split(/[,|/]/).map(s => s.trim()).filter(Boolean);
+      }
+    }
+
+    let variantLabel = '';
+    if (sizeVal && colorVal) variantLabel = `${sizeVal} / ${colorVal}`;
+    else if (sizeVal) variantLabel = sizeVal;
+    else if (colorVal) variantLabel = colorVal;
+
+    results.push({
+      id: rowId || `sheet-prod-${i}`,
+      itemGroupId,
+      name: rawName,
+      description: (colMap['description'] !== undefined && cells[colMap['description']]) ? cells[colMap['description']].replace(/^["']|["']$/g, '').trim() : 'สินค้าคุณภาพพร้อมจัดส่ง',
+      price: priceVal,
+      salePrice: salePriceVal > 0 ? salePriceVal : undefined,
+      bv: bvVal,
+      image: allImgs[0] || primaryImg,
+      images: allImgs,
+      category: (colMap['category'] !== undefined && cells[colMap['category']]) ? cells[colMap['category']].replace(/^["']|["']$/g, '').trim() : 'อุปกรณ์ส่องสว่าง',
+      brand: (colMap['brand'] !== undefined && cells[colMap['brand']]) ? cells[colMap['brand']].replace(/^["']|["']$/g, '').trim() : 'NO BRAND',
+      condition: conditionVal,
+      stock: stockVal,
+      options: singleRowOptions,
+      sku: rowId || `SKU-${3070000 + i}`,
+      variantLabel,
+      singleRowOptions,
+      source: 'googlesheet'
+    });
   }
 
-  // Automatic Consolidation: If products share the exact same name, merge into 1 single product!
+  // Automatic Consolidation: Group by item_group_id (Facebook standard) or product name
   const consolidated: Product[] = [];
-  const nameLookup = new Map<string, Product>();
+  const groupLookup = new Map<string, Product>();
 
   for (const item of results) {
-    const key = item.name.trim().toLowerCase();
+    const groupKey = item.itemGroupId 
+      ? `grp_${item.itemGroupId.trim().toLowerCase()}`
+      : `name_${item.name.trim().toLowerCase()}`;
 
     // Prepare item's variantOptions if options exist
     if (item.options && item.options.length > 0) {
@@ -310,64 +612,84 @@ export const parseCSV = (text: string): Product[] => {
       item.variantOptions = [];
     }
 
-    if (nameLookup.has(key)) {
-      const existing = nameLookup.get(key)!;
+    if (groupLookup.has(groupKey)) {
+      const existing = groupLookup.get(groupKey)!;
 
-      // Ensure existing has variantOptions
       if (!existing.variantOptions || existing.variantOptions.length === 0) {
-        if (existing.options && existing.options.length > 0) {
-          existing.variantOptions = existing.options.map((opt: string) => ({
-            name: opt,
-            price: existing.price,
-            bv: existing.bv,
-            stock: existing.stock,
-            sku: existing.sku,
-            image: existing.image
-          }));
-        } else {
-          existing.variantOptions = [];
-        }
+        existing.variantOptions = [{
+          name: (existing as any).firstRowVariantLabel || "รุ่นมาตรฐาน",
+          price: existing.price,
+          bv: existing.bv,
+          stock: existing.stock,
+          sku: existing.sku,
+          image: existing.image
+        }];
       }
 
-      // Merge item's variantOptions into existing
-      if (item.variantOptions && item.variantOptions.length > 0) {
-        for (const v of item.variantOptions) {
-          const existingIdx = existing.variantOptions.findIndex(
-            (ev) => ev.name.toLowerCase() === v.name.toLowerCase()
-          );
-          if (existingIdx === -1) {
-            existing.variantOptions.push(v);
-          } else {
-            existing.variantOptions[existingIdx].price = v.price;
-            existing.variantOptions[existingIdx].bv = v.bv;
-            existing.variantOptions[existingIdx].stock = v.stock;
-            if (v.sku) existing.variantOptions[existingIdx].sku = v.sku;
-            if (v.image) existing.variantOptions[existingIdx].image = v.image;
-          }
-        }
+      const thisVarName = item.variantLabel || (item.id && item.id !== existing.id ? item.id : "ตัวเลือก " + (existing.variantOptions.length + 1));
+      const existingIdx = existing.variantOptions.findIndex(
+        (ev) => ev.name.toLowerCase() === thisVarName.toLowerCase()
+      );
+
+      const newVarObj = {
+        name: thisVarName,
+        price: item.price,
+        bv: item.bv,
+        stock: item.stock,
+        sku: item.sku,
+        image: item.image
+      };
+
+      if (existingIdx === -1) {
+        existing.variantOptions.push(newVarObj);
+      } else {
+        existing.variantOptions[existingIdx] = newVarObj;
       }
 
-      // Sort variants by price ascending so lowest price displays first
-      if (existing.variantOptions.length > 0) {
-        existing.variantOptions.sort((a, b) => a.price - b.price);
-        existing.options = existing.variantOptions.map((v) => v.name);
-        existing.price = existing.variantOptions[0].price;
-        existing.bv = existing.variantOptions[0].bv;
-      }
-
-      // Merge images
       const existingImgs = existing.images || (existing.image ? [existing.image] : []);
       const itemImgs = item.images || (item.image ? [item.image] : []);
       for (const img of itemImgs) {
-        if (!existingImgs.includes(img)) {
-          existingImgs.push(img);
-        }
+        if (!existingImgs.includes(img)) existingImgs.push(img);
       }
       existing.images = existingImgs;
       existing.image = existingImgs[0] || existing.image;
+
+      existing.variantOptions.sort((a, b) => a.price - b.price);
+      existing.options = existing.variantOptions.map((v) => v.name);
+      existing.price = existing.variantOptions[0].price;
+      existing.bv = existing.variantOptions[0].bv;
+
     } else {
-      nameLookup.set(key, item);
-      consolidated.push(item);
+      const newProduct: any = {
+        id: item.id,
+        itemGroupId: item.itemGroupId,
+        name: item.name,
+        description: item.description,
+        price: item.price,
+        salePrice: item.salePrice,
+        bv: item.bv,
+        image: item.image,
+        images: item.images,
+        category: item.category,
+        brand: item.brand,
+        condition: item.condition,
+        stock: item.stock,
+        sku: item.sku,
+        firstRowVariantLabel: item.variantLabel,
+        options: item.singleRowOptions && item.singleRowOptions.length > 0 ? item.singleRowOptions : undefined,
+        variantOptions: item.variantOptions || [],
+        source: "googlesheet"
+      };
+
+      if (newProduct.variantOptions && newProduct.variantOptions.length > 0) {
+        newProduct.options = newProduct.variantOptions.map((v) => v.name);
+        newProduct.variantOptions.sort((a, b) => a.price - b.price);
+        newProduct.price = newProduct.variantOptions[0].price;
+        newProduct.bv = newProduct.variantOptions[0].bv;
+      }
+
+      groupLookup.set(groupKey, newProduct);
+      consolidated.push(newProduct);
     }
   }
 

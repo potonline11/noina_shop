@@ -5,8 +5,8 @@
 
 import React, { useState, useRef, useEffect } from 'react';
 import { Product } from '../types';
-import { Database, Link, RefreshCw, CheckCircle, AlertTriangle, FileSpreadsheet, Eye, Code, Save, Mail, Copy, Check, Sparkles, Download } from 'lucide-react';
-import { parseCSV, DEMO_SPREADSHEET_DATA, DEFAULT_SHEET_URL, getCleanSheetUrl, parseSheetData, stripHtml } from '../utils/sheetParser';
+import { Database, Link, RefreshCw, CheckCircle, AlertTriangle, FileSpreadsheet, Eye, Code, Save, Mail, Copy, Check, Sparkles, Download, Share2, ExternalLink, Layers, Tag, Globe, ShoppingBag } from 'lucide-react';
+import { parseCSV, DEMO_SPREADSHEET_DATA, DEMO_FACEBOOK_SPREADSHEET_DATA, FACEBOOK_CATALOG_HEADER, DEFAULT_SHEET_URL, getCleanSheetUrl, parseSheetData, stripHtml } from '../utils/sheetParser';
 
 interface GoogleSheetSyncProps {
   onSyncComplete: (products: Product[]) => void;
@@ -22,6 +22,12 @@ export default function GoogleSheetSync({ onSyncComplete, currentProductsCount }
   const [status, setStatus] = useState<{ type: 'idle' | 'success' | 'error'; message: string }>({ type: 'idle', message: '' });
   const [previewProducts, setPreviewProducts] = useState<Product[]>([]);
 
+  // Format selection tab: 'facebook' (recommended for both FB & Noinashop) or 'simple'
+  const [formatTab, setFormatTab] = useState<'facebook' | 'simple'>('facebook');
+  const [copiedFbHeader, setCopiedFbHeader] = useState(false);
+  const [copiedFbFeedUrl, setCopiedFbFeedUrl] = useState(false);
+  const [downloadingFbTemplate, setDownloadingFbTemplate] = useState(false);
+
   // Webhook integration states
   const [webhookUrl, setWebhookUrl] = useState(() => {
     return localStorage.getItem('noina_order_webhook_url') || '';
@@ -34,6 +40,51 @@ export default function GoogleSheetSync({ onSyncComplete, currentProductsCount }
   const [logoSaveStatus, setLogoSaveStatus] = useState<string>('');
   const [copiedCleanCsv, setCopiedCleanCsv] = useState(false);
   const [downloadingCsv, setDownloadingCsv] = useState(false);
+
+  const fbFeedUrl = typeof window !== 'undefined' ? `${window.location.origin}/api/facebook-feed.csv` : 'https://www.noinashop.business/api/facebook-feed.csv';
+
+  const handleCopyFbHeader = async () => {
+    try {
+      // Use tab characters so pasting directly into Google Sheets splits across columns A, B, C... automatically
+      const tabSeparatedHeader = FACEBOOK_CATALOG_HEADER.split(',').join('\t');
+      await navigator.clipboard.writeText(tabSeparatedHeader);
+      setCopiedFbHeader(true);
+      setTimeout(() => setCopiedFbHeader(false), 3000);
+    } catch (e) {
+      console.error('Failed to copy Facebook header:', e);
+    }
+  };
+
+  const handleCopyFbFeedUrl = async () => {
+    try {
+      await navigator.clipboard.writeText(fbFeedUrl);
+      setCopiedFbFeedUrl(true);
+      setTimeout(() => setCopiedFbFeedUrl(false), 3000);
+    } catch (e) {
+      console.error('Failed to copy Facebook feed URL:', e);
+    }
+  };
+
+  const handleDownloadFbTemplate = async () => {
+    try {
+      setDownloadingFbTemplate(true);
+      const res = await fetch('/api/facebook-template.csv');
+      const csvText = await res.text();
+      const blob = new Blob([csvText], { type: 'text/csv;charset=utf-8;' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = 'noinashop_facebook_catalog_template.csv';
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      setTimeout(() => URL.revokeObjectURL(url), 1000);
+    } catch (e) {
+      console.error('Failed to download Facebook template:', e);
+    } finally {
+      setDownloadingFbTemplate(false);
+    }
+  };
 
   const handleCopyCleanCsv = async () => {
     try {
@@ -720,39 +771,283 @@ export default function GoogleSheetSync({ onSyncComplete, currentProductsCount }
     <div className="space-y-6">
       
       {/* SECTION 1: PRODUCTS INVENTORY SYNC */}
-      <div className="bg-white rounded-2xl border border-slate-100 p-6 shadow-sm">
-        <div className="flex items-center gap-3 border-b border-slate-100 pb-4 mb-6">
-          <div className="p-2 bg-emerald-50 rounded-xl text-emerald-600">
-            <FileSpreadsheet className="w-6 h-6" />
+      <div className="bg-white rounded-2xl border border-slate-100 p-6 shadow-sm space-y-6">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-slate-100 pb-5">
+          <div className="flex items-center gap-3">
+            <div className="p-2.5 bg-gradient-to-br from-blue-600 to-indigo-600 rounded-xl text-white shadow-sm">
+              <FileSpreadsheet className="w-6 h-6" />
+            </div>
+            <div>
+              <div className="flex items-center gap-2">
+                <h3 className="text-sm md:text-base font-bold text-slate-800">ระบบดึงข้อมูลสินค้าจาก Google Sheets</h3>
+                <span className="px-2 py-0.5 bg-blue-100 text-blue-800 text-[10px] font-bold rounded-full">
+                  Facebook & Noina Shop Sync
+                </span>
+              </div>
+              <p className="text-[11px] text-slate-500 mt-0.5">
+                รองรับฟอร์แมตมาตรฐาน Facebook Catalog (Meta Commerce Manager) ลงครั้งเดียวขึ้นทั้ง Noinashop และ Facebook Shop
+              </p>
+            </div>
           </div>
-          <div>
-            <h3 className="text-sm md:text-base font-bold text-slate-800">ระบบดึงข้อมูลสินค้าจาก Google Sheets</h3>
-            <p className="text-[11px] text-slate-500 mt-0.5">อัปเดตและซิงก์ข้อมูลสินค้าของร้าน Noinashop แบบเรียลไทม์ได้ทันที</p>
+
+          {/* Format Switcher Tabs */}
+          <div className="flex bg-slate-100 p-1 rounded-xl self-start sm:self-auto text-xs font-semibold">
+            <button
+              type="button"
+              onClick={() => setFormatTab('facebook')}
+              className={`px-3 py-1.5 rounded-lg transition flex items-center gap-1.5 ${
+                formatTab === 'facebook'
+                  ? 'bg-white text-blue-700 shadow-xs font-bold'
+                  : 'text-slate-600 hover:text-slate-900'
+              }`}
+            >
+              <Share2 className="w-3.5 h-3.5 text-blue-600" />
+              ฟอร์แมต Facebook Catalog (แนะนำ)
+            </button>
+            <button
+              type="button"
+              onClick={() => setFormatTab('simple')}
+              className={`px-3 py-1.5 rounded-lg transition flex items-center gap-1.5 ${
+                formatTab === 'simple'
+                  ? 'bg-white text-slate-900 shadow-xs font-bold'
+                  : 'text-slate-600 hover:text-slate-900'
+              }`}
+            >
+              <FileSpreadsheet className="w-3.5 h-3.5 text-slate-500" />
+              แบบดั้งเดิม (Simple)
+            </button>
           </div>
         </div>
 
-        {/* Instructions Guide */}
-        <div className="bg-slate-50 border border-slate-100 rounded-xl p-4 mb-6 text-xs text-slate-600">
-          <h4 className="font-bold text-slate-700 mb-2 flex items-center gap-1">
-            <Database className="w-4 h-4 text-emerald-600" />
-            วิธีการจัดเตรียม Google Sheet เพื่อเผยแพร่สินค้า:
-          </h4>
-          <ol className="list-decimal pl-4 space-y-1.5 leading-relaxed text-[11px]">
-            <li>สร้าง Google Sheet และใส่แถวหัวข้อแรก (แถวที่ 1) ดังนี้: <code className="bg-slate-200 px-1 py-0.5 rounded text-indigo-700 font-mono">Name, Description, Price, BV, Image, Category, Brand, Condition, Stock, Options</code></li>
-            <li>คอลัมน์ <strong>Category</strong>: สามารถระบุหมวดหมู่ เช่น <code className="bg-slate-200 px-1 py-0.5 rounded font-mono">เครื่องใช้ไฟฟ้า</code>, <code className="bg-slate-200 px-1 py-0.5 rounded font-mono">อุปกรณ์ส่องสว่าง</code>, <code className="bg-slate-200 px-1 py-0.5 rounded font-mono">smartphone</code> เป็นต้น</li>
-            <li>คอลัมน์ <strong>Options</strong> (ตัวเลือกเสริม): หากสินค้ามีหลายแบบ/หลายสี ให้ใส่คั่นด้วยจุลภาค เช่น <code className="bg-slate-200 px-1 py-0.5 rounded text-slate-800">แสงขาว (6500K), แสงส้ม (3000K)</code> ลูกค้าจะสามารถกดเลือกแบบก่อนใส่ตะกร้าได้ทันที</li>
-            <li>ไปที่เมนู <strong>ไฟล์ (File)</strong> &gt; <strong>แชร์ (Share)</strong> &gt; <strong>เผยแพร่ทางเว็บ (Publish to web)</strong></li>
-            <li>เลือกประเภทข้อมูลเป็น <strong>ค่าที่คั่นด้วยจุลภาค (.csv)</strong> จากนั้นกดปุ่ม "เผยแพร่"</li>
-            <li>คัดลอกลิงก์ที่ได้ มาวางในช่องกรอกด้านล่างเพื่อทำการดึงข้อมูล</li>
-          </ol>
-        </div>
+        {/* Tab 1: Facebook Catalog Format Guide (Recommended) */}
+        {formatTab === 'facebook' ? (
+          <div className="space-y-4">
+            <div className="bg-gradient-to-br from-blue-50/80 via-indigo-50/50 to-slate-50 border border-blue-200/80 rounded-2xl p-4 sm:p-5 text-slate-700 text-xs shadow-xs space-y-4">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                <div className="flex items-start gap-2.5">
+                  <div className="p-2 bg-blue-600 text-white rounded-xl shadow-xs shrink-0 mt-0.5">
+                    <Share2 className="w-4 h-4" />
+                  </div>
+                  <div>
+                    <h4 className="font-bold text-blue-950 text-xs sm:text-sm">
+                      จัด Google Sheet ให้ตรงกับ Facebook Catalog เพื่อให้ข้อมูลไปโชว์ทั้ง 2 ฝั่ง
+                    </h4>
+                    <p className="text-[11px] text-slate-600 mt-0.5 leading-relaxed">
+                      เมื่อใช้หัวตารางและโครงสร้างตามมาตรฐาน Meta Commerce Manager ข้อมูลสินค้าใน Google Sheet จะดึงเข้าเว็บ Noina Shop พร้อมคำนวณคะแนน BV และสามารถนำลิงก์เดียวกันไปใช้เป็น Data Feed ใน Facebook Shop ได้ทันที!
+                    </p>
+                  </div>
+                </div>
+
+                {/* Action Buttons for Facebook */}
+                <div className="flex flex-wrap items-center gap-2 shrink-0">
+                  <button
+                    type="button"
+                    onClick={handleCopyFbHeader}
+                    className="px-3 py-1.5 bg-white hover:bg-slate-50 text-blue-700 border border-blue-200 rounded-xl text-xs font-semibold flex items-center gap-1.5 transition shadow-xs"
+                    title="คัดลอกแถวหัวตารางไปวางในแถวที่ 1 ของ Google Sheet"
+                  >
+                    {copiedFbHeader ? <Check className="w-3.5 h-3.5 text-emerald-600" /> : <Copy className="w-3.5 h-3.5 text-blue-600" />}
+                    {copiedFbHeader ? 'คัดลอกหัวตารางแล้ว!' : 'คัดลอกหัวตาราง Facebook'}
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={handleDownloadFbTemplate}
+                    disabled={downloadingFbTemplate}
+                    className="px-3.5 py-1.5 bg-blue-600 hover:bg-blue-700 text-white rounded-xl text-xs font-semibold flex items-center gap-1.5 transition shadow-xs disabled:opacity-50"
+                  >
+                    {downloadingFbTemplate ? <RefreshCw className="w-3.5 h-3.5 animate-spin" /> : <Download className="w-3.5 h-3.5" />}
+                    ดาวน์โหลดแม่แบบ (.csv)
+                  </button>
+                </div>
+              </div>
+
+              {/* Facebook Column Header Chips */}
+              <div className="bg-white/90 backdrop-blur-sm p-3.5 rounded-xl border border-blue-100 space-y-2">
+                <span className="block text-[11px] font-bold text-slate-800">
+                  📋 แถวหัวตารางที่ต้องมีใน Google Sheet (แถวที่ 1):
+                </span>
+                <div className="flex flex-wrap gap-1.5 text-[10px] font-mono">
+                  <span className="px-2 py-0.5 bg-blue-100 text-blue-900 font-bold rounded-md">id (รหัสสินค้า)</span>
+                  <span className="px-2 py-0.5 bg-blue-100 text-blue-900 font-bold rounded-md">title (ชื่อสินค้า)</span>
+                  <span className="px-2 py-0.5 bg-blue-100 text-blue-900 font-bold rounded-md">description (รายละเอียด)</span>
+                  <span className="px-2 py-0.5 bg-blue-100 text-blue-900 font-bold rounded-md">availability (in stock / out of stock)</span>
+                  <span className="px-2 py-0.5 bg-blue-100 text-blue-900 font-bold rounded-md">condition (new / refurbished / used)</span>
+                  <span className="px-2 py-0.5 bg-emerald-100 text-emerald-900 font-bold rounded-md">price (ราคา เช่น 99.00 THB)</span>
+                  <span className="px-2 py-0.5 bg-blue-100 text-blue-900 font-bold rounded-md">link (ลิงก์เว็บ)</span>
+                  <span className="px-2 py-0.5 bg-blue-100 text-blue-900 font-bold rounded-md">image_link (ลิงก์รูปหลัก)</span>
+                  <span className="px-2 py-0.5 bg-blue-100 text-blue-900 font-bold rounded-md">brand (ยี่ห้อ)</span>
+                  <span className="px-2 py-0.5 bg-purple-100 text-purple-900 font-bold rounded-md">item_group_id (รหัสกลุ่มตัวเลือก)</span>
+                  <span className="px-2 py-0.5 bg-purple-100 text-purple-900 font-bold rounded-md">size (ขนาด/วัตต์)</span>
+                  <span className="px-2 py-0.5 bg-purple-100 text-purple-900 font-bold rounded-md">color (สี/แสง)</span>
+                  <span className="px-2 py-0.5 bg-blue-100 text-blue-900 font-bold rounded-md">additional_image_link (รูปเสริม)</span>
+                  <span className="px-2 py-0.5 bg-blue-100 text-blue-900 font-bold rounded-md">sale_price (ราคาโปร)</span>
+                  <span className="px-2 py-0.5 bg-blue-100 text-blue-900 font-bold rounded-md">inventory (จำนวนสต็อก)</span>
+                  <span className="px-2 py-0.5 bg-blue-100 text-blue-900 font-bold rounded-md">product_type (หมวดหมู่ร้าน)</span>
+                  <span className="px-2 py-0.5 bg-amber-100 text-amber-900 font-bold rounded-md">custom_label_0 (คะแนน BV)</span>
+                </div>
+              </div>
+
+              {/* Key Features Breakdown for Facebook */}
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-3 text-[11px]">
+                <div className="bg-white/80 p-3 rounded-xl border border-blue-100 space-y-1">
+                  <span className="font-bold text-purple-900 flex items-center gap-1.5">
+                    <Layers className="w-3.5 h-3.5 text-purple-600" />
+                    การรวมตัวเลือก (Variants)
+                  </span>
+                  <p className="text-slate-600 text-[10px] leading-relaxed">
+                    สินค้าที่มีหลายขนาด (เช่น 20W และ 25W หรือ 2x4 และ 4x4) ให้ลงแยกแถวกัน โดยใส่ <code className="bg-purple-50 text-purple-700 px-1 py-0.2 rounded font-mono">item_group_id</code> เหมือนกัน และใส่ขนาดในช่อง <code className="bg-purple-50 text-purple-700 px-1 py-0.2 rounded font-mono">size</code> ระบบจะรวมเป็นการ์ดเดียวกันที่มีปุ่มให้เลือกขนาดพร้อมราคาที่ตรงกันทันที!
+                  </p>
+                </div>
+
+                <div className="bg-white/80 p-3 rounded-xl border border-blue-100 space-y-1">
+                  <span className="font-bold text-amber-900 flex items-center gap-1.5">
+                    <Tag className="w-3.5 h-3.5 text-amber-600" />
+                    คะแนนธุรกิจ BV (Noina Shop)
+                  </span>
+                  <p className="text-slate-600 text-[10px] leading-relaxed">
+                    ใส่คะแนน BV ในช่อง <code className="bg-amber-50 text-amber-800 px-1 py-0.2 rounded font-mono">custom_label_0</code> เช่น <code className="text-slate-800">14 BV</code> หรือ <code className="text-slate-800">14</code> (หรือใส่คอลัมน์ <code className="text-slate-800 font-mono">bv</code> ตรงๆ) ทั้งสองฝั่งจะอ่านได้ถูกต้อง 100%
+                  </p>
+                </div>
+
+                <div className="bg-white/80 p-3 rounded-xl border border-blue-100 space-y-1">
+                  <span className="font-bold text-emerald-900 flex items-center gap-1.5">
+                    <Globe className="w-3.5 h-3.5 text-emerald-600" />
+                    รูปแบบราคาและรูปภาพ
+                  </span>
+                  <p className="text-slate-600 text-[10px] leading-relaxed">
+                    ในช่อง <code className="bg-emerald-50 text-emerald-800 px-1 py-0.2 rounded font-mono">price</code> ใส่ได้ทั้ง <code className="text-slate-800">99.00 THB</code> หรือ <code className="text-slate-800">99 THB</code> ส่วนรูปหลักใส่ใน <code className="text-slate-800 font-mono">image_link</code> และรูปเสริมใส่ใน <code className="text-slate-800 font-mono">additional_image_link</code> คั่นด้วยจุลภาค
+                  </p>
+                </div>
+              </div>
+
+              {/* Sample Data Table Preview */}
+              <div className="bg-white rounded-xl border border-slate-200 overflow-hidden">
+                <div className="bg-slate-100 px-3 py-2 flex items-center justify-between border-b border-slate-200">
+                  <span className="text-[11px] font-bold text-slate-700">ตัวอย่างข้อมูลจริงใน Google Sheet (ตามมาตรฐาน Facebook Catalog):</span>
+                  <span className="text-[10px] text-slate-500">เลื่อนแนวนอนเพื่อดูคอลัมน์ทั้งหมด</span>
+                </div>
+                <div className="overflow-x-auto text-[10px]">
+                  <table className="w-full text-left border-collapse">
+                    <thead>
+                      <tr className="bg-slate-50 text-slate-700 font-bold border-b border-slate-200 whitespace-nowrap">
+                        <th className="p-2 border-r">id</th>
+                        <th className="p-2 border-r">item_group_id</th>
+                        <th className="p-2 border-r">title</th>
+                        <th className="p-2 border-r">size</th>
+                        <th className="p-2 border-r">price</th>
+                        <th className="p-2 border-r">availability</th>
+                        <th className="p-2 border-r">custom_label_0 (BV)</th>
+                        <th className="p-2">image_link</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-slate-150 whitespace-nowrap text-slate-600 font-mono">
+                      <tr className="hover:bg-blue-50/40">
+                        <td className="p-2 font-bold text-blue-700 border-r">DAI-A95-20W</td>
+                        <td className="p-2 text-purple-700 font-bold border-r">GRP-DAI-A95</td>
+                        <td className="p-2 text-slate-800 font-sans border-r">DAI_ICHI หลอดไฟ LED A95 Bulb</td>
+                        <td className="p-2 font-bold text-purple-800 border-r">20W</td>
+                        <td className="p-2 text-emerald-700 font-bold border-r">139.00 THB</td>
+                        <td className="p-2 text-emerald-600 border-r">in stock</td>
+                        <td className="p-2 text-amber-700 font-bold border-r">14 BV</td>
+                        <td className="p-2 truncate max-w-xs text-slate-400 font-sans">https://.../ee0604a2...jpg</td>
+                      </tr>
+                      <tr className="hover:bg-blue-50/40">
+                        <td className="p-2 font-bold text-blue-700 border-r">DAI-A95-25W</td>
+                        <td className="p-2 text-purple-700 font-bold border-r">GRP-DAI-A95</td>
+                        <td className="p-2 text-slate-800 font-sans border-r">DAI_ICHI หลอดไฟ LED A95 Bulb</td>
+                        <td className="p-2 font-bold text-purple-800 border-r">25W</td>
+                        <td className="p-2 text-emerald-700 font-bold border-r">259.00 THB</td>
+                        <td className="p-2 text-emerald-600 border-r">in stock</td>
+                        <td className="p-2 text-amber-700 font-bold border-r">26 BV</td>
+                        <td className="p-2 truncate max-w-xs text-slate-400 font-sans">https://.../ee0604a2...jpg</td>
+                      </tr>
+                      <tr className="hover:bg-blue-50/40 bg-slate-50/50">
+                        <td className="p-2 font-bold text-blue-700 border-r">LEK-BLK-2X4</td>
+                        <td className="p-2 text-purple-700 font-bold border-r">GRP-LEK-BLK</td>
+                        <td className="p-2 text-slate-800 font-sans border-r">บล็อกยางพร้อมเต้ารับกราวด์คู่ LeKise</td>
+                        <td className="p-2 font-bold text-purple-800 border-r">2 x 4</td>
+                        <td className="p-2 text-emerald-700 font-bold border-r">189.00 THB</td>
+                        <td className="p-2 text-emerald-600 border-r">in stock</td>
+                        <td className="p-2 text-amber-700 font-bold border-r">18.9 BV</td>
+                        <td className="p-2 truncate max-w-xs text-slate-400 font-sans">https://.../3ef32740...jpg</td>
+                      </tr>
+                      <tr className="hover:bg-blue-50/40 bg-slate-50/50">
+                        <td className="p-2 font-bold text-blue-700 border-r">LEK-BLK-4X4</td>
+                        <td className="p-2 text-purple-700 font-bold border-r">GRP-LEK-BLK</td>
+                        <td className="p-2 text-slate-800 font-sans border-r">บล็อกยางพร้อมเต้ารับกราวด์คู่ LeKise</td>
+                        <td className="p-2 font-bold text-purple-800 border-r">4 x 4</td>
+                        <td className="p-2 text-emerald-700 font-bold border-r">239.00 THB</td>
+                        <td className="p-2 text-emerald-600 border-r">in stock</td>
+                        <td className="p-2 text-amber-700 font-bold border-r">23.9 BV</td>
+                        <td className="p-2 truncate max-w-xs text-slate-400 font-sans">https://.../3ef32740...jpg</td>
+                      </tr>
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+
+              {/* Step by step to publish and connect */}
+              <div className="pt-2 border-t border-blue-200/60">
+                <span className="block font-bold text-slate-800 mb-2">📌 ขั้นตอนการเชื่อมต่อ Google Sheet เข้ากับ Noina Shop และ Facebook Commerce Manager:</span>
+                <ol className="list-decimal pl-4 space-y-1.5 text-[11px] leading-relaxed text-slate-600">
+                  <li>เปิด Google Sheet ของคุณ และคัดลอกแถวหัวตารางด้านบนไปวางที่แถวที่ 1</li>
+                  <li>กรอกรายการสินค้าของคุณ (ระบุราคาพร้อม <code className="font-mono text-emerald-700">THB</code> และหากมีหลายขนาดให้ใส่ <code className="font-mono text-purple-700">item_group_id</code> เหมือนกัน)</li>
+                  <li>ใน Google Sheet ไปที่เมนู <strong>ไฟล์ (File)</strong> &gt; <strong>แชร์ (Share)</strong> &gt; <strong>เผยแพร่ทางเว็บ (Publish to web)</strong> &gt; เลือกประเภทเป็น <strong>ค่าที่คั่นด้วยจุลภาค (.csv)</strong> แล้วกด "เผยแพร่"</li>
+                  <li>คัดลอกลิงก์ที่ได้มาวางในช่อง <strong>"ลิงก์ Google Sheet"</strong> ด้านล่างนี้ แล้วกดปุ่ม <strong>"ดึงข้อมูล"</strong> เพื่ออัปเดตเว็บ Noina Shop</li>
+                  <li>นำลิงก์เดียวกัน (หรือกดปุ่มคัดลอก Live Feed ด้านล่าง) ไปวางใน <strong>Facebook Commerce Manager</strong> &gt; <strong>Catalog (แคตตาล็อก)</strong> &gt; <strong>Data Sources (แหล่งข้อมูล)</strong> &gt; <strong>Data Feed</strong> สินค้าจะซิงก์ไปแสดงบน Facebook Shop ทันที!</li>
+                </ol>
+              </div>
+
+              {/* Live Facebook Catalog Feed URL Card */}
+              <div className="p-3 bg-white/90 rounded-xl border border-blue-200 flex flex-col sm:flex-row sm:items-center justify-between gap-2.5">
+                <div className="flex items-center gap-2">
+                  <div className="p-1.5 bg-blue-100 text-blue-700 rounded-lg shrink-0">
+                    <ExternalLink className="w-4 h-4" />
+                  </div>
+                  <div className="min-w-0">
+                    <span className="block text-[11px] font-bold text-slate-800">
+                      ลิงก์ Live Facebook Feed URL ของร้านคุณ (ส่งให้ Facebook Commerce Manager ได้โดยตรง):
+                    </span>
+                    <span className="block text-[10px] text-blue-600 truncate font-mono">
+                      {fbFeedUrl}
+                    </span>
+                  </div>
+                </div>
+                <button
+                  type="button"
+                  onClick={handleCopyFbFeedUrl}
+                  className="px-3 py-1.5 bg-blue-50 hover:bg-blue-100 text-blue-700 border border-blue-200 rounded-lg text-xs font-semibold flex items-center gap-1.5 transition shrink-0"
+                >
+                  {copiedFbFeedUrl ? <Check className="w-3.5 h-3.5 text-emerald-600" /> : <Copy className="w-3.5 h-3.5" />}
+                  {copiedFbFeedUrl ? 'คัดลอก Feed URL แล้ว!' : 'คัดลอก Feed URL'}
+                </button>
+              </div>
+            </div>
+          </div>
+        ) : (
+          /* Tab 2: Simple Format Guide (Legacy) */
+          <div className="bg-slate-50 border border-slate-100 rounded-xl p-4 text-xs text-slate-600 space-y-2">
+            <h4 className="font-bold text-slate-700 flex items-center gap-1">
+              <Database className="w-4 h-4 text-emerald-600" />
+              วิธีการจัดเตรียม Google Sheet แบบดั้งเดิม (Simple Format):
+            </h4>
+            <ol className="list-decimal pl-4 space-y-1.5 leading-relaxed text-[11px]">
+              <li>สร้าง Google Sheet และใส่แถวหัวข้อแรก (แถวที่ 1) ดังนี้: <code className="bg-slate-200 px-1 py-0.5 rounded text-indigo-700 font-mono">Name, Description, Price, BV, Image, Category, Brand, Condition, Stock, Options</code></li>
+              <li>คอลัมน์ <strong>Category</strong>: สามารถระบุหมวดหมู่ เช่น <code className="bg-slate-200 px-1 py-0.5 rounded font-mono">เครื่องใช้ไฟฟ้า</code>, <code className="bg-slate-200 px-1 py-0.5 rounded font-mono">อุปกรณ์ส่องสว่าง</code>, <code className="bg-slate-200 px-1 py-0.5 rounded font-mono">smartphone</code> เป็นต้น</li>
+              <li>คอลัมน์ <strong>Options</strong>: ใส่ตัวเลือกคั่นด้วยจุลภาค เช่น <code className="bg-slate-200 px-1 py-0.5 rounded text-slate-800">20W:139:14, 25W:259:26</code> หรือ <code className="bg-slate-200 px-1 py-0.5 rounded text-slate-800">2 x 4, 4 x 4</code></li>
+              <li>ไปที่เมนู <strong>ไฟล์ (File)</strong> &gt; <strong>แชร์ (Share)</strong> &gt; <strong>เผยแพร่ทางเว็บ (Publish to web)</strong> &gt; เลือก <strong>.csv</strong> จากนั้นกดปุ่ม "เผยแพร่"</li>
+              <li>คัดลอกลิงก์ที่ได้ มาวางในช่องกรอกด้านล่างเพื่อทำการดึงข้อมูล</li>
+            </ol>
+          </div>
+        )}
 
         {/* Sync Form */}
         <form onSubmit={handleSync} className="space-y-4">
           <div>
             <label className="block text-xs font-semibold text-slate-700 mb-1.5 flex items-center gap-1">
               <Link className="w-3.5 h-3.5 text-slate-400" />
-              ลิงก์ Google Sheet เว็บแบบ CSV (.csv)
+              ลิงก์ Google Sheet เว็บแบบ CSV (.csv) หรือลิงก์ Google Sheets สาธารณะ
             </label>
             <div className="flex gap-2">
               <input
@@ -760,19 +1055,19 @@ export default function GoogleSheetSync({ onSyncComplete, currentProductsCount }
                 value={sheetUrl}
                 onChange={(e) => setSheetUrl(e.target.value)}
                 placeholder="วางลิงก์ Google Sheet แบบ CSV (.csv) ที่แชร์ต่อสาธารณะแล้ว"
-                className="flex-grow px-3.5 py-2 text-xs rounded-xl border border-slate-300 focus:outline-none focus:ring-1 focus:ring-emerald-500 bg-white"
+                className="flex-grow px-3.5 py-2.5 text-xs rounded-xl border border-slate-300 focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white shadow-2xs"
               />
               <button
                 type="submit"
                 disabled={loading}
-                className="bg-emerald-600 hover:bg-emerald-700 text-white font-semibold text-xs px-4 py-2 rounded-xl transition flex items-center gap-1.5 shrink-0 shadow-sm disabled:opacity-50"
+                className="bg-blue-600 hover:bg-blue-700 text-white font-semibold text-xs px-5 py-2.5 rounded-xl transition flex items-center gap-1.5 shrink-0 shadow-sm disabled:opacity-50"
               >
                 {loading ? (
                   <RefreshCw className="w-3.5 h-3.5 animate-spin" />
                 ) : (
                   <RefreshCw className="w-3.5 h-3.5" />
                 )}
-                ดึงข้อมูล
+                ดึงข้อมูลสินค้า
               </button>
             </div>
           </div>
@@ -791,14 +1086,14 @@ export default function GoogleSheetSync({ onSyncComplete, currentProductsCount }
         </form>
 
         {/* Clean CSV Download / Quick Copy */}
-        <div className="mt-5 p-4 bg-indigo-50/70 border border-indigo-100 rounded-xl flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+        <div className="p-4 bg-indigo-50/70 border border-indigo-100 rounded-xl flex flex-col sm:flex-row sm:items-center justify-between gap-3">
           <div className="flex items-center gap-2.5">
             <div className="p-2 bg-indigo-100 text-indigo-700 rounded-lg shrink-0">
               <FileSpreadsheet className="w-5 h-5" />
             </div>
             <div>
-              <p className="text-xs font-bold text-indigo-900">Google Sheet / CSV ฉบับแก้ไขเรียบร้อย (4 รายการคลีน)</p>
-              <p className="text-[11px] text-indigo-700">ตัดแถวว่างและจัดระเบียบฟิลด์ข้อความให้เรียบร้อย สามารถดาวน์โหลดไปอัปโหลดทับได้ทันที</p>
+              <p className="text-xs font-bold text-indigo-900">Google Sheet / CSV ฉบับแก้ไขเรียบร้อย (คลีนและพร้อมใช้งาน)</p>
+              <p className="text-[11px] text-indigo-700">ตัดแถวว่าง จัดระเบียบตัวเลือก และคำนวณคะแนน BV ให้อัตโนมัติ สามารถดาวน์โหลดไปเปิดใน Excel หรือ Google Sheets ได้ทันที</p>
             </div>
           </div>
           <div className="flex items-center gap-2 shrink-0">
