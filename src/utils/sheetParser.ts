@@ -25,6 +25,39 @@ export const getCleanSheetUrl = (url: string): string => {
 
 export const FACEBOOK_CATALOG_HEADER = 'id,title,description,availability,condition,price,link,image_link,brand,item_group_id,additional_image_link,sale_price,inventory,size,color,product_type,google_product_category,custom_label_0';
 
+export const SHOPEE_MASS_UPLOAD_HEADERS = [
+  'Category',
+  'Product Name',
+  'Product Description',
+  'Maximum Purchase Quantity',
+  'Maximum Purchase Quantity - Start Date',
+  'Maximum Purchase Quantity - Time Period (in Days)',
+  'Maximum Purchase Quantity - End Date',
+  'Minimum Purchase Quantity',
+  'Parent SKU',
+  'Variation Integration No.',
+  'Variation Name 1',
+  'Option for Variation 1',
+  'Image per Variation',
+  'Variation Name 2',
+  'Option for Variation 2',
+  'Price',
+  'Stock',
+  'SKU',
+  'Cover Image',
+  'Image 2',
+  'Image 3',
+  'Image 4',
+  'Image 5',
+  'Weight',
+  'Length',
+  'Width',
+  'Height'
+];
+
+export const SHOPEE_MASS_UPLOAD_HEADER_STRING = SHOPEE_MASS_UPLOAD_HEADERS.join(',');
+export const SHOPEE_MASS_UPLOAD_TSV_STRING = SHOPEE_MASS_UPLOAD_HEADERS.join('\t');
+
 export const DEMO_FACEBOOK_SPREADSHEET_DATA = `id,title,description,availability,condition,price,link,image_link,brand,item_group_id,additional_image_link,sale_price,inventory,size,color,product_type,google_product_category,custom_label_0
 "DAI-A95-20W","DAI_ICHI หลอดไฟ LED A95 Bulb DAI-ICHI ขั้ว E27 แสง Daylight","หลอดไฟ LED A95 ขั้ว E27 แสง Daylight ประหยัดพลังงาน มาตรฐาน มอก.","in stock","new","139.00 THB","https://www.noinashop.business","https://wbruny6z1studoa4.public.blob.vercel-storage.com/TANARATH/ee0604a2-1cc2-4a7b-82f8-bb5c4ea2cf84.jpg","DAI_ICHI","GRP-DAI-A95","","","99","20W","Daylight แสงขาว","เครื่องใช้ไฟฟ้า > อุปกรณ์ส่องสว่าง","Hardware > Electrical Supplies","14 BV"
 "DAI-A95-25W","DAI_ICHI หลอดไฟ LED A95 Bulb DAI-ICHI ขั้ว E27 แสง Daylight","หลอดไฟ LED A95 ขั้ว E27 แสง Daylight ประหยัดพลังงาน มาตรฐาน มอก.","in stock","new","259.00 THB","https://www.noinashop.business","https://wbruny6z1studoa4.public.blob.vercel-storage.com/TANARATH/ee0604a2-1cc2-4a7b-82f8-bb5c4ea2cf84.jpg","DAI_ICHI","GRP-DAI-A95","","","99","25W","Daylight แสงขาว","เครื่องใช้ไฟฟ้า > อุปกรณ์ส่องสว่าง","Hardware > Electrical Supplies","26 BV"

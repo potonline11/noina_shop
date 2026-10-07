@@ -6,7 +6,7 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { Product } from '../types';
 import { Database, Link, RefreshCw, CheckCircle, AlertTriangle, FileSpreadsheet, Eye, Code, Save, Mail, Copy, Check, Sparkles, Download, Share2, ExternalLink, Layers, Tag, Globe, ShoppingBag } from 'lucide-react';
-import { parseCSV, DEMO_SPREADSHEET_DATA, DEMO_FACEBOOK_SPREADSHEET_DATA, FACEBOOK_CATALOG_HEADER, DEFAULT_SHEET_URL, getCleanSheetUrl, parseSheetData, stripHtml } from '../utils/sheetParser';
+import { parseCSV, DEMO_SPREADSHEET_DATA, DEMO_FACEBOOK_SPREADSHEET_DATA, FACEBOOK_CATALOG_HEADER, SHOPEE_MASS_UPLOAD_HEADERS, SHOPEE_MASS_UPLOAD_TSV_STRING, DEFAULT_SHEET_URL, getCleanSheetUrl, parseSheetData, stripHtml } from '../utils/sheetParser';
 
 interface GoogleSheetSyncProps {
   onSyncComplete: (products: Product[]) => void;
@@ -22,11 +22,16 @@ export default function GoogleSheetSync({ onSyncComplete, currentProductsCount }
   const [status, setStatus] = useState<{ type: 'idle' | 'success' | 'error'; message: string }>({ type: 'idle', message: '' });
   const [previewProducts, setPreviewProducts] = useState<Product[]>([]);
 
-  // Format selection tab: 'facebook' (recommended for both FB & Noinashop) or 'simple'
-  const [formatTab, setFormatTab] = useState<'facebook' | 'simple'>('facebook');
+  // Format selection tab: 'facebook' (recommended for FB & Noinashop), 'shopee' (Multi-sheet for Shopee), or 'simple'
+  const [formatTab, setFormatTab] = useState<'facebook' | 'shopee' | 'simple'>('facebook');
   const [copiedFbHeader, setCopiedFbHeader] = useState(false);
   const [copiedFbFeedUrl, setCopiedFbFeedUrl] = useState(false);
   const [downloadingFbTemplate, setDownloadingFbTemplate] = useState(false);
+
+  // Shopee Multi-Sheet integration states
+  const [copiedShopeeHeader, setCopiedShopeeHeader] = useState(false);
+  const [copiedShopeeFormula, setCopiedShopeeFormula] = useState(false);
+  const [downloadingShopeeCsv, setDownloadingShopeeCsv] = useState(false);
 
   // Webhook integration states
   const [webhookUrl, setWebhookUrl] = useState(() => {
@@ -116,6 +121,79 @@ export default function GoogleSheetSync({ onSyncComplete, currentProductsCount }
       console.error('Failed to download clean CSV:', e);
     } finally {
       setDownloadingCsv(false);
+    }
+  };
+
+  const handleCopyShopeeHeader = async () => {
+    try {
+      await navigator.clipboard.writeText(SHOPEE_MASS_UPLOAD_TSV_STRING);
+      setCopiedShopeeHeader(true);
+      setTimeout(() => setCopiedShopeeHeader(false), 3000);
+    } catch (e) {
+      console.error('Failed to copy Shopee header:', e);
+    }
+  };
+
+  const handleCopyShopeeFormula = async () => {
+    try {
+      // Row formula for Shopee sheet that references the Products sheet directly:
+      // Category, Product Name, Product Description, MaxPQ, MaxPQStart, MaxPQPeriod, MaxPQEnd, MinPQ, ParentSKU, VarIntegration, VarName1, Option1, VarImg, VarName2, Option2, Price, Stock, SKU, CoverImg, Img2, Img3, Img4, Img5, Weight, Length, Width, Height
+      const formulaRow = [
+        '', // Category (Optional)
+        '=Products!A2', // Product Name (Col A of Products)
+        '=Products!B2', // Product Description (Col B of Products)
+        '', // Max Purchase Qty
+        '', // MaxPQ Start Date
+        '', // MaxPQ Period
+        '', // MaxPQ End Date
+        '1', // Min Purchase Qty
+        '=Products!M2', // Parent SKU (Col M of Products)
+        '=IF(Products!J2<>"","GRP-"&Products!M2,"")', // Variation Integration No.
+        '=IF(Products!J2<>"","ขนาด/รุ่น","")', // Variation Name 1
+        '=Products!J2', // Option for Variation 1 (Col J of Products)
+        '=Products!E2', // Image per Variation
+        '', // Variation Name 2
+        '', // Option for Variation 2
+        '=Products!C2', // Price (Col C of Products)
+        '=Products!I2', // Stock (Col I of Products)
+        '=Products!M2', // SKU
+        '=Products!E2', // Cover Image (Col E of Products)
+        '', // Image 2
+        '', // Image 3
+        '', // Image 4
+        '', // Image 5
+        '0.5', // Weight (kg)
+        '10', // Length (cm)
+        '10', // Width (cm)
+        '10' // Height (cm)
+      ].join('\t');
+
+      await navigator.clipboard.writeText(formulaRow);
+      setCopiedShopeeFormula(true);
+      setTimeout(() => setCopiedShopeeFormula(false), 3000);
+    } catch (e) {
+      console.error('Failed to copy Shopee formula:', e);
+    }
+  };
+
+  const handleDownloadShopeeCsv = async () => {
+    try {
+      setDownloadingShopeeCsv(true);
+      const res = await fetch('/api/shopee-mass-upload.csv');
+      const csvText = await res.text();
+      const blob = new Blob([csvText], { type: 'text/csv;charset=utf-8;' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = 'Shopee_mass_upload_template.csv';
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      setTimeout(() => URL.revokeObjectURL(url), 1000);
+    } catch (e) {
+      console.error('Failed to download Shopee CSV:', e);
+    } finally {
+      setDownloadingShopeeCsv(false);
     }
   };
 
@@ -791,7 +869,7 @@ export default function GoogleSheetSync({ onSyncComplete, currentProductsCount }
           </div>
 
           {/* Format Switcher Tabs */}
-          <div className="flex bg-slate-100 p-1 rounded-xl self-start sm:self-auto text-xs font-semibold">
+          <div className="flex flex-wrap bg-slate-100 p-1 rounded-xl self-start sm:self-auto text-xs font-semibold gap-1">
             <button
               type="button"
               onClick={() => setFormatTab('facebook')}
@@ -803,6 +881,18 @@ export default function GoogleSheetSync({ onSyncComplete, currentProductsCount }
             >
               <Share2 className="w-3.5 h-3.5 text-blue-600" />
               ฟอร์แมต Facebook Catalog (แนะนำ)
+            </button>
+            <button
+              type="button"
+              onClick={() => setFormatTab('shopee')}
+              className={`px-3 py-1.5 rounded-lg transition flex items-center gap-1.5 ${
+                formatTab === 'shopee'
+                  ? 'bg-white text-orange-600 shadow-xs font-bold'
+                  : 'text-slate-600 hover:text-slate-900'
+              }`}
+            >
+              <ShoppingBag className="w-3.5 h-3.5 text-orange-500" />
+              ฟอร์แมต Shopee (Multi-Sheet)
             </button>
             <button
               type="button"
@@ -1023,10 +1113,234 @@ export default function GoogleSheetSync({ onSyncComplete, currentProductsCount }
                   {copiedFbFeedUrl ? 'คัดลอก Feed URL แล้ว!' : 'คัดลอก Feed URL'}
                 </button>
               </div>
+
+              {/* Meta Pixel Integration Status Badge */}
+              <div className="p-3.5 bg-gradient-to-r from-blue-900 to-indigo-900 text-white rounded-xl shadow-xs space-y-2.5">
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+                  <div className="flex items-center gap-2">
+                    <span className="w-2.5 h-2.5 rounded-full bg-emerald-400 animate-pulse"></span>
+                    <span className="text-xs font-bold text-white tracking-wide">
+                      Meta Pixel เชื่อมต่อและทำงานแล้วในเว็บ
+                    </span>
+                    <span className="text-[10px] bg-blue-700/80 px-2 py-0.5 rounded-full text-blue-100 font-mono">
+                      Pixel ID: 595969138811921
+                    </span>
+                  </div>
+                  <span className="text-[10px] text-emerald-300 font-medium flex items-center gap-1">
+                    <CheckCircle className="w-3 h-3 text-emerald-400" /> สถานะพร้อมรับเหตุการณ์ (Active)
+                  </span>
+                </div>
+                <div className="grid grid-cols-2 sm:grid-cols-5 gap-1.5 text-[10px] text-slate-200">
+                  <div className="bg-white/10 px-2 py-1 rounded-md text-center">
+                    <span className="text-emerald-300 font-semibold">✓ PageView</span>
+                    <span className="block text-[9px] text-slate-300">ทุกหน้าเว็บ</span>
+                  </div>
+                  <div className="bg-white/10 px-2 py-1 rounded-md text-center">
+                    <span className="text-emerald-300 font-semibold">✓ ViewContent</span>
+                    <span className="block text-[9px] text-slate-300">เมื่อดูสินค้า</span>
+                  </div>
+                  <div className="bg-white/10 px-2 py-1 rounded-md text-center">
+                    <span className="text-emerald-300 font-semibold">✓ AddToCart</span>
+                    <span className="block text-[9px] text-slate-300">ลงตะกร้า</span>
+                  </div>
+                  <div className="bg-white/10 px-2 py-1 rounded-md text-center">
+                    <span className="text-emerald-300 font-semibold">✓ Purchase</span>
+                    <span className="block text-[9px] text-slate-300">เมื่อสั่งซื้อ</span>
+                  </div>
+                  <div className="bg-white/10 px-2 py-1 rounded-md text-center col-span-2 sm:col-span-1">
+                    <span className="text-emerald-300 font-semibold">✓ Lead</span>
+                    <span className="block text-[9px] text-slate-300">สมัครสมาชิก</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        ) : formatTab === 'shopee' ? (
+          /* Tab 2: Shopee Multi-Sheet Format Guide */
+          <div className="space-y-4">
+            <div className="bg-gradient-to-br from-orange-50/90 via-amber-50/60 to-white border border-orange-200 rounded-2xl p-4 sm:p-5 text-slate-700 text-xs shadow-xs space-y-4">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                <div className="flex items-start gap-2.5">
+                  <div className="p-2 bg-gradient-to-br from-orange-500 to-amber-600 text-white rounded-xl shadow-xs shrink-0 mt-0.5">
+                    <ShoppingBag className="w-4 h-4" />
+                  </div>
+                  <div>
+                    <h4 className="font-bold text-orange-950 text-xs sm:text-sm">
+                      ระบบ Multi-Sheet ใช้งานร่วมกับ Shopee (Shopee Mass Upload Template)
+                    </h4>
+                    <p className="text-[11px] text-slate-600 mt-0.5 leading-relaxed">
+                      ลงข้อมูลที่แท็บ <strong className="text-slate-800">Products</strong> แค่ที่เดียว จากนั้นสร้างแท็บ <strong className="text-orange-700">Shopee</strong> ขึ้นมาเชื่อมโยงด้วยสูตร ข้อมูลจะแปลงเป็นแบบฟอร์ม Shopee อัตโนมัติ พร้อมดาวน์โหลดไปอัปโหลดเข้า Shopee Seller Centre ทันที!
+                    </p>
+                  </div>
+                </div>
+
+                {/* Action Buttons for Shopee */}
+                <div className="flex flex-wrap items-center gap-2 shrink-0">
+                  <button
+                    type="button"
+                    onClick={handleCopyShopeeHeader}
+                    className="px-3 py-1.5 bg-white hover:bg-slate-50 text-orange-700 border border-orange-200 rounded-xl text-xs font-semibold flex items-center gap-1.5 transition shadow-xs"
+                    title="คัดลอกหัวตาราง Shopee 27 คอลัมน์ไปวางที่แถวที่ 3 ของแท็บ Shopee"
+                  >
+                    {copiedShopeeHeader ? <Check className="w-3.5 h-3.5 text-emerald-600" /> : <Copy className="w-3.5 h-3.5 text-orange-600" />}
+                    {copiedShopeeHeader ? 'คัดลอกหัวตาราง Shopee แล้ว!' : 'คัดลอกหัวตาราง Shopee'}
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={handleCopyShopeeFormula}
+                    className="px-3 py-1.5 bg-white hover:bg-slate-50 text-amber-800 border border-amber-300 rounded-xl text-xs font-semibold flex items-center gap-1.5 transition shadow-xs"
+                    title="คัดลอกสูตรดึงข้อมูลจากแท็บ Products ไปวางในแถวที่ 4 ของแท็บ Shopee"
+                  >
+                    {copiedShopeeFormula ? <Check className="w-3.5 h-3.5 text-emerald-600" /> : <Code className="w-3.5 h-3.5 text-amber-600" />}
+                    {copiedShopeeFormula ? 'คัดลอกสูตรเชื่อมโยงแล้ว!' : 'คัดลอกสูตรเชื่อมโยงชีต'}
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={handleDownloadShopeeCsv}
+                    disabled={downloadingShopeeCsv}
+                    className="px-3.5 py-1.5 bg-gradient-to-r from-orange-500 to-amber-600 hover:from-orange-600 hover:to-amber-700 text-white rounded-xl text-xs font-semibold flex items-center gap-1.5 transition shadow-xs disabled:opacity-50"
+                  >
+                    {downloadingShopeeCsv ? <RefreshCw className="w-3.5 h-3.5 animate-spin" /> : <Download className="w-3.5 h-3.5" />}
+                    ดาวน์โหลดไฟล์ Shopee (.csv)
+                  </button>
+                </div>
+              </div>
+
+              {/* Multi-Sheet Architecture Cards */}
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-3 text-[11px]">
+                <div className="bg-white/90 p-3.5 rounded-xl border border-blue-150 space-y-1.5 shadow-2xs">
+                  <span className="font-bold text-blue-900 flex items-center gap-1.5 text-xs">
+                    <FileSpreadsheet className="w-4 h-4 text-blue-600" />
+                    1. แท็บชีต "Products" (ชีตหลัก Master)
+                  </span>
+                  <p className="text-slate-600 text-[10px] leading-relaxed">
+                    ชีตที่คุณลงสินค้าไว้ปัจจุบัน มีชื่อ, รายละเอียด, ราคา, BV, รูปภาพ, สต็อก <strong>คุมการแสดงผลบน Noinashop และ Facebook Catalog</strong> ในจุดเดียว
+                  </p>
+                </div>
+
+                <div className="bg-white/90 p-3.5 rounded-xl border border-amber-200 space-y-1.5 shadow-2xs">
+                  <span className="font-bold text-amber-900 flex items-center gap-1.5 text-xs">
+                    <Sparkles className="w-4 h-4 text-amber-600" />
+                    2. สูตรอัตโนมัติ (Formula Sync)
+                  </span>
+                  <p className="text-slate-600 text-[10px] leading-relaxed">
+                    ใช้สูตรดึงข้อมูล เช่น <code className="bg-amber-50 text-amber-800 px-1 py-0.2 rounded font-mono">=Products!A2</code> (ชื่อ) และ <code className="bg-amber-50 text-amber-800 px-1 py-0.2 rounded font-mono">=Products!C2</code> (ราคา) ทำให้ไม่ต้องกรอกข้อมูลซ้ำซ้อนสองรอบ
+                  </p>
+                </div>
+
+                <div className="bg-white/90 p-3.5 rounded-xl border border-orange-200 space-y-1.5 shadow-2xs">
+                  <span className="font-bold text-orange-950 flex items-center gap-1.5 text-xs">
+                    <ShoppingBag className="w-4 h-4 text-orange-500" />
+                    3. แท็บชีต "Shopee" (Mass Upload)
+                  </span>
+                  <p className="text-slate-600 text-[10px] leading-relaxed">
+                    มีหัวตาราง 27 คอลัมน์ตรงตามแบบฟอร์ม <strong>Shopee Mass Upload Template</strong> เป๊ะ เมื่อจะนำเข้า Shopee เพียงกดดาวน์โหลดเป็น .xlsx หรือ .csv แล้วอัปโหลดได้เลย
+                  </p>
+                </div>
+              </div>
+
+              {/* Column Mapping Table */}
+              <div className="bg-white rounded-xl border border-orange-200/70 overflow-hidden shadow-2xs">
+                <div className="bg-orange-100/60 px-3 py-2 flex items-center justify-between border-b border-orange-200/70">
+                  <span className="text-[11px] font-bold text-orange-950 flex items-center gap-1.5">
+                    <Layers className="w-3.5 h-3.5 text-orange-600" />
+                    ตารางจับคู่คอลัมน์ (Products ➜ Shopee Template):
+                  </span>
+                  <span className="text-[10px] text-orange-700">อ้างอิงตาม Shopee Mass Upload Basic Template</span>
+                </div>
+                <div className="overflow-x-auto text-[10px]">
+                  <table className="w-full text-left border-collapse">
+                    <thead>
+                      <tr className="bg-orange-50/60 text-slate-700 font-bold border-b border-slate-200 whitespace-nowrap">
+                        <th className="p-2 border-r">คอลัมน์ Shopee</th>
+                        <th className="p-2 border-r">ความสำคัญ</th>
+                        <th className="p-2 border-r">สูตรที่ใส่ในชีต Shopee</th>
+                        <th className="p-2">ดึงมาจากคอลัมน์ใน Products</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-slate-150 whitespace-nowrap text-slate-600 font-mono">
+                      <tr className="hover:bg-orange-50/30">
+                        <td className="p-2 font-bold text-slate-800 border-r">B: Product Name</td>
+                        <td className="p-2 text-red-600 font-bold border-r">Mandatory (บังคับ)</td>
+                        <td className="p-2 text-blue-700 font-bold border-r">=Products!A2</td>
+                        <td className="p-2 text-slate-700 font-sans">คอลัมน์ A (title - ชื่อสินค้า)</td>
+                      </tr>
+                      <tr className="hover:bg-orange-50/30">
+                        <td className="p-2 font-bold text-slate-800 border-r">C: Product Description</td>
+                        <td className="p-2 text-red-600 font-bold border-r">Mandatory (บังคับ)</td>
+                        <td className="p-2 text-blue-700 font-bold border-r">=Products!B2</td>
+                        <td className="p-2 text-slate-700 font-sans">คอลัมน์ B (description - รายละเอียด)</td>
+                      </tr>
+                      <tr className="hover:bg-orange-50/30">
+                        <td className="p-2 font-bold text-slate-800 border-r">I: Parent SKU</td>
+                        <td className="p-2 text-slate-500 border-r">Optional</td>
+                        <td className="p-2 text-blue-700 font-bold border-r">=Products!M2</td>
+                        <td className="p-2 text-slate-700 font-sans">คอลัมน์ M (id - รหัสสินค้า)</td>
+                      </tr>
+                      <tr className="hover:bg-orange-50/30">
+                        <td className="p-2 font-bold text-slate-800 border-r">K: Variation Name 1</td>
+                        <td className="p-2 text-amber-700 border-r">Conditional</td>
+                        <td className="p-2 text-blue-700 font-bold border-r">=IF(Products!J2&lt;&gt;"","ขนาด/รุ่น","")</td>
+                        <td className="p-2 text-slate-700 font-sans">ใส่ชื่อกลุ่มตัวเลือก (หากมีขนาด)</td>
+                      </tr>
+                      <tr className="hover:bg-orange-50/30">
+                        <td className="p-2 font-bold text-slate-800 border-r">L: Option for Variation 1</td>
+                        <td className="p-2 text-amber-700 border-r">Conditional</td>
+                        <td className="p-2 text-blue-700 font-bold border-r">=Products!J2</td>
+                        <td className="p-2 text-slate-700 font-sans">คอลัมน์ J (size - 20W, 25W, 2x4)</td>
+                      </tr>
+                      <tr className="hover:bg-orange-50/30">
+                        <td className="p-2 font-bold text-slate-800 border-r">P: Price</td>
+                        <td className="p-2 text-red-600 font-bold border-r">Mandatory (บังคับ)</td>
+                        <td className="p-2 text-emerald-700 font-bold border-r">=Products!C2</td>
+                        <td className="p-2 text-slate-700 font-sans">คอลัมน์ C (price - ราคาตัวเลข)</td>
+                      </tr>
+                      <tr className="hover:bg-orange-50/30">
+                        <td className="p-2 font-bold text-slate-800 border-r">Q: Stock</td>
+                        <td className="p-2 text-red-600 font-bold border-r">Mandatory (บังคับ)</td>
+                        <td className="p-2 text-blue-700 font-bold border-r">=Products!I2</td>
+                        <td className="p-2 text-slate-700 font-sans">คอลัมน์ I (inventory - สต็อก)</td>
+                      </tr>
+                      <tr className="hover:bg-orange-50/30">
+                        <td className="p-2 font-bold text-slate-800 border-r">R: SKU</td>
+                        <td className="p-2 text-slate-500 border-r">Optional</td>
+                        <td className="p-2 text-blue-700 font-bold border-r">=Products!M2</td>
+                        <td className="p-2 text-slate-700 font-sans">คอลัมน์ M (id)</td>
+                      </tr>
+                      <tr className="hover:bg-orange-50/30">
+                        <td className="p-2 font-bold text-slate-800 border-r">S: Cover Image</td>
+                        <td className="p-2 text-red-600 font-bold border-r">Mandatory (บังคับ)</td>
+                        <td className="p-2 text-blue-700 font-bold border-r">=Products!E2</td>
+                        <td className="p-2 text-slate-700 font-sans">คอลัมน์ E (image_link - รูปหน้าปก)</td>
+                      </tr>
+                      <tr className="hover:bg-orange-50/30">
+                        <td className="p-2 font-bold text-slate-800 border-r">X: Weight</td>
+                        <td className="p-2 text-red-600 font-bold border-r">Mandatory (บังคับ)</td>
+                        <td className="p-2 text-slate-700 font-bold border-r">0.5</td>
+                        <td className="p-2 text-slate-700 font-sans">น้ำหนักพัสดุ (กก.) เช่น 0.5</td>
+                      </tr>
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+
+              {/* Step by step to setup Multi-Sheet in Google Sheets */}
+              <div className="pt-2 border-t border-orange-200/60">
+                <span className="block font-bold text-slate-800 mb-2">📌 วิธีทำ Multi-Sheet ใน Google Sheet ของคุณให้ใช้กับ Shopee ได้ทันที:</span>
+                <ol className="list-decimal pl-4 space-y-1.5 text-[11px] leading-relaxed text-slate-600">
+                  <li>เปิด Google Sheet ของคุณ ด้านล่างซ้ายกดปุ่ม <strong>+ (เพิ่มแผ่นงาน)</strong> แล้วตั้งชื่อแท็บใหม่ว่า <strong className="text-orange-600 font-mono">Shopee</strong></li>
+                  <li>คลิกปุ่ม <strong>"คัดลอกหัวตาราง Shopee"</strong> ด้านบนนี้ แล้วไปคลิกที่ช่อง <strong>A3</strong> (หรือ A1) ในแท็บ Shopee จากนั้นกด <code className="bg-slate-150 px-1 py-0.2 rounded font-mono">Ctrl + V</code> เพื่อวางหัวตาราง</li>
+                  <li>คลิกปุ่ม <strong>"คัดลอกสูตรเชื่อมโยงชีต"</strong> ด้านบนนี้ แล้วไปคลิกที่ช่อง <strong>A4</strong> (หรือ A2) ในแท็บ Shopee จากนั้นกด <code className="bg-slate-150 px-1 py-0.2 rounded font-mono">Ctrl + V</code> เพื่อวางสูตร</li>
+                  <li>คลุมดำแถวสูตรแล้วดับเบิ้ลคลิกที่จุดสี่เหลี่ยมมุมขวาล่างเพื่อลากสูตรลงมาให้ครบทุกแถวสินค้า</li>
+                  <li>เมื่อต้องการนำสินค้าเข้า Shopee: ใน Google Sheet ไปที่ <strong>ไฟล์ (File) &gt; ดาวน์โหลด (Download) &gt; Microsoft Excel (.xlsx)</strong> แล้วนำไฟล์นี้ไปอัปโหลดใน <strong>Shopee Seller Centre &gt; สินค้าของฉัน &gt; เครื่องมือจัดการแบบชุด &gt; เพิ่มสินค้าแบบชุด (Mass Upload)</strong> ได้ทันที!</li>
+                </ol>
+              </div>
             </div>
           </div>
         ) : (
-          /* Tab 2: Simple Format Guide (Legacy) */
+          /* Tab 3: Simple Format Guide (Legacy) */
           <div className="bg-slate-50 border border-slate-100 rounded-xl p-4 text-xs text-slate-600 space-y-2">
             <h4 className="font-bold text-slate-700 flex items-center gap-1">
               <Database className="w-4 h-4 text-emerald-600" />

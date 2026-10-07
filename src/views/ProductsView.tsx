@@ -5,6 +5,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { Product, Member } from '../types';
+import { trackFbViewContent } from '../utils/facebookPixel';
 import { 
   Search, 
   ShoppingCart, 
@@ -77,6 +78,13 @@ export default function ProductsView({
   const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
   const [selectedOption, setSelectedOption] = useState<string>('');
   const [activePreviewImage, setActivePreviewImage] = useState<string>('');
+
+  // Track Meta Pixel ViewContent event when viewing product modal
+  useEffect(() => {
+    if (selectedProduct) {
+      trackFbViewContent(selectedProduct);
+    }
+  }, [selectedProduct]);
   const [copiedProductShare, setCopiedProductShare] = useState<boolean>(false);
   const [qtyToAdd, setQtyToAdd] = useState<number>(1);
   const [showAddSuccess, setShowAddSuccess] = useState<boolean>(false);

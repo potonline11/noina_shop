@@ -11,6 +11,7 @@ import {
   INITIAL_COMMISSIONS 
 } from './data/mockData';
 import { parseCSV, DEMO_SPREADSHEET_DATA, DEFAULT_SHEET_URL, getCleanSheetUrl, parseSheetData } from './utils/sheetParser';
+import { trackFbPageView, trackFbAddToCart, trackFbPurchase, trackFbLead } from './utils/facebookPixel';
 
 // Subcomponents and Views
 import Navbar from './components/Navbar';
@@ -36,6 +37,11 @@ export default function App() {
   // Navigation View State
   const [currentView, setCurrentView] = useState<string>('home');
   
+  // Track Meta Pixel PageView on navigation/view changes
+  useEffect(() => {
+    trackFbPageView(currentView);
+  }, [currentView]);
+
   // Auth Session State
   const [currentUser, setCurrentUser] = useState<Member | null>(() => {
     const cached = sessionStorage.getItem('noina_current_user');
@@ -317,6 +323,13 @@ export default function App() {
       return [...updated, newMember];
     });
 
+    // Track Meta Pixel Lead event on member registration
+    trackFbLead({
+      content_name: 'Member Registration',
+      member_id: newMember.id,
+      rank: newMember.rank
+    });
+
     const clientWebhookUrl = localStorage.getItem('noina_order_webhook_url') || '';
     const clientSheetUrl = localStorage.getItem('noina_sheet_url') || '';
     const sheetId = extractSheetId(clientSheetUrl);
@@ -454,6 +467,7 @@ export default function App() {
   }, [cart]);
 
   const handleAddToCart = (product: Product, qty: number) => {
+    trackFbAddToCart(product, qty);
     setCart(prev => {
       const idx = prev.findIndex(item => item.product.id === product.id);
       if (idx !== -1) {
@@ -522,6 +536,9 @@ export default function App() {
 
     const updatedOrders = [newOrder, ...orders];
     setOrders(updatedOrders);
+
+    // Track Meta Pixel Purchase event
+    trackFbPurchase(newOrder);
 
     const clientWebhookUrl = localStorage.getItem('noina_order_webhook_url') || '';
     const clientSheetUrl = localStorage.getItem('noina_sheet_url') || '';

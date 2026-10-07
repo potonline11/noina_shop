@@ -850,6 +850,149 @@ ${productsContext || 'ขณะนี้ไม่มีสินค้าใน�
     }
   });
 
+  // Helper to generate Shopee Mass Upload (Basic Template) CSV format
+  const generateShopeeMassUploadCSV = (prods: any[]) => {
+    const shopeeHeaders = [
+      'Category',
+      'Product Name',
+      'Product Description',
+      'Maximum Purchase Quantity',
+      'Maximum Purchase Quantity - Start Date',
+      'Maximum Purchase Quantity - Time Period (in Days)',
+      'Maximum Purchase Quantity - End Date',
+      'Minimum Purchase Quantity',
+      'Parent SKU',
+      'Variation Integration No.',
+      'Variation Name 1',
+      'Option for Variation 1',
+      'Image per Variation',
+      'Variation Name 2',
+      'Option for Variation 2',
+      'Price',
+      'Stock',
+      'SKU',
+      'Cover Image',
+      'Image 2',
+      'Image 3',
+      'Image 4',
+      'Image 5',
+      'Weight',
+      'Length',
+      'Width',
+      'Height'
+    ];
+
+    const escapeCSV = (val: any) => {
+      if (val === undefined || val === null) return '';
+      const str = String(val).replace(/\r\n/g, '\n').replace(/\r/g, '\n');
+      if (str.includes(',') || str.includes('"') || str.includes('\n')) {
+        return '"' + str.replace(/"/g, '""') + '"';
+      }
+      return str;
+    };
+
+    const rows = [shopeeHeaders.join(',')];
+
+    for (const p of prods) {
+      const cleanDesc = (p.description || '').replace(/<[^>]*>/g, ' ').replace(/\s+/g, ' ').trim();
+      const parentSku = p.sku || p.id || `SKU-${p.id}`;
+      const mainImg = p.image || '';
+      const extraImgs = (p.images || []).filter((img: string) => img !== mainImg);
+
+      if (p.variantOptions && p.variantOptions.length > 0) {
+        const variationIntegrationNo = p.itemGroupId || parentSku;
+        for (let idx = 0; idx < p.variantOptions.length; idx++) {
+          const v = p.variantOptions[idx];
+          const variantSku = v.sku || `${parentSku}-${idx + 1}`;
+          const varPrice = Number(v.price || p.price);
+          const varStock = v.stock !== undefined ? v.stock : (p.stock || 99);
+          const varImg = v.image || mainImg;
+
+          rows.push([
+            escapeCSV(''), // Category (Optional)
+            escapeCSV(p.name),
+            escapeCSV(cleanDesc),
+            escapeCSV(''), // Max Purchase Qty
+            escapeCSV(''), // Max Purchase Start Date
+            escapeCSV(''), // Max Purchase Days
+            escapeCSV(''), // Max Purchase End Date
+            escapeCSV('1'), // Min Purchase Qty
+            escapeCSV(parentSku),
+            escapeCSV(variationIntegrationNo),
+            escapeCSV('ขนาด/รุ่น'), // Variation Name 1
+            escapeCSV(v.name), // Option for Variation 1
+            escapeCSV(varImg),
+            escapeCSV(''), // Variation Name 2
+            escapeCSV(''), // Option for Variation 2
+            escapeCSV(varPrice),
+            escapeCSV(varStock),
+            escapeCSV(variantSku),
+            escapeCSV(mainImg),
+            escapeCSV(extraImgs[0] || ''),
+            escapeCSV(extraImgs[1] || ''),
+            escapeCSV(extraImgs[2] || ''),
+            escapeCSV(extraImgs[3] || ''),
+            escapeCSV('0.5'), // Weight in kg
+            escapeCSV('10'), // Length in cm
+            escapeCSV('10'), // Width in cm
+            escapeCSV('10')  // Height in cm
+          ].join(','));
+        }
+      } else {
+        const prodPrice = Number(p.price);
+        const prodStock = p.stock || 99;
+
+        rows.push([
+          escapeCSV(''), // Category
+          escapeCSV(p.name),
+          escapeCSV(cleanDesc),
+          escapeCSV(''),
+          escapeCSV(''),
+          escapeCSV(''),
+          escapeCSV(''),
+          escapeCSV('1'), // Min Purchase Qty
+          escapeCSV(parentSku),
+          escapeCSV(''),
+          escapeCSV(''),
+          escapeCSV(''),
+          escapeCSV(''),
+          escapeCSV(''),
+          escapeCSV(''),
+          escapeCSV(prodPrice),
+          escapeCSV(prodStock),
+          escapeCSV(parentSku),
+          escapeCSV(mainImg),
+          escapeCSV(extraImgs[0] || ''),
+          escapeCSV(extraImgs[1] || ''),
+          escapeCSV(extraImgs[2] || ''),
+          escapeCSV(extraImgs[3] || ''),
+          escapeCSV('0.5'),
+          escapeCSV('10'),
+          escapeCSV('10'),
+          escapeCSV('10')
+        ].join(','));
+      }
+    }
+
+    return '\uFEFF' + rows.join('\r\n');
+  };
+
+  // Shopee Mass Upload export endpoints
+  app.get(['/api/shopee-mass-upload.csv', '/api/export-shopee-csv', '/api/shopee-feed.csv'], async (req, res) => {
+    try {
+      const store = await readStore();
+      const prods = [...(store.sellerProducts || []), ...(store.products || [])];
+      const csvContent = generateShopeeMassUploadCSV(prods);
+      res.setHeader('Content-Type', 'text/csv; charset=utf-8');
+      res.setHeader('Content-Disposition', 'attachment; filename="Shopee_mass_upload_template.csv"');
+      res.setHeader('Access-Control-Allow-Origin', '*');
+      res.send(csvContent);
+    } catch (e: any) {
+      console.error('Error generating Shopee CSV:', e);
+      res.status(500).send('Error generating Shopee Mass Upload CSV');
+    }
+  });
+
   app.post('/api/products-store', async (req, res) => {
     try {
       const { sheetUrl, webhookUrl, logoUrl, products, members, orders, commissionLogs, sellerProducts } = req.body;
